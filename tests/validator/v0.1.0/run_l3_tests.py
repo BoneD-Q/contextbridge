@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for context-validator L3-A + L3-B1 (I11/I10) + L3-B2 (I16)."""
+"""Tests for context-validator L3-A + L3-B1/B2/B3/B4 + L3-C1 (I14)."""
 
 from __future__ import annotations
 
@@ -29,7 +29,10 @@ FAILURES: list[str] = []
 L3A = ["I01", "I02", "I03", "I04", "I05", "I06", "I07", "I08", "I09", "I15", "I17", "I18", "I19"]
 L3_B1 = ["I10", "I11"]
 L3_B2 = ["I16"]
-L3_DEFERRED = ["I12", "I13", "I14", "I20"]
+L3_B3 = ["I12"]
+L3_B4 = ["I13"]
+L3_C1 = ["I14"]
+L3_DEFERRED = ["I20"]
 
 
 def ok(name: str) -> None:
@@ -86,6 +89,12 @@ def test_generated_temp_copy() -> None:
             expect_status(report, iid, "PASS", f"generated {iid}")
         for iid in L3_B2:
             expect_status(report, iid, "PASS", f"generated {iid}")
+        for iid in L3_B3:
+            expect_status(report, iid, "PASS", f"generated {iid}")
+        for iid in L3_B4:
+            expect_status(report, iid, "PASS", f"generated {iid}")
+        for iid in L3_C1:
+            expect_status(report, iid, "PASS", f"generated {iid}")
         for iid in L3_DEFERRED:
             expect_status(report, iid, "NOT_CHECKED", f"generated deferred {iid}")
         for hid in [f"H{i:02d}" for i in range(1, 7)]:
@@ -102,18 +111,27 @@ def test_empty_and_minimal() -> None:
             expect_status(report, iid, "PASS", f"empty {iid}")
         for iid in L3_B2:
             expect_status(report, iid, "PASS", f"empty {iid}")
+        for iid in L3_B3:
+            expect_status(report, iid, "PASS", f"empty {iid}")
+        for iid in L3_B4:
+            expect_status(report, iid, "PASS", f"empty {iid}")
+        for iid in L3_C1:
+            expect_status(report, iid, "PASS", f"empty {iid}")
         for iid in L3_DEFERRED:
             expect_status(report, iid, "NOT_CHECKED", f"empty deferred {iid}")
 
         minimal = build_valid_minimal_package(Path(tmp) / "minimal")
         report_m = validate_package(minimal)
         expect_status(report_m, "I01", "PASS", "minimal I01")
+        expect_status(report_m, "I14", "PASS", "minimal I14")
         expect_status(report_m, "I02", "PASS", "minimal I02")
         expect_status(report_m, "I03", "PASS", "minimal I03")
         expect_status(report_m, "I04", "PASS", "minimal I04")
         expect_status(report_m, "I09", "PASS", "minimal I09")
         expect_status(report_m, "I10", "PASS", "minimal I10")
         expect_status(report_m, "I11", "PASS", "minimal I11")
+        expect_status(report_m, "I12", "PASS", "minimal I12")
+        expect_status(report_m, "I13", "PASS", "minimal I13")
         expect_status(report_m, "I15", "PASS", "minimal I15")
         expect_status(report_m, "I16", "PASS", "minimal I16")
         check("minimal not invalid", report_m["final_status"] != "invalid")
@@ -486,15 +504,15 @@ def test_review_fix_l3_layer_mixed() -> None:
         pkg = build_valid_minimal_package(Path(tmp) / "layer")
         report = validate_package(pkg)
         check(
-            "L3 layer not full PASS with deferred I*",
+            "L3 layer not full PASS with deferred I20",
             report["layers"]["L3"] == "NOT_CHECKED",
             report["layers"]["L3"],
         )
         check("L1 unchanged style", report["layers"]["L1"] in {"PASS", "WARNING"})
         check("L2 PASS", report["layers"]["L2"] == "PASS")
-        # Per-check deferred still NOT_CHECKED; A rules still individual PASS
         expect_status(report, "I01", "PASS", "layer mix I01 PASS")
-        expect_status(report, "I14", "NOT_CHECKED", "layer mix I14 NOT_CHECKED")
+        expect_status(report, "I14", "PASS", "layer mix I14 PASS")
+        expect_status(report, "I20", "NOT_CHECKED", "layer mix I20 NOT_CHECKED")
 
 
 def test_convergence_i18_privacy_and_whitespace() -> None:
@@ -604,7 +622,7 @@ def test_convergence_mid_dir_symlink() -> None:
 
 
 def test_convergence_l3_warning_vs_not_checked() -> None:
-    """I19 WARNING must not make L3 layer look finished while B/C remain NOT_CHECKED."""
+    """I19 WARNING must not make L3 layer look finished while I20 remains NOT_CHECKED."""
     with tempfile.TemporaryDirectory() as tmp:
         pkg = build_valid_minimal_package(Path(tmp) / "warn_layer")
         ev = load_json(pkg / "evidence/evidence.json")
@@ -616,7 +634,8 @@ def test_convergence_l3_warning_vs_not_checked() -> None:
         save_json(pkg / "knowledge/facts.json", facts)
         report = validate_package(pkg)
         expect_status(report, "I19", "WARNING", "warn-layer I19 WARNING")
-        expect_status(report, "I14", "NOT_CHECKED", "warn-layer I14 NOT_CHECKED")
+        expect_status(report, "I14", "PASS", "warn-layer I14 PASS")
+        expect_status(report, "I20", "NOT_CHECKED", "warn-layer I20 NOT_CHECKED")
         check(
             "L3 layer NOT_CHECKED despite I19 WARNING",
             report["layers"]["L3"] == "NOT_CHECKED",
@@ -650,7 +669,7 @@ def test_report_and_offline() -> None:
             pkg = build_valid_minimal_package(Path(tmp) / "pkg")
             report = validate_package(pkg)
             check("no network", calls == [])
-            check("phase 3B-B2", report["checker"]["phase"] == "3B-B2")
+            check("phase 3B-C1", report["checker"]["phase"] == "3B-C1")
             check("L3-A flag", report["checker"]["scripts_implemented"]["L3_A_references"] is True)
             check(
                 "L3-B1 flag",
@@ -660,10 +679,22 @@ def test_report_and_offline() -> None:
                 "L3-B2 flag",
                 report["checker"]["scripts_implemented"]["L3_B2_readable_false"] is True,
             )
+            check(
+                "L3-B3 flag",
+                report["checker"]["scripts_implemented"]["L3_B3_line_range_bounds"] is True,
+            )
+            check(
+                "L3-B4 flag",
+                report["checker"]["scripts_implemented"]["L3_B4_other_locators"] is True,
+            )
+            check(
+                "L3-C excerpts flag",
+                report["checker"]["scripts_implemented"]["L3_C_excerpts"] is True,
+            )
             check("L3-B full locators false", report["checker"]["scripts_implemented"]["L3_B_locators"] is False)
             check("read_only", report["read_only"] is True)
             ids = {c["id"] for c in report["checks"]}
-            for iid in L3A + L3_B1 + L3_B2 + L3_DEFERRED:
+            for iid in L3A + L3_B1 + L3_B2 + L3_B3 + L3_B4 + L3_C1 + L3_DEFERRED:
                 check(f"report has {iid}", iid in ids)
     finally:
         urllib.request.urlopen = original  # type: ignore[assignment]
@@ -1054,8 +1085,1381 @@ def test_b2_i16_readable_false() -> None:
         )
 
 
+def _patch_locator(pkg: Path, **fields) -> None:
+    ev = load_json(pkg / "evidence/evidence.json")
+    loc = ev["evidence"][0]["locator"]
+    for k, v in fields.items():
+        loc[k] = v
+    save_json(pkg / "evidence/evidence.json", ev)
+
+
+def _i12_errors(report: dict) -> list[dict]:
+    return result_map(report).get("I12", {}).get("errors") or []
+
+
+def _i12_msgs(report: dict) -> str:
+    return " ".join(e.get("message", "") for e in _i12_errors(report))
+
+
+def test_b3_i12_line_range() -> None:
+    from _integrity import PackageIndex, check_i12, line_number_value
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+
+        # 1) Legal line_range
+        pkg = build_valid_minimal_package(root / "ok")
+        report = validate_package(pkg)
+        expect_status(report, "I12", "PASS", "B3 legal line_range PASS")
+
+        # 2) start=null
+        pkg2 = build_valid_minimal_package(root / "start_null")
+        _patch_locator(pkg2, start=None)
+        report2 = validate_package(pkg2)
+        expect_status(report2, "I12", "FAIL", "B3 start=null FAIL")
+        check("B3 start=null reason", "line_range_null" in _i12_msgs(report2))
+
+        # 3) end=null (no coalesce to start)
+        pkg3 = build_valid_minimal_package(root / "end_null")
+        _patch_locator(pkg3, end=None)
+        report3 = validate_package(pkg3)
+        expect_status(report3, "I12", "FAIL", "B3 end=null FAIL")
+        check("B3 end=null reason", "line_range_null" in _i12_msgs(report3))
+
+        # 4) start=0
+        pkg4 = build_valid_minimal_package(root / "start0")
+        _patch_locator(pkg4, start=0, end=1)
+        report4 = validate_package(pkg4)
+        expect_status(report4, "I12", "FAIL", "B3 start=0 FAIL")
+        check("B3 start=0 reason", "line_range_start_lt_1" in _i12_msgs(report4))
+
+        # 5) start negative
+        pkg5 = build_valid_minimal_package(root / "start_neg")
+        _patch_locator(pkg5, start=-1, end=1)
+        report5 = validate_package(pkg5)
+        expect_status(report5, "I12", "FAIL", "B3 start negative FAIL")
+        check("B3 start neg reason", "line_range_start_lt_1" in _i12_msgs(report5))
+
+        # 6) end < start
+        pkg6 = build_valid_minimal_package(root / "end_lt")
+        _patch_locator(pkg6, start=2, end=1)
+        report6 = validate_package(pkg6)
+        expect_status(report6, "I12", "FAIL", "B3 end < start FAIL")
+        check("B3 end<start reason", "line_range_end_lt_start" in _i12_msgs(report6))
+
+        # 7) end > line count (design.md has 2 lines)
+        pkg7 = build_valid_minimal_package(root / "end_gt")
+        _patch_locator(pkg7, start=1, end=99)
+        report7 = validate_package(pkg7)
+        expect_status(report7, "I12", "FAIL", "B3 end > lines FAIL")
+        check("B3 out of bounds reason", "line_range_out_of_bounds" in _i12_msgs(report7))
+
+        # 8) empty file
+        pkg8 = build_valid_minimal_package(root / "empty_file")
+        (pkg8 / "source/original/design.md").write_text("", encoding="utf-8")
+        _patch_locator(pkg8, start=1, end=1)
+        report8 = validate_package(pkg8)
+        expect_status(report8, "I12", "FAIL", "B3 empty file FAIL")
+        check("B3 empty file bounds", "line_range_out_of_bounds" in _i12_msgs(report8))
+
+        # 9) 1.0 integer semantics — JSON number 1.0 may serialize as 1; force float via direct check
+        kind, n = line_number_value(1.0)
+        check("B3 1.0 ok", kind == "ok" and n == 1)
+        pkg9 = build_valid_minimal_package(root / "one_point_zero")
+        # After JSON round-trip 1.0 may become 1; still PASS either way
+        _patch_locator(pkg9, start=1.0, end=1.0)
+        report9 = validate_package(pkg9)
+        expect_status(report9, "I12", "PASS", "B3 1.0 PASS")
+
+        # 10) 1.5 illegal
+        pkg10 = build_valid_minimal_package(root / "one_point_five")
+        _patch_locator(pkg10, start=1.5, end=2)
+        report10 = validate_package(pkg10)
+        expect_status(report10, "I12", "FAIL", "B3 1.5 FAIL")
+        check("B3 1.5 reason", "line_range_invalid" in _i12_msgs(report10))
+
+        # 11) NaN / Infinity — direct classifier + check_i12 (JSON cannot carry these)
+        check("B3 nan invalid", line_number_value(float("nan"))[0] == "invalid")
+        check("B3 inf invalid", line_number_value(float("inf"))[0] == "invalid")
+        pkg11 = build_valid_minimal_package(root / "nan_pkg")
+        idx11 = PackageIndex()
+        idx11.loaded_kinds.add("evidence")
+        idx11.by_kind["evidence"] = {
+            "ev_001": {
+                "evidence_id": "ev_001",
+                "locator": {
+                    "source_id": "src_001",
+                    "path": "source/original/design.md",
+                    "locator_type": "line_range",
+                    "start": float("nan"),
+                    "end": 1,
+                    "excerpt": "x",
+                },
+            }
+        }
+        out11, _, _ = check_i12(idx11, pkg11, {"ev_001": "safe"})
+        check("B3 nan I12 FAIL", out11.result == "FAIL", out11.message)
+        check("B3 nan reason", "line_range_invalid" in (out11.errors[0]["message"] if out11.errors else ""))
+
+        # 12) bool line numbers
+        check("B3 True invalid", line_number_value(True)[0] == "invalid")
+        check("B3 False invalid", line_number_value(False)[0] == "invalid")
+        idx12 = PackageIndex()
+        idx12.loaded_kinds.add("evidence")
+        idx12.by_kind["evidence"] = {
+            "ev_001": {
+                "evidence_id": "ev_001",
+                "locator": {
+                    "source_id": "src_001",
+                    "path": "source/original/design.md",
+                    "locator_type": "line_range",
+                    "start": True,
+                    "end": 1,
+                    "excerpt": "x",
+                },
+            }
+        }
+        out12, _, _ = check_i12(idx12, pkg11, {"ev_001": "safe"})
+        check("B3 bool I12 FAIL", out12.result == "FAIL", out12.message)
+
+        # 13) I11 unsafe gate — no out-of-package read
+        pkg13 = build_valid_minimal_package(root / "i11_unsafe")
+        outside = root / "secret_outside.txt"
+        outside.write_text("SECRET\n", encoding="utf-8")
+        before = outside.read_text(encoding="utf-8")
+        _patch_locator(pkg13, path="../secret_outside.txt", start=1, end=1)
+        report13 = validate_package(pkg13)
+        after = outside.read_text(encoding="utf-8")
+        expect_status(report13, "I11", "FAIL", "B3 I11 unsafe still FAIL")
+        expect_status(report13, "I12", "NOT_CHECKED", "B3 I11 unsafe → I12 NOT_CHECKED")
+        check("B3 I11 gate reason", "i11_unsafe" in _i12_msgs(report13))
+        check("B3 no outside mutate", before == after)
+
+        # 14) I11 unresolved gate — inject safety map
+        out14, _, _ = check_i12(idx11, pkg11, {"ev_001": "unresolved"})
+        # fix idx to have valid numbers so gate is the only issue
+        idx14 = PackageIndex()
+        idx14.loaded_kinds.add("evidence")
+        idx14.by_kind["evidence"] = {
+            "ev_001": {
+                "evidence_id": "ev_001",
+                "locator": {
+                    "source_id": "src_001",
+                    "path": "source/original/design.md",
+                    "locator_type": "line_range",
+                    "start": 1,
+                    "end": 1,
+                    "excerpt": "x",
+                },
+            }
+        }
+        out14, _, _ = check_i12(idx14, pkg11, {"ev_001": "unresolved"})
+        check("B3 I11 unresolved NOT_CHECKED", out14.result == "NOT_CHECKED", out14.message)
+        check("B3 i11_unresolved reason", "i11_unresolved" in out14.errors[0]["message"])
+
+        # 15) I10 missing file
+        pkg15 = build_valid_minimal_package(root / "i10_miss")
+        _patch_locator(pkg15, path="source/original/missing.md", start=1, end=1)
+        report15 = validate_package(pkg15)
+        expect_status(report15, "I11", "PASS", "B3 missing path I11 PASS")
+        expect_status(report15, "I10", "FAIL", "B3 missing path I10 FAIL")
+        expect_status(report15, "I12", "NOT_CHECKED", "B3 I10 missing → I12 NOT_CHECKED")
+        check("B3 i10_missing reason", "i10_missing" in _i12_msgs(report15))
+
+        # 16) file read failure (OSError) → NOT_CHECKED read_failed
+        pkg16 = build_valid_minimal_package(root / "read_fail")
+        idx16 = PackageIndex()
+        idx16.loaded_kinds.add("evidence")
+        idx16.by_kind["evidence"] = {
+            "ev_001": {
+                "evidence_id": "ev_001",
+                "locator": {
+                    "source_id": "src_001",
+                    "path": "source/original/design.md",
+                    "locator_type": "line_range",
+                    "start": 1,
+                    "end": 1,
+                    "excerpt": "x",
+                },
+            }
+        }
+        real_read_text = Path.read_text
+
+        def boom(self, *args, **kwargs):
+            raise OSError("simulated read failure")
+
+        Path.read_text = boom  # type: ignore[method-assign]
+        try:
+            out16, _, snap16 = check_i12(idx16, pkg16, {"ev_001": "safe"})
+        finally:
+            Path.read_text = real_read_text  # type: ignore[method-assign]
+        check("B3 file read failure NOT_CHECKED", out16.result == "NOT_CHECKED", out16.message)
+        check("B3 read_failed reason", "read_failed" in out16.errors[0]["message"])
+        check("B3 read fail no snapshot", "ev_001" not in snap16)
+
+        # 17) UTF-8 decode failure
+        pkg17 = build_valid_minimal_package(root / "utf8_bad")
+        bad = pkg17 / "source/original/design.md"
+        bad.write_bytes(b"\xff\xfe binary not utf8 \xff")
+        _patch_locator(pkg17, start=1, end=1)
+        report17 = validate_package(pkg17)
+        expect_status(report17, "I12", "NOT_CHECKED", "B3 utf8 fail NOT_CHECKED")
+        check("B3 utf8 reason", "utf8_decode_failed" in _i12_msgs(report17))
+
+        # 18) non line_range skipped → PASS (empty applicable)
+        pkg18 = build_valid_minimal_package(root / "section_only")
+        _patch_locator(
+            pkg18,
+            locator_type="section",
+            start="Intro",
+            end=None,
+        )
+        report18 = validate_package(pkg18)
+        expect_status(report18, "I12", "PASS", "B3 non-line_range PASS")
+        check("B3 section empty applicable", "empty applicable" in result_map(report18)["I12"]["message"])
+
+        # 19) no applicable — empty evidence already PASS
+        empty = build_valid_minimal_package(root / "empty_ev", empty=True)
+        report19 = validate_package(empty)
+        expect_status(report19, "I12", "PASS", "B3 empty evidence I12 PASS")
+
+        # 20) evidence not loaded
+        pkg20 = build_valid_minimal_package(root / "no_ev")
+        (pkg20 / "evidence/evidence.json").unlink()
+        report20 = validate_package(pkg20)
+        expect_status(report20, "I12", "NOT_CHECKED", "B3 evidence unloaded NOT_CHECKED")
+
+        # 21–22) mixed FAIL + NOT_CHECKED — retain both details; overall FAIL
+        pkg21 = build_valid_minimal_package(root / "mixed")
+        (pkg21 / "source/original/extra.md").write_text("only\n", encoding="utf-8")
+        ev21 = load_json(pkg21 / "evidence/evidence.json")
+        # ev_001: out of bounds FAIL
+        ev21["evidence"][0]["locator"]["start"] = 1
+        ev21["evidence"][0]["locator"]["end"] = 99
+        # ev_002: I11 unsafe → NOT_CHECKED
+        ev21["evidence"].append(
+            {
+                "evidence_id": "ev_002",
+                "kind": "excerpt",
+                "locator": {
+                    "source_id": "src_001",
+                    "path": "../outside.txt",
+                    "locator_type": "line_range",
+                    "start": 1,
+                    "end": 1,
+                    "excerpt": "x",
+                },
+                "supports": [],
+                "redaction_applied": False,
+                "notes": "",
+            }
+        )
+        # ev_003: valid PASS item
+        ev21["evidence"].append(
+            {
+                "evidence_id": "ev_003",
+                "kind": "excerpt",
+                "locator": {
+                    "source_id": "src_001",
+                    "path": "source/original/extra.md",
+                    "locator_type": "line_range",
+                    "start": 1,
+                    "end": 1,
+                    "excerpt": "only",
+                },
+                "supports": [],
+                "redaction_applied": False,
+                "notes": "",
+            }
+        )
+        save_json(pkg21 / "evidence/evidence.json", ev21)
+        # break reverse links for I04 noise — set fact unverified empty
+        facts = load_json(pkg21 / "knowledge/facts.json")
+        facts["facts"][0]["evidence_ids"] = []
+        facts["facts"][0]["status"] = "unverified"
+        save_json(pkg21 / "knowledge/facts.json", facts)
+        ev21 = load_json(pkg21 / "evidence/evidence.json")
+        ev21["evidence"][0]["supports"] = []
+        save_json(pkg21 / "evidence/evidence.json", ev21)
+        report21 = validate_package(pkg21)
+        expect_status(report21, "I12", "FAIL", "B3 mixed overall FAIL")
+        msgs21 = _i12_msgs(report21)
+        check("B3 mixed keeps FAIL detail", "line_range_out_of_bounds" in msgs21)
+        check("B3 mixed keeps NOT_CHECKED detail", "i11_unsafe" in msgs21)
+        check("B3 mixed message notes not checked", "not checked" in result_map(report21)["I12"]["message"])
+        check(
+            "B3 wrote_to_package false",
+            report21["wrote_to_package"] is False,
+        )
+        check("B3 network false", report21["checker"]["network"] is False)
+
+
+def _i13_errors(report: dict) -> list[dict]:
+    return result_map(report).get("I13", {}).get("errors") or []
+
+
+def _i13_msgs(report: dict) -> str:
+    return " ".join(e.get("message", "") for e in _i13_errors(report))
+
+
+def _set_locator_as(
+    pkg: Path,
+    locator_type: str,
+    *,
+    start=None,
+    end=None,
+    path: str | None = None,
+) -> None:
+    """Retarget first evidence locator to a non-line_range type (schema-valid)."""
+    fields: dict = {"locator_type": locator_type}
+    if path is not None:
+        fields["path"] = path
+    if locator_type == "section":
+        fields["start"] = "Intro" if start is None else start
+        fields["end"] = end
+    elif locator_type == "json_pointer":
+        fields["start"] = "/a/b" if start is None else start
+        fields["end"] = end
+    elif locator_type == "anchor":
+        fields["start"] = "sec-1" if start is None else start
+        fields["end"] = end
+    elif locator_type == "page_range":
+        fields["start"] = 1 if start is None else start
+        fields["end"] = 1 if end is None else end
+    _patch_locator(pkg, **fields)
+
+
+def test_b4_i13_other_locators() -> None:
+    from _integrity import PackageIndex, check_i13
+    from pathlib import Path as PathType
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+
+        # 1) evidence unloaded → NOT_CHECKED
+        pkg1 = build_valid_minimal_package(root / "no_ev")
+        (pkg1 / "evidence/evidence.json").unlink()
+        report1 = validate_package(pkg1)
+        expect_status(report1, "I13", "NOT_CHECKED", "B4 evidence unloaded NOT_CHECKED")
+
+        # 2) empty evidence loaded → PASS
+        empty = build_valid_minimal_package(root / "empty", empty=True)
+        report2 = validate_package(empty)
+        expect_status(report2, "I13", "PASS", "B4 empty evidence PASS")
+
+        # 3) only line_range → PASS (I12 still owns bounds)
+        pkg3 = build_valid_minimal_package(root / "line_only")
+        report3 = validate_package(pkg3)
+        expect_status(report3, "I13", "PASS", "B4 line_range only I13 PASS")
+        expect_status(report3, "I12", "PASS", "B4 line_range only I12 PASS")
+
+        # 4–7) each applicable type alone → NOT_CHECKED
+        for lt, label in [
+            ("section", "section"),
+            ("json_pointer", "json_pointer"),
+            ("anchor", "anchor"),
+            ("page_range", "page_range"),
+        ]:
+            pkg = build_valid_minimal_package(root / f"only_{lt}")
+            _set_locator_as(pkg, lt)
+            # avoid I16/I04 noise: drop verified link if needed — keep package schema-ok
+            facts = load_json(pkg / "knowledge/facts.json")
+            facts["facts"][0]["status"] = "unverified"
+            facts["facts"][0]["evidence_ids"] = []
+            save_json(pkg / "knowledge/facts.json", facts)
+            ev = load_json(pkg / "evidence/evidence.json")
+            ev["evidence"][0]["supports"] = []
+            save_json(pkg / "evidence/evidence.json", ev)
+            report = validate_package(pkg)
+            expect_status(report, "I13", "NOT_CHECKED", f"B4 only {label} NOT_CHECKED")
+            check(f"B4 only {label} no_finder", "no_finder" in _i13_msgs(report))
+            check(f"B4 only {label} not PASS", report["checks"] is not None)
+
+        # 8) four types mixed → NOT_CHECKED with four details
+        pkg8 = build_valid_minimal_package(root / "four_types")
+        (pkg8 / "source/original/extra.md").write_text("# H\n", encoding="utf-8")
+        facts8 = load_json(pkg8 / "knowledge/facts.json")
+        facts8["facts"][0]["status"] = "unverified"
+        facts8["facts"][0]["evidence_ids"] = []
+        save_json(pkg8 / "knowledge/facts.json", facts8)
+        ev8 = {
+            "evidence": [
+                {
+                    "evidence_id": "ev_sec",
+                    "kind": "excerpt",
+                    "locator": {
+                        "source_id": "src_001",
+                        "path": "source/original/design.md",
+                        "locator_type": "section",
+                        "start": "Intro",
+                        "end": None,
+                        "excerpt": "x",
+                    },
+                    "supports": [],
+                    "redaction_applied": False,
+                    "notes": "",
+                },
+                {
+                    "evidence_id": "ev_ptr",
+                    "kind": "excerpt",
+                    "locator": {
+                        "source_id": "src_001",
+                        "path": "source/original/design.md",
+                        "locator_type": "json_pointer",
+                        "start": "/a",
+                        "end": None,
+                        "excerpt": "x",
+                    },
+                    "supports": [],
+                    "redaction_applied": False,
+                    "notes": "",
+                },
+                {
+                    "evidence_id": "ev_anc",
+                    "kind": "excerpt",
+                    "locator": {
+                        "source_id": "src_001",
+                        "path": "source/original/design.md",
+                        "locator_type": "anchor",
+                        "start": "a1",
+                        "end": None,
+                        "excerpt": "x",
+                    },
+                    "supports": [],
+                    "redaction_applied": False,
+                    "notes": "",
+                },
+                {
+                    "evidence_id": "ev_page",
+                    "kind": "excerpt",
+                    "locator": {
+                        "source_id": "src_001",
+                        "path": "source/original/design.md",
+                        "locator_type": "page_range",
+                        "start": 1,
+                        "end": 1,
+                        "excerpt": "x",
+                    },
+                    "supports": [],
+                    "redaction_applied": False,
+                    "notes": "",
+                },
+            ]
+        }
+        save_json(pkg8 / "evidence/evidence.json", ev8)
+        report8 = validate_package(pkg8)
+        expect_status(report8, "I13", "NOT_CHECKED", "B4 four types NOT_CHECKED")
+        errs8 = _i13_errors(report8)
+        check("B4 four types detail count", len(errs8) == 4, str(len(errs8)))
+        ids8 = " ".join(e["message"] for e in errs8)
+        for eid in ("ev_sec", "ev_ptr", "ev_anc", "ev_page"):
+            check(f"B4 four types has {eid}", eid in ids8)
+
+        # 9) line_range + section → I13 NOT_CHECKED; I12 still evaluates line_range
+        pkg9 = build_valid_minimal_package(root / "mixed_lr")
+        facts9 = load_json(pkg9 / "knowledge/facts.json")
+        facts9["facts"][0]["status"] = "unverified"
+        facts9["facts"][0]["evidence_ids"] = []
+        save_json(pkg9 / "knowledge/facts.json", facts9)
+        ev9 = load_json(pkg9 / "evidence/evidence.json")
+        ev9["evidence"][0]["supports"] = []
+        ev9["evidence"].append(
+            {
+                "evidence_id": "ev_sec",
+                "kind": "excerpt",
+                "locator": {
+                    "source_id": "src_001",
+                    "path": "source/original/design.md",
+                    "locator_type": "section",
+                    "start": "Intro",
+                    "end": None,
+                    "excerpt": "x",
+                },
+                "supports": [],
+                "redaction_applied": False,
+                "notes": "",
+            }
+        )
+        save_json(pkg9 / "evidence/evidence.json", ev9)
+        report9 = validate_package(pkg9)
+        expect_status(report9, "I13", "NOT_CHECKED", "B4 line+section I13 NOT_CHECKED")
+        expect_status(report9, "I12", "PASS", "B4 line+section I12 still PASS")
+        check("B4 mixed only section in I13", "ev_sec" in _i13_msgs(report9))
+        check("B4 mixed no ev_001 in I13", "ev_001" not in _i13_msgs(report9))
+
+        # 10–11) applicable never PASS; per-item detail present (covered above)
+
+        # 12) I13 does not re-run I12: bad line_range still I12 FAIL, I13 PASS if no other types
+        pkg12 = build_valid_minimal_package(root / "i12_own")
+        _patch_locator(pkg12, start=1, end=99)
+        report12 = validate_package(pkg12)
+        expect_status(report12, "I12", "FAIL", "B4 I12 owns line_range FAIL")
+        expect_status(report12, "I13", "PASS", "B4 I13 ignores line_range")
+
+        # 13) no file content reads during check_i13
+        pkg13 = build_valid_minimal_package(root / "no_read")
+        idx13 = PackageIndex()
+        idx13.loaded_kinds.add("evidence")
+        idx13.by_kind["evidence"] = {
+            "ev_sec": {
+                "evidence_id": "ev_sec",
+                "locator": {
+                    "source_id": "src_001",
+                    "path": "source/original/design.md",
+                    "locator_type": "section",
+                    "start": "Intro",
+                    "end": None,
+                    "excerpt": "x",
+                },
+            }
+        }
+        reads: list[str] = []
+        real_read = PathType.read_text
+
+        def counting_read(self, *args, **kwargs):
+            reads.append(str(self))
+            return real_read(self, *args, **kwargs)
+
+        PathType.read_text = counting_read  # type: ignore[method-assign]
+        try:
+            out13 = check_i13(idx13, {"ev_sec": "safe"})
+        finally:
+            PathType.read_text = real_read  # type: ignore[method-assign]
+        check("B4 no content read", reads == [], str(reads))
+        check("B4 unit NOT_CHECKED", out13.result == "NOT_CHECKED", out13.message)
+
+        # 14) no out-of-package access: unsafe path still NOT_CHECKED without reading
+        outside = root / "outside_secret.txt"
+        outside.write_text("SECRET\n", encoding="utf-8")
+        before = outside.read_text(encoding="utf-8")
+        idx14 = PackageIndex()
+        idx14.loaded_kinds.add("evidence")
+        idx14.by_kind["evidence"] = {
+            "ev_bad": {
+                "evidence_id": "ev_bad",
+                "locator": {
+                    "source_id": "src_001",
+                    "path": "../outside_secret.txt",
+                    "locator_type": "section",
+                    "start": "X",
+                    "end": None,
+                    "excerpt": "x",
+                },
+            }
+        }
+        out14 = check_i13(idx14, {"ev_bad": "unsafe"})
+        after = outside.read_text(encoding="utf-8")
+        check("B4 outside unchanged", before == after)
+        check("B4 unsafe gate reason", "i11_unsafe" in out14.errors[0]["message"])
+        check("B4 unsafe NOT_CHECKED", out14.result == "NOT_CHECKED")
+
+        # 15–16) package flags
+        report15 = validate_package(pkg3)
+        check("B4 wrote_to_package false", report15["wrote_to_package"] is False)
+        check("B4 network false", report15["checker"]["network"] is False)
+        check("B4 phase", report15["checker"]["phase"] == "3B-C1")
+
+
+def _i14_errors(report: dict) -> list[dict]:
+    return result_map(report).get("I14", {}).get("errors") or []
+
+
+def _i14_msgs(report: dict) -> str:
+    return " ".join(e.get("message", "") for e in _i14_errors(report))
+
+
+def _write_design(pkg: Path, text: str) -> None:
+    (pkg / "source/original/design.md").write_text(text, encoding="utf-8", newline="\n")
+
+
+def _unlink_knowledge_links(pkg: Path) -> None:
+    facts = load_json(pkg / "knowledge/facts.json")
+    if facts.get("facts"):
+        facts["facts"][0]["status"] = "unverified"
+        facts["facts"][0]["evidence_ids"] = []
+        save_json(pkg / "knowledge/facts.json", facts)
+    ev = load_json(pkg / "evidence/evidence.json")
+    if ev.get("evidence"):
+        ev["evidence"][0]["supports"] = []
+        save_json(pkg / "evidence/evidence.json", ev)
+
+
+def test_c1_i14_excerpt_match() -> None:
+    """I14 excerpt match — IDs map to docs/validator-i14-test-plan.zh-CN.md."""
+    from _integrity import (
+        PackageIndex,
+        check_i12,
+        check_i14,
+        excerpt_nonempty_lines,
+        normalize_excerpt_newlines,
+    )
+    from pathlib import Path as PathType
+    import unicodedata
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+
+        # --- Gates first ---
+        # I14-T068 / T085: evidence unloaded
+        pkg_u = build_valid_minimal_package(root / "unload")
+        (pkg_u / "evidence/evidence.json").unlink()
+        report_u = validate_package(pkg_u)
+        expect_status(report_u, "I14", "NOT_CHECKED", "I14-T068 evidence unloaded")
+
+        # I14-T070 / T084 / T069: empty loaded → PASS
+        empty = build_valid_minimal_package(root / "empty", empty=True)
+        report_e = validate_package(empty)
+        expect_status(report_e, "I14", "PASS", "I14-T070 empty loaded PASS")
+
+        # I14-T060 / T073: unsafe, zero I14 content read
+        idx_unsafe = PackageIndex()
+        idx_unsafe.loaded_kinds.add("evidence")
+        idx_unsafe.by_kind["evidence"] = {
+            "ev_bad": {
+                "evidence_id": "ev_bad",
+                "locator": {
+                    "source_id": "src_001",
+                    "path": "../outside_secret.txt",
+                    "locator_type": "line_range",
+                    "start": 1,
+                    "end": 1,
+                    "excerpt": "x",
+                },
+            }
+        }
+        reads: list[str] = []
+        real_read = PathType.read_text
+
+        def counting_read(self, *args, **kwargs):
+            reads.append(str(self))
+            return real_read(self, *args, **kwargs)
+
+        PathType.read_text = counting_read  # type: ignore[method-assign]
+        try:
+            out_u = check_i14(
+                idx_unsafe,
+                root / "unload",
+                {"ev_bad": "unsafe"},
+                {"ev_bad": "not_checked"},
+            )
+        finally:
+            PathType.read_text = real_read  # type: ignore[method-assign]
+        check("I14-T060 unsafe NC", out_u.result == "NOT_CHECKED")
+        check("I14-T060 i11_unsafe", "i11_unsafe" in out_u.errors[0]["message"])
+        check("I14-T073 zero reads", reads == [], str(reads))
+
+        # I14-T061 unresolved
+        out_ur = check_i14(
+            idx_unsafe,
+            root / "unload",
+            {"ev_bad": "unresolved"},
+            {"ev_bad": "not_checked"},
+        )
+        check("I14-T061 unresolved", out_ur.result == "NOT_CHECKED")
+        check("I14-T061 reason", "i11_unresolved" in out_ur.errors[0]["message"])
+
+        # I14-T062 i10 missing → I12 not_checked → I14 consumes I12
+        pkg_miss = build_valid_minimal_package(root / "miss")
+        _patch_locator(pkg_miss, path="source/original/nope.md")
+        report_miss = validate_package(pkg_miss)
+        expect_status(report_miss, "I14", "NOT_CHECKED", "I14-T062 i10 missing")
+        check("I14-T062 reason", "i12_not_checked" in _i14_msgs(report_miss))
+
+        # I14-T063 null start → i12_failed
+        pkg_null = build_valid_minimal_package(root / "null")
+        _patch_locator(pkg_null, start=None)
+        report_null = validate_package(pkg_null)
+        expect_status(report_null, "I12", "FAIL", "I14-T063 I12 FAIL")
+        expect_status(report_null, "I14", "NOT_CHECKED", "I14-T063 I14 NC")
+        check("I14-T063 i12_failed", "i12_failed" in _i14_msgs(report_null))
+
+        # I14-T064 / T098 out of bounds
+        pkg_oob = build_valid_minimal_package(root / "oob")
+        _patch_locator(pkg_oob, start=1, end=99)
+        report_oob = validate_package(pkg_oob)
+        expect_status(report_oob, "I12", "FAIL", "I14-T064 I12 FAIL")
+        expect_status(report_oob, "I14", "NOT_CHECKED", "I14-T098 I14 NC not excerpt FAIL")
+        check("I14-T064 no excerpt_line_missing", "excerpt_line_missing" not in _i14_msgs(report_oob))
+        check("I14-T064 i12_failed", "i12_failed" in _i14_msgs(report_oob))
+
+        # I14-T065 end < start
+        pkg_ord = build_valid_minimal_package(root / "ord")
+        _patch_locator(pkg_ord, start=2, end=1)
+        report_ord = validate_package(pkg_ord)
+        expect_status(report_ord, "I14", "NOT_CHECKED", "I14-T065 end<start")
+        check("I14-T065 i12_failed", "i12_failed" in _i14_msgs(report_ord))
+
+        # I14-T005 empty file → I12 FAIL → I14 NC
+        pkg_emptyf = build_valid_minimal_package(root / "emptyf")
+        _write_design(pkg_emptyf, "")
+        _patch_locator(pkg_emptyf, start=1, end=1, excerpt="x")
+        report_emptyf = validate_package(pkg_emptyf)
+        expect_status(report_emptyf, "I12", "FAIL", "I14-T005 I12 FAIL empty file")
+        expect_status(report_emptyf, "I14", "NOT_CHECKED", "I14-T005 I14 NC")
+        check("I14-T005 i12_failed", "i12_failed" in _i14_msgs(report_emptyf))
+
+        # I14-T066 / T071: I11/I10 PASS, I12 NC via bad UTF-8
+        pkg_utf = build_valid_minimal_package(root / "utf")
+        bad = pkg_utf / "source/original/design.md"
+        bad.write_bytes(b"\xff\xfe not utf8")
+        _patch_locator(pkg_utf, start=1, end=1, excerpt="x")
+        report_utf = validate_package(pkg_utf)
+        expect_status(report_utf, "I12", "NOT_CHECKED", "I14-T066 I12 NC")
+        expect_status(report_utf, "I14", "NOT_CHECKED", "I14-T066/T071 I14 NC")
+        check("I14-T071 i12_not_checked", "i12_not_checked" in _i14_msgs(report_utf))
+        check(
+            "I14-T071 not utf8_decode_failed",
+            "utf8_decode_failed" not in _i14_msgs(report_utf),
+        )
+
+        # I14-T067 readable:false
+        pkg_rf = build_valid_minimal_package(root / "rf")
+        _set_source_readable(pkg_rf, "src_001", False)
+        _unlink_knowledge_links(pkg_rf)
+        _patch_locator(pkg_rf, excerpt="")  # avoid I16 evidence quoting FAIL noise optional
+        # non-empty excerpt for I14 gate; I16 may FAIL quoting — restore non-empty
+        _patch_locator(pkg_rf, excerpt="生产环境服务默认监听 8080 端口。")
+        report_rf = validate_package(pkg_rf)
+        expect_status(report_rf, "I14", "NOT_CHECKED", "I14-T067 readable_false")
+        check("I14-T067 reason", "readable_false" in _i14_msgs(report_rf))
+        check("I14-T097 I16 still fails quoting", result_map(report_rf)["I16"]["result"] == "FAIL")
+
+        # I14-T072 / T074: I12 read failure → no snapshot; I14 must not re-read
+        pkg72 = build_valid_minimal_package(root / "r72")
+        _write_design(pkg72, "line1\nline2\n")
+        _patch_locator(pkg72, start=2, end=2, excerpt="line2")
+        idx72 = PackageIndex()
+        idx72.loaded_kinds.add("evidence")
+        idx72.loaded_kinds.add("source")
+        idx72.by_kind["source"] = {
+            "src_001": {"source_id": "src_001", "readable": True},
+        }
+        idx72.by_kind["evidence"] = {
+            "ev_001": load_json(pkg72 / "evidence/evidence.json")["evidence"][0],
+        }
+        real_read2 = PathType.read_text
+
+        def fail_os(self, *args, **kwargs):
+            if Path(self).name == "design.md":
+                raise OSError("simulated")
+            return real_read2(self, *args, **kwargs)
+
+        PathType.read_text = fail_os  # type: ignore[method-assign]
+        try:
+            _c72, st72, snap72 = check_i12(idx72, pkg72, {"ev_001": "safe"})
+        finally:
+            PathType.read_text = real_read2  # type: ignore[method-assign]
+        i14_reads_72: list[str] = []
+
+        def count_i14_72(self, *args, **kwargs):
+            i14_reads_72.append(Path(self).name)
+            return real_read2(self, *args, **kwargs)
+
+        PathType.read_text = count_i14_72  # type: ignore[method-assign]
+        try:
+            out72 = check_i14(idx72, pkg72, {"ev_001": "safe"}, st72, snap72)
+        finally:
+            PathType.read_text = real_read2  # type: ignore[method-assign]
+        check("I14-T072 I12 NC", st72.get("ev_001") == "not_checked")
+        check("I14-T072 no snapshot", "ev_001" not in snap72)
+        check("I14-T072 I14 NC", out72.result == "NOT_CHECKED")
+        check("I14-T072 reason", "i12_not_checked" in out72.errors[0]["message"])
+        check("I14-T072 zero I14 reads", i14_reads_72 == [], str(i14_reads_72))
+
+        def fail_utf(self, *args, **kwargs):
+            if Path(self).name == "design.md":
+                raise UnicodeDecodeError("utf-8", b"\xff", 0, 1, "sim")
+            return real_read2(self, *args, **kwargs)
+
+        PathType.read_text = fail_utf  # type: ignore[method-assign]
+        try:
+            _c74, st74, snap74 = check_i12(idx72, pkg72, {"ev_001": "safe"})
+        finally:
+            PathType.read_text = real_read2  # type: ignore[method-assign]
+        i14_reads_74: list[str] = []
+
+        def count_i14_74(self, *args, **kwargs):
+            i14_reads_74.append(Path(self).name)
+            return real_read2(self, *args, **kwargs)
+
+        PathType.read_text = count_i14_74  # type: ignore[method-assign]
+        try:
+            out74 = check_i14(idx72, pkg72, {"ev_001": "safe"}, st74, snap74)
+        finally:
+            PathType.read_text = real_read2  # type: ignore[method-assign]
+        check("I14-T074 I12 NC", st74.get("ev_001") == "not_checked")
+        check("I14-T074 no snapshot", "ev_001" not in snap74)
+        check("I14-T074 I14 NC", out74.result == "NOT_CHECKED")
+        check("I14-T074 reason", "i12_not_checked" in out74.errors[0]["message"])
+        check("I14-T074 zero I14 reads", i14_reads_74 == [], str(i14_reads_74))
+
+        # source-index unloaded → cannot confirm readable → NC
+        idx_ns = PackageIndex()
+        idx_ns.loaded_kinds.add("evidence")
+        idx_ns.by_kind["evidence"] = dict(idx72.by_kind["evidence"])
+        out_ns = check_i14(
+            idx_ns, pkg72, {"ev_001": "safe"}, {"ev_001": "pass"}, {"ev_001": "line2\n"}
+        )
+        check("I14 source unloaded NC", out_ns.result == "NOT_CHECKED")
+        check(
+            "I14 source_readable_unresolved",
+            "source_readable_unresolved" in out_ns.errors[0]["message"],
+        )
+
+        # --- Matching ---
+        pkg1 = build_valid_minimal_package(root / "t001")
+        _write_design(pkg1, "A\nB\n")
+        _patch_locator(pkg1, start=2, end=2, excerpt="B")
+        expect_status(validate_package(pkg1), "I14", "PASS", "I14-T001 single line")
+
+        pkg2 = build_valid_minimal_package(root / "t002")
+        _write_design(pkg2, "A\nB\nC\n")
+        _patch_locator(pkg2, start=1, end=3, excerpt="A\nC")
+        expect_status(validate_package(pkg2), "I14", "PASS", "I14-T002 multiline")
+
+        pkg3 = build_valid_minimal_package(root / "t003")
+        _write_design(pkg3, "A\nB\n")
+        _patch_locator(pkg3, start=1, end=1, excerpt="B")
+        report3 = validate_package(pkg3)
+        expect_status(report3, "I14", "FAIL", "I14-T003 missing")
+        check("I14-T003 reason", "excerpt_line_missing" in _i14_msgs(report3))
+
+        pkg4 = build_valid_minimal_package(root / "t004")
+        _write_design(pkg4, "A\nB\n")
+        _patch_locator(pkg4, start=1, end=2, excerpt="A\nZ")
+        expect_status(validate_package(pkg4), "I14", "FAIL", "I14-T004 partial missing")
+
+        pkg6 = build_valid_minimal_package(root / "t006")
+        _write_design(pkg6, "xxYYxxYYxx\n")
+        _patch_locator(pkg6, start=1, end=1, excerpt="YY")
+        expect_status(validate_package(pkg6), "I14", "PASS", "I14-T006 repeated substr")
+
+        pkg7 = build_valid_minimal_package(root / "t007")
+        _write_design(pkg7, "hello world\n")
+        _patch_locator(pkg7, start=1, end=1, excerpt="world")
+        expect_status(validate_package(pkg7), "I14", "PASS", "I14-T007 substr not full line")
+
+        pkg8 = build_valid_minimal_package(root / "t008")
+        _write_design(pkg8, "secret\nother\n")
+        _patch_locator(pkg8, start=2, end=2, excerpt="secret")
+        expect_status(validate_package(pkg8), "I14", "FAIL", "I14-T008 outside window")
+
+        # Newlines I14-T010–T015
+        pkg_nl = build_valid_minimal_package(root / "nl")
+        _write_design(pkg_nl, "a\nb\n")
+        _patch_locator(pkg_nl, start=1, end=2, excerpt="a\nb")
+        expect_status(validate_package(pkg_nl), "I14", "PASS", "I14-T010 LF")
+        _patch_locator(pkg_nl, excerpt="a\r\nb")
+        expect_status(validate_package(pkg_nl), "I14", "PASS", "I14-T011 CRLF")
+        _patch_locator(pkg_nl, excerpt="a\rb")
+        expect_status(validate_package(pkg_nl), "I14", "PASS", "I14-T012 CR")
+        _patch_locator(pkg_nl, excerpt="a\r\nb\rc\n")
+        _write_design(pkg_nl, "a\nb\nc\n")
+        _patch_locator(pkg_nl, start=1, end=3, excerpt="a\r\nb\rc\n")
+        expect_status(validate_package(pkg_nl), "I14", "PASS", "I14-T013 mixed")
+        _patch_locator(pkg_nl, excerpt="a\n")
+        expect_status(validate_package(pkg_nl), "I14", "PASS", "I14-T014 trailing nl")
+        raw = "  keep  "
+        lines = excerpt_nonempty_lines(raw + "\r\n")
+        check("I14-T015 char content", lines == ["  keep  "], str(lines))
+        check(
+            "I14-T015 normalize only newlines",
+            normalize_excerpt_newlines("x\r\ny") == "x\ny",
+        )
+
+        # Whitespace T020–T028
+        pkg_ws = build_valid_minimal_package(root / "ws")
+        _write_design(pkg_ws, "a  b\n")
+        _patch_locator(pkg_ws, start=1, end=1, excerpt="")
+        expect_status(validate_package(pkg_ws), "I14", "PASS", "I14-T020 empty excerpt")
+        _patch_locator(pkg_ws, excerpt="   ")
+        expect_status(validate_package(pkg_ws), "I14", "PASS", "I14-T021 spaces")
+        _patch_locator(pkg_ws, excerpt="\t\t")
+        expect_status(validate_package(pkg_ws), "I14", "PASS", "I14-T022 tabs")
+        _patch_locator(pkg_ws, excerpt="  \n\t\n")
+        expect_status(validate_package(pkg_ws), "I14", "PASS", "I14-T023 blank lines")
+        _patch_locator(pkg_ws, excerpt="\n\na  b\n")
+        expect_status(validate_package(pkg_ws), "I14", "PASS", "I14-T024 blank+text")
+        _patch_locator(pkg_ws, excerpt=" a  b")
+        expect_status(validate_package(pkg_ws), "I14", "FAIL", "I14-T025 leading space")
+        _patch_locator(pkg_ws, excerpt="a  b ")
+        expect_status(validate_package(pkg_ws), "I14", "FAIL", "I14-T026 trailing space")
+        _patch_locator(pkg_ws, excerpt="a  b")
+        expect_status(validate_package(pkg_ws), "I14", "PASS", "I14-T027 multi space")
+        _write_design(pkg_ws, "a b\n")
+        _patch_locator(pkg_ws, excerpt="a  b")
+        expect_status(validate_package(pkg_ws), "I14", "FAIL", "I14-T028 space mismatch")
+
+        # Unicode T030–T034
+        nfc = unicodedata.normalize("NFC", "é")
+        nfd = unicodedata.normalize("NFD", "é")
+        pkg_uc = build_valid_minimal_package(root / "uc")
+        _write_design(pkg_uc, nfc + "\n")
+        _patch_locator(pkg_uc, start=1, end=1, excerpt=nfc)
+        expect_status(validate_package(pkg_uc), "I14", "PASS", "I14-T030 NFC=NFC")
+        _write_design(pkg_uc, nfd + "\n")
+        _patch_locator(pkg_uc, excerpt=nfd)
+        expect_status(validate_package(pkg_uc), "I14", "PASS", "I14-T031 NFD=NFD")
+        _write_design(pkg_uc, nfc + "\n")
+        _patch_locator(pkg_uc, excerpt=nfd)
+        expect_status(validate_package(pkg_uc), "I14", "FAIL", "I14-T032 NFC≠NFD")
+        _write_design(pkg_uc, "端口 8080 ok\n")
+        _patch_locator(pkg_uc, excerpt="端口 8080 ok")
+        expect_status(validate_package(pkg_uc), "I14", "PASS", "I14-T033 zh-en")
+        _patch_locator(pkg_uc, excerpt="端口 8081 ok")
+        expect_status(validate_package(pkg_uc), "I14", "FAIL", "I14-T034 zh-en miss")
+
+        # Order T035–T037
+        pkg_ord2 = build_valid_minimal_package(root / "ord2")
+        _write_design(pkg_ord2, "L1\nmiddle\nL3\n")
+        _patch_locator(pkg_ord2, start=1, end=3, excerpt="L1\nL3")
+        expect_status(validate_package(pkg_ord2), "I14", "PASS", "I14-T035 order")
+        _patch_locator(pkg_ord2, excerpt="L3\nL1")
+        expect_status(validate_package(pkg_ord2), "I14", "PASS", "I14-T036 reverse")
+        _patch_locator(pkg_ord2, excerpt="L1\nL3")
+        expect_status(validate_package(pkg_ord2), "I14", "PASS", "I14-T037 noncontig")
+
+        # Types: non-line_range → I14 NOT_CHECKED (out_of_scope_type)
+        def _only_type(name: str, lt: str, start, end) -> None:
+            pkg = build_valid_minimal_package(root / name)
+            _unlink_knowledge_links(pkg)
+            ev = load_json(pkg / "evidence/evidence.json")
+            ev["evidence"][0]["locator"] = {
+                "source_id": "src_001",
+                "path": "source/original/design.md",
+                "locator_type": lt,
+                "start": start,
+                "end": end,
+                "excerpt": "line1",
+            }
+            save_json(pkg / "evidence/evidence.json", ev)
+            report = validate_package(pkg)
+            expect_status(report, "I14", "NOT_CHECKED", f"I14 only {lt} NOT_CHECKED")
+            check(
+                f"I14 only {lt} out_of_scope",
+                "out_of_scope_type" in _i14_msgs(report),
+            )
+
+        _only_type("sec", "section", "Intro", None)
+        _only_type("jptr", "json_pointer", "/a", None)
+        _only_type("anc", "anchor", "a1", None)
+        _only_type("page", "page_range", 1, 1)
+
+        # line_range PASS + section → overall NOT_CHECKED
+        pkg_mix = build_valid_minimal_package(root / "lr_sec")
+        _unlink_knowledge_links(pkg_mix)
+        _write_design(pkg_mix, "A\nB\n")
+        evm = {
+            "evidence": [
+                {
+                    "evidence_id": "ev_lr",
+                    "kind": "excerpt",
+                    "locator": {
+                        "source_id": "src_001",
+                        "path": "source/original/design.md",
+                        "locator_type": "line_range",
+                        "start": 1,
+                        "end": 1,
+                        "excerpt": "A",
+                    },
+                    "supports": [],
+                    "redaction_applied": False,
+                    "notes": "",
+                },
+                {
+                    "evidence_id": "ev_sec",
+                    "kind": "excerpt",
+                    "locator": {
+                        "source_id": "src_001",
+                        "path": "source/original/design.md",
+                        "locator_type": "section",
+                        "start": "Intro",
+                        "end": None,
+                        "excerpt": "A",
+                    },
+                    "supports": [],
+                    "redaction_applied": False,
+                    "notes": "",
+                },
+            ]
+        }
+        save_json(pkg_mix / "evidence/evidence.json", evm)
+        report_mix = validate_package(pkg_mix)
+        expect_status(report_mix, "I14", "NOT_CHECKED", "I14 line_range+section NC")
+        check("I14 mix has out_of_scope", "out_of_scope_type" in _i14_msgs(report_mix))
+        expect_status(report_mix, "I13", "NOT_CHECKED", "I14-T096 I13 NC")
+
+        # all line_range PASS, no other types → PASS
+        pkg_lr_only = build_valid_minimal_package(root / "lr_only")
+        _write_design(pkg_lr_only, "A\n")
+        _patch_locator(pkg_lr_only, start=1, end=1, excerpt="A")
+        expect_status(
+            validate_package(pkg_lr_only),
+            "I14",
+            "PASS",
+            "I14 all line_range only PASS",
+        )
+
+        # I12 overall FAIL must not block I14 on other I12-pass items
+        pkg_partial = build_valid_minimal_package(root / "i12_partial")
+        _unlink_knowledge_links(pkg_partial)
+        _write_design(pkg_partial, "okline\n")
+        evp = {
+            "evidence": [
+                {
+                    "evidence_id": "ev_bad_bounds",
+                    "kind": "excerpt",
+                    "locator": {
+                        "source_id": "src_001",
+                        "path": "source/original/design.md",
+                        "locator_type": "line_range",
+                        "start": 1,
+                        "end": 99,
+                        "excerpt": "okline",
+                    },
+                    "supports": [],
+                    "redaction_applied": False,
+                    "notes": "",
+                },
+                {
+                    "evidence_id": "ev_ok",
+                    "kind": "excerpt",
+                    "locator": {
+                        "source_id": "src_001",
+                        "path": "source/original/design.md",
+                        "locator_type": "line_range",
+                        "start": 1,
+                        "end": 1,
+                        "excerpt": "okline",
+                    },
+                    "supports": [],
+                    "redaction_applied": False,
+                    "notes": "",
+                },
+            ]
+        }
+        save_json(pkg_partial / "evidence/evidence.json", evp)
+        report_p12 = validate_package(pkg_partial)
+        expect_status(report_p12, "I12", "FAIL", "I14 I12 overall FAIL")
+        expect_status(report_p12, "I14", "NOT_CHECKED", "I14 partial I12 still NC not FAIL")
+        check("I14 partial has i12_failed", "i12_failed" in _i14_msgs(report_p12))
+        check("I14 partial no excerpt FAIL", "excerpt_line_missing" not in _i14_msgs(report_p12))
+
+        # T080–T083 rollup
+        pkg_s = build_valid_minimal_package(root / "sum")
+        _unlink_knowledge_links(pkg_s)
+        _write_design(pkg_s, "A\nB\n")
+        evs = {
+            "evidence": [
+                {
+                    "evidence_id": "ev_ok",
+                    "kind": "excerpt",
+                    "locator": {
+                        "source_id": "src_001",
+                        "path": "source/original/design.md",
+                        "locator_type": "line_range",
+                        "start": 1,
+                        "end": 1,
+                        "excerpt": "A",
+                    },
+                    "supports": [],
+                    "redaction_applied": False,
+                    "notes": "",
+                },
+                {
+                    "evidence_id": "ev_bad",
+                    "kind": "excerpt",
+                    "locator": {
+                        "source_id": "src_001",
+                        "path": "source/original/design.md",
+                        "locator_type": "line_range",
+                        "start": 2,
+                        "end": 2,
+                        "excerpt": "Z",
+                    },
+                    "supports": [],
+                    "redaction_applied": False,
+                    "notes": "",
+                },
+            ]
+        }
+        save_json(pkg_s / "evidence/evidence.json", evs)
+        expect_status(validate_package(pkg_s), "I14", "FAIL", "I14-T081 mix FAIL")
+
+        evs["evidence"][1]["locator"]["path"] = "../outside.md"
+        save_json(pkg_s / "evidence/evidence.json", evs)
+        # first ok, second unsafe → NC overall (no FAIL)
+        expect_status(validate_package(pkg_s), "I14", "NOT_CHECKED", "I14-T082 PASS+NC")
+
+        evs["evidence"][0]["locator"]["excerpt"] = "NOPE"
+        evs["evidence"][1]["locator"]["path"] = "../outside.md"
+        save_json(pkg_s / "evidence/evidence.json", evs)
+        expect_status(validate_package(pkg_s), "I14", "FAIL", "I14-T083 FAIL>NC")
+
+        # T090–T092 privacy / readonly
+        pkg_p = build_valid_minimal_package(root / "priv")
+        _write_design(pkg_p, "visible\n")
+        _patch_locator(pkg_p, start=1, end=1, excerpt="sk-test-SECRET-not-in-window")
+        before = fingerprint_package(pkg_p)
+        report_p = validate_package(pkg_p)
+        after = fingerprint_package(pkg_p)
+        check("I14-T090 fingerprint", before == after)
+        check("I14-T090 wrote false", report_p["wrote_to_package"] is False)
+        check("I14-T090 network", report_p["checker"]["network"] is False)
+        check("I14-T090 read_only", report_p["read_only"] is True)
+        expect_status(report_p, "I14", "FAIL", "I14-T092 FAIL with secret excerpt")
+        dump = json.dumps(report_p, ensure_ascii=False)
+        check("I14-T092 no secret leak", "sk-test-SECRET" not in dump)
+
+        outside = root / "outside_secret.txt"
+        outside.write_text("SECRET\n", encoding="utf-8")
+        before_o = outside.read_text(encoding="utf-8")
+        pkg_out = build_valid_minimal_package(root / "outpkg")
+        _patch_locator(pkg_out, path="../outside_secret.txt")
+        report_out = validate_package(pkg_out)
+        after_o = outside.read_text(encoding="utf-8")
+        check("I14-T091 outside unchanged", before_o == after_o)
+        expect_status(report_out, "I14", "NOT_CHECKED", "I14-T091 unsafe NC")
+
+        # T093 generated-output (pre-verified 22/22 match)
+        with tempfile.TemporaryDirectory() as gtmp:
+            gpkg = Path(gtmp) / "generated-output"
+            shutil.copytree(GENERATED, gpkg)
+            greport = validate_package(gpkg)
+            expect_status(greport, "I14", "PASS", "I14-T093 generated PASS")
+            check("I14-T093 L4 NC", greport["layers"]["L4"] == "NOT_CHECKED")
+            lim = " ".join(greport.get("limitations") or [])
+            check("I14-T093 limitations semantic", "semantic" in lim.lower() or "L4" in lim)
+
+        # T094 minimal
+        expect_status(
+            validate_package(build_valid_minimal_package(root / "min2")),
+            "I14",
+            "PASS",
+            "I14-T094 minimal",
+        )
+
+        # T095 smoke weaker: first line hits, second missing
+        pkg95 = build_valid_minimal_package(root / "smoke")
+        _write_design(pkg95, "first\nsecond\n")
+        _patch_locator(pkg95, start=1, end=2, excerpt="first\nMISSING")
+        expect_status(validate_package(pkg95), "I14", "FAIL", "I14-T095 stricter than smoke")
+
+        # T099 / T086 / T100 flags
+        report_f = validate_package(build_valid_minimal_package(root / "flags"))
+        check("I14-T099 phase", report_f["checker"]["phase"] == "3B-C1")
+        check(
+            "I14-T099 L3_C_excerpts",
+            report_f["checker"]["scripts_implemented"]["L3_C_excerpts"] is True,
+        )
+        expect_status(report_f, "I20", "NOT_CHECKED", "I14-T099 I20 deferred")
+        i14r = result_map(report_f)["I14"]["result"]
+        check("I14-T086 status set", i14r in {"PASS", "FAIL", "NOT_CHECKED"}, i14r)
+        for hid in [f"H{i:02d}" for i in range(1, 7)]:
+            expect_status(report_f, hid, "NOT_CHECKED", f"I14-T100 {hid}")
+
+        # --- Snapshot consistency T101–T107 (real check_i12 → check_i14) ---
+        pkg_snap = build_valid_minimal_package(root / "snap")
+        _write_design(pkg_snap, "SNAP_OK\nSNAP_OTHER\n")
+        _patch_locator(pkg_snap, start=1, end=1, excerpt="SNAP_OK")
+        ev0 = load_json(pkg_snap / "evidence/evidence.json")["evidence"][0]
+        src0 = load_json(pkg_snap / "source/source-index.json")["sources"][0]
+        idx_snap = PackageIndex()
+        idx_snap.loaded_kinds.add("evidence")
+        idx_snap.loaded_kinds.add("source")
+        idx_snap.by_kind["evidence"] = {ev0["evidence_id"]: ev0}
+        idx_snap.by_kind["source"] = {src0["source_id"]: src0}
+        eid = ev0["evidence_id"]
+        safety_ok = {eid: "safe"}
+
+        out_i12, st_i12, snap_i12 = check_i12(idx_snap, pkg_snap, safety_ok)
+        check("I14-T101 I12 PASS", out_i12.result == "PASS")
+        check("I14-T101 status pass", st_i12.get(eid) == "pass")
+        check("I14-T101 has snapshot", eid in snap_i12 and "SNAP_OK" in snap_i12[eid])
+        snap_obj_id = id(snap_i12[eid])
+
+        i14_reads_101: list[str] = []
+        real_rt = PathType.read_text
+
+        def forbid_i14_read(self, *args, **kwargs):
+            i14_reads_101.append(Path(self).name)
+            raise AssertionError(f"I14 must not re-read {self}")
+
+        PathType.read_text = forbid_i14_read  # type: ignore[method-assign]
+        try:
+            out_i14 = check_i14(idx_snap, pkg_snap, safety_ok, st_i12, snap_i12)
+        finally:
+            PathType.read_text = real_rt  # type: ignore[method-assign]
+        check("I14-T101 I14 PASS", out_i14.result == "PASS", out_i14.message)
+        check("I14-T101 zero I14 reads", i14_reads_101 == [], str(i14_reads_101))
+        check("I14-T101 same snapshot object", id(snap_i12[eid]) == snap_obj_id)
+
+        # I14-T102: full L3 — design.md content read once (I12 only)
+        pkg102 = build_valid_minimal_package(root / "t102")
+        _write_design(pkg102, "ONE\n")
+        _patch_locator(pkg102, start=1, end=1, excerpt="ONE")
+        design_reads: list[str] = []
+        real_rt102 = PathType.read_text
+
+        def count_design(self, *args, **kwargs):
+            if Path(self).name == "design.md":
+                design_reads.append("design.md")
+            return real_rt102(self, *args, **kwargs)
+
+        PathType.read_text = count_design  # type: ignore[method-assign]
+        try:
+            report102 = validate_package(pkg102)
+        finally:
+            PathType.read_text = real_rt102  # type: ignore[method-assign]
+        expect_status(report102, "I12", "PASS", "I14-T102 I12 PASS")
+        expect_status(report102, "I14", "PASS", "I14-T102 I14 PASS")
+        check(
+            "I14-T102 design.md read once",
+            len(design_reads) == 1,
+            f"reads={len(design_reads)} {design_reads}",
+        )
+
+        # I14-T103: I12 OSError → I14 NC, no re-read (real check_i12→check_i14)
+        pkg103 = build_valid_minimal_package(root / "t103")
+        _write_design(pkg103, "X\n")
+        _patch_locator(pkg103, start=1, end=1, excerpt="X")
+        ev103 = load_json(pkg103 / "evidence/evidence.json")["evidence"][0]
+        src103 = load_json(pkg103 / "source/source-index.json")["sources"][0]
+        idx103 = PackageIndex()
+        idx103.loaded_kinds.add("evidence")
+        idx103.loaded_kinds.add("source")
+        idx103.by_kind["evidence"] = {ev103["evidence_id"]: ev103}
+        idx103.by_kind["source"] = {src103["source_id"]: src103}
+        eid103 = ev103["evidence_id"]
+
+        def boom103(self, *args, **kwargs):
+            if Path(self).name == "design.md":
+                raise OSError("t103")
+            return real_rt(self, *args, **kwargs)
+
+        PathType.read_text = boom103  # type: ignore[method-assign]
+        try:
+            _c103, st103, snap103 = check_i12(idx103, pkg103, {eid103: "safe"})
+        finally:
+            PathType.read_text = real_rt  # type: ignore[method-assign]
+        reads103: list[str] = []
+
+        def count103(self, *args, **kwargs):
+            reads103.append(Path(self).name)
+            return real_rt(self, *args, **kwargs)
+
+        PathType.read_text = count103  # type: ignore[method-assign]
+        try:
+            out103 = check_i14(idx103, pkg103, {eid103: "safe"}, st103, snap103)
+        finally:
+            PathType.read_text = real_rt  # type: ignore[method-assign]
+        check("I14-T103 I12 not_checked", st103.get(eid103) == "not_checked")
+        check("I14-T103 no snapshot", eid103 not in snap103)
+        check("I14-T103 I14 NC", out103.result == "NOT_CHECKED")
+        check("I14-T103 zero I14 reads", reads103 == [], str(reads103))
+
+        # I14-T104: pass status but missing snapshot → NC, no remedial read
+        reads104: list[str] = []
+
+        def count104(self, *args, **kwargs):
+            reads104.append(Path(self).name)
+            return real_rt(self, *args, **kwargs)
+
+        PathType.read_text = count104  # type: ignore[method-assign]
+        try:
+            out104 = check_i14(
+                idx_snap, pkg_snap, safety_ok, {eid: "pass"}, {}
+            )
+        finally:
+            PathType.read_text = real_rt  # type: ignore[method-assign]
+        check("I14-T104 NC", out104.result == "NOT_CHECKED")
+        check("I14-T104 snapshot_missing", "snapshot_missing" in out104.errors[0]["message"])
+        check("I14-T104 zero reads", reads104 == [], str(reads104))
+
+        # I14-T105: snapshot match → PASS (real check_i12→check_i14)
+        pkg105 = build_valid_minimal_package(root / "t105")
+        _write_design(pkg105, "MATCH_LINE\n")
+        _patch_locator(pkg105, start=1, end=1, excerpt="MATCH_LINE")
+        ev105 = load_json(pkg105 / "evidence/evidence.json")["evidence"][0]
+        src105 = load_json(pkg105 / "source/source-index.json")["sources"][0]
+        idx105 = PackageIndex()
+        idx105.loaded_kinds.add("evidence")
+        idx105.loaded_kinds.add("source")
+        idx105.by_kind["evidence"] = {ev105["evidence_id"]: ev105}
+        idx105.by_kind["source"] = {src105["source_id"]: src105}
+        eid105 = ev105["evidence_id"]
+        _c105, st105, snap105 = check_i12(idx105, pkg105, {eid105: "safe"})
+        out105 = check_i14(idx105, pkg105, {eid105: "safe"}, st105, snap105)
+        check("I14-T105 I12 pass", st105.get(eid105) == "pass")
+        check("I14-T105 I14 PASS", out105.result == "PASS", out105.message)
+
+        # I14-T106: snapshot mismatch → FAIL
+        pkg106 = build_valid_minimal_package(root / "t106")
+        _write_design(pkg106, "REAL_LINE\n")
+        _patch_locator(pkg106, start=1, end=1, excerpt="NOT_IN_FILE")
+        ev106 = load_json(pkg106 / "evidence/evidence.json")["evidence"][0]
+        src106 = load_json(pkg106 / "source/source-index.json")["sources"][0]
+        idx106 = PackageIndex()
+        idx106.loaded_kinds.add("evidence")
+        idx106.loaded_kinds.add("source")
+        idx106.by_kind["evidence"] = {ev106["evidence_id"]: ev106}
+        idx106.by_kind["source"] = {src106["source_id"]: src106}
+        eid106 = ev106["evidence_id"]
+        _c106, st106, snap106 = check_i12(idx106, pkg106, {eid106: "safe"})
+        out106 = check_i14(idx106, pkg106, {eid106: "safe"}, st106, snap106)
+        check("I14-T106 I12 pass", st106.get(eid106) == "pass")
+        check("I14-T106 I14 FAIL", out106.result == "FAIL", out106.message)
+        check(
+            "I14-T106 excerpt_line_missing",
+            "excerpt_line_missing" in out106.errors[0]["message"],
+        )
+
+        # I14-T107: mutate disk after I12 snapshot; I14 still uses snapshot
+        pkg107 = build_valid_minimal_package(root / "t107")
+        _write_design(pkg107, "ORIGINAL_SNAP\n")
+        _patch_locator(pkg107, start=1, end=1, excerpt="ORIGINAL_SNAP")
+        ev107 = load_json(pkg107 / "evidence/evidence.json")["evidence"][0]
+        src107 = load_json(pkg107 / "source/source-index.json")["sources"][0]
+        idx107 = PackageIndex()
+        idx107.loaded_kinds.add("evidence")
+        idx107.loaded_kinds.add("source")
+        idx107.by_kind["evidence"] = {ev107["evidence_id"]: ev107}
+        idx107.by_kind["source"] = {src107["source_id"]: src107}
+        eid107 = ev107["evidence_id"]
+        _c107, st107, snap107 = check_i12(idx107, pkg107, {eid107: "safe"})
+        check("I14-T107 snapshot original", "ORIGINAL_SNAP" in snap107[eid107])
+        _write_design(pkg107, "MUTATED_DISK\n")
+        # Also change excerpt to match mutated disk — must still FAIL if using snapshot...
+        # Keep excerpt as ORIGINAL_SNAP: disk no longer has it, snapshot does → PASS.
+        reads107: list[str] = []
+
+        def count107(self, *args, **kwargs):
+            reads107.append(Path(self).name)
+            return real_rt(self, *args, **kwargs)
+
+        PathType.read_text = count107  # type: ignore[method-assign]
+        try:
+            out107 = check_i14(idx107, pkg107, {eid107: "safe"}, st107, snap107)
+        finally:
+            PathType.read_text = real_rt  # type: ignore[method-assign]
+        check("I14-T107 I14 PASS on snapshot", out107.result == "PASS", out107.message)
+        check("I14-T107 zero re-reads", reads107 == [], str(reads107))
+        # Opposite: excerpt matches mutated disk only → still FAIL from snapshot
+        ev107b = dict(ev107)
+        loc107b = dict(ev107["locator"])
+        loc107b["excerpt"] = "MUTATED_DISK"
+        ev107b["locator"] = loc107b
+        idx107b = PackageIndex()
+        idx107b.loaded_kinds.add("evidence")
+        idx107b.loaded_kinds.add("source")
+        idx107b.by_kind["evidence"] = {eid107: ev107b}
+        idx107b.by_kind["source"] = {src107["source_id"]: src107}
+        out107b = check_i14(idx107b, pkg107, {eid107: "safe"}, st107, snap107)
+        check("I14-T107 FAIL ignores disk mutate", out107b.result == "FAIL", out107b.message)
+
+
 def main() -> int:
-    print("== context-validator L3-A + L3-B1 + L3-B2 tests ==")
+    print("== context-validator L3-A + B1–B4 + C1 (I14) tests ==")
     check("script exists", SCRIPT.is_file())
     check("generated-output exists", GENERATED.is_dir())
 
@@ -1082,6 +2486,9 @@ def main() -> int:
     test_convergence_l3_warning_vs_not_checked()
     test_b1_i11_i10_paths()
     test_b2_i16_readable_false()
+    test_b3_i12_line_range()
+    test_b4_i13_other_locators()
+    test_c1_i14_excerpt_match()
     test_report_and_offline()
 
     print(f"\nSummary: {PASSES} passed, {len(FAILURES)} failed")

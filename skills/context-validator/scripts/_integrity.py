@@ -3,13 +3,17 @@
 L3-A: I01–I09, I15, I17, I18, I19 (cross-file references).
 L3-B Batch B1: I11 path safety + I10 locator.path exists.
 L3-B Batch B2: I16 readable:false sources (Option C).
+L3-B Batch B3: I12 line_range bounds.
+L3-B Batch B4: I13 other locator types (Option B — no finders).
+L3-C Batch C1: I14 excerpt text match (line_range windows only).
 
-Still NOT_CHECKED: I12, I13, I14, I20.
+Still NOT_CHECKED: I20.
 L4 is never automated here.
 """
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -37,11 +41,11 @@ L3A_IDS = {
 }
 
 L3_DEFERRED_IDS = {
-    "I12": "Phase 3B: L3-B line_range bounds not implemented",
-    "I13": "Phase 3B: L3-B other locator findability not implemented (Q2)",
-    "I14": "Phase 3B: L3-C excerpt match not implemented",
     "I20": "Phase 3B: checksum verification not implemented (Q3)",
 }
+
+# I13 applicable locator_type values (line_range is I12 only).
+I13_LOCATOR_TYPES = frozenset({"section", "json_pointer", "anchor", "page_range"})
 
 # kind -> (relative file, array key, id field, schema check id)
 KIND_SPECS: list[tuple[str, str, str, str, str]] = [
@@ -228,6 +232,51 @@ def locator_path_is_file(package: Path, rel: str) -> bool:
         return resolved.is_file()
     except (ValueError, OSError):
         return False
+
+
+def line_number_value(value: Any) -> tuple[str, int | None]:
+    """Classify a line_range start/end value.
+
+    Returns (kind, int_or_none) where kind is:
+      ok | null | invalid
+    Rejects bool (bool is a subclass of int), NaN, Infinity, non-integers.
+    Accepts integer-valued floats such as 1.0.
+    """
+    if value is None:
+        return "null", None
+    if isinstance(value, bool):
+        return "invalid", None
+    if isinstance(value, int):
+        return "ok", value
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            return "invalid", None
+        if value != math.trunc(value):
+            return "invalid", None
+        return "ok", int(value)
+    return "invalid", None
+
+
+def normalize_excerpt_newlines(excerpt: str) -> str:
+    """Normalize excerpt newlines only (CRLF/CR → LF). No Unicode normalize."""
+    return excerpt.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def excerpt_nonempty_lines(excerpt: Any) -> list[str]:
+    """Non-empty excerpt lines after newline normalize; strip only for emptiness."""
+    if not isinstance(excerpt, str):
+        return []
+    return [
+        ln
+        for ln in normalize_excerpt_newlines(excerpt).split("\n")
+        if ln.strip() != ""
+    ]
+
+
+def line_range_window_text(text: str, start: int, end: int) -> str:
+    """Build I14 window using the same line numbering as I12 (1-based inclusive)."""
+    lines = text.splitlines()
+    return "\n".join(lines[start - 1 : end])
 
 
 def _knowledge_loaded(idx: PackageIndex) -> bool:
@@ -813,6 +862,410 @@ def check_i10(
     )
 
 
+def check_i12(
+    idx: PackageIndex,
+    package: Path,
+    path_safety: dict[str, str],
+) -> tuple[CheckOut, dict[str, str], dict[str, str]]:
+    """I12 line_range bounds — frozen L3-B3 rules.
+
+    Gates on I11/I10 before any file read. Rollup: FAIL > NOT_CHECKED > PASS.
+    Per-item NOT_CHECKED reasons are retained in errors even when overall FAIL.
+
+    Returns (CheckOut, item_status, text_snapshot):
+      item_status: line_range evidence_id → pass | fail | not_checked (for I14)
+      text_snapshot: evidence_id → UTF-8 text for items whose file read succeeded
+        (in-memory only; never written to validation-report or error messages).
+      Non-line_range ids are absent from both maps.
+    """
+    name = "line_range bounds"
+    item_status: dict[str, str] = {}
+    text_snapshot: dict[str, str] = {}
+    if not _evidence_loaded(idx):
+        return (
+            CheckOut("I12", name, NOT_CHECKED, "evidence.json not loaded"),
+            item_status,
+            text_snapshot,
+        )
+
+    fail_errors: list[dict[str, str]] = []
+    nc_errors: list[dict[str, str]] = []
+    checked_ok = 0
+
+    for eid, ev in idx.by_kind["evidence"].items():
+        loc = ev.get("locator") if isinstance(ev.get("locator"), dict) else {}
+        if loc.get("locator_type") != "line_range":
+            continue
+
+        safety = path_safety.get(eid)
+        if safety == "unsafe":
+            item_status[eid] = "not_checked"
+            nc_errors.append(
+                {
+                    "path": f"{REL_EVIDENCE}#{eid}/locator",
+                    "message": f"{eid} line_range not checked (i11_unsafe)",
+                }
+            )
+            continue
+        if safety != "safe":
+            item_status[eid] = "not_checked"
+            nc_errors.append(
+                {
+                    "path": f"{REL_EVIDENCE}#{eid}/locator",
+                    "message": f"{eid} line_range not checked (i11_unresolved)",
+                }
+            )
+            continue
+
+        raw_path = loc.get("path")
+        if not isinstance(raw_path, str) or not locator_path_is_file(package, raw_path):
+            item_status[eid] = "not_checked"
+            nc_errors.append(
+                {
+                    "path": f"{REL_EVIDENCE}#{eid}/locator/path",
+                    "message": f"{eid} line_range not checked (i10_missing)",
+                }
+            )
+            continue
+
+        start_kind, start_n = line_number_value(loc.get("start"))
+        end_kind, end_n = line_number_value(loc.get("end"))
+        if start_kind == "null" or end_kind == "null":
+            item_status[eid] = "fail"
+            fail_errors.append(
+                {
+                    "path": f"{REL_EVIDENCE}#{eid}/locator",
+                    "message": f"{eid} line_range start/end null (line_range_null)",
+                }
+            )
+            continue
+        if start_kind != "ok" or end_kind != "ok" or start_n is None or end_n is None:
+            item_status[eid] = "fail"
+            fail_errors.append(
+                {
+                    "path": f"{REL_EVIDENCE}#{eid}/locator",
+                    "message": f"{eid} line_range start/end not integer line numbers (line_range_invalid)",
+                }
+            )
+            continue
+        if start_n < 1:
+            item_status[eid] = "fail"
+            fail_errors.append(
+                {
+                    "path": f"{REL_EVIDENCE}#{eid}/locator/start",
+                    "message": f"{eid} line_range start < 1 (line_range_start_lt_1)",
+                }
+            )
+            continue
+        if end_n < start_n:
+            item_status[eid] = "fail"
+            fail_errors.append(
+                {
+                    "path": f"{REL_EVIDENCE}#{eid}/locator",
+                    "message": f"{eid} line_range end < start (line_range_end_lt_start)",
+                }
+            )
+            continue
+
+        try:
+            root = package.resolve()
+            resolved = (package / raw_path).resolve()
+            resolved.relative_to(root)
+            text = resolved.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            item_status[eid] = "not_checked"
+            nc_errors.append(
+                {
+                    "path": f"{REL_EVIDENCE}#{eid}/locator/path",
+                    "message": f"{eid} line_range not checked (utf8_decode_failed)",
+                }
+            )
+            continue
+        except (OSError, ValueError):
+            item_status[eid] = "not_checked"
+            nc_errors.append(
+                {
+                    "path": f"{REL_EVIDENCE}#{eid}/locator/path",
+                    "message": f"{eid} line_range not checked (read_failed)",
+                }
+            )
+            continue
+
+        # Successful read snapshot for I14 (same bytes I12 used for line_count).
+        text_snapshot[eid] = text
+
+        line_count = len(text.splitlines())
+        if end_n > line_count:
+            item_status[eid] = "fail"
+            fail_errors.append(
+                {
+                    "path": f"{REL_EVIDENCE}#{eid}/locator/end",
+                    "message": (
+                        f"{eid} line_range end > line_count={line_count} "
+                        f"(line_range_out_of_bounds)"
+                    ),
+                }
+            )
+            continue
+
+        item_status[eid] = "pass"
+        checked_ok += 1
+
+    # FAIL > NOT_CHECKED > PASS; keep NOT_CHECKED detail when FAIL.
+    detail = (fail_errors + nc_errors)[:50]
+    if fail_errors:
+        return (
+            CheckOut(
+                "I12",
+                name,
+                FAIL,
+                (
+                    f"{len(fail_errors)} line_range bound error(s)"
+                    + (f"; {len(nc_errors)} not checked" if nc_errors else "")
+                ),
+                errors=detail,
+            ),
+            item_status,
+            text_snapshot,
+        )
+    if nc_errors:
+        return (
+            CheckOut(
+                "I12",
+                name,
+                NOT_CHECKED,
+                f"{len(nc_errors)} line_range item(s) not checked",
+                errors=detail,
+            ),
+            item_status,
+            text_snapshot,
+        )
+    if checked_ok == 0:
+        return (
+            CheckOut("I12", name, PASS, "no line_range evidence items (empty applicable set)"),
+            item_status,
+            text_snapshot,
+        )
+    return (
+        CheckOut(
+            "I12",
+            name,
+            PASS,
+            f"all {checked_ok} line_range bound(s) valid",
+        ),
+        item_status,
+        text_snapshot,
+    )
+
+
+def check_i13(
+    idx: PackageIndex,
+    path_safety: dict[str, str] | None = None,
+) -> CheckOut:
+    """I13 other locator types — frozen Option B (no finders).
+
+    Does not read file contents. Does not resolve findability.
+    Uses I11 path_safety only for per-item gate reasons (no I/O).
+    """
+    name = "Other locator types"
+    if not _evidence_loaded(idx):
+        return CheckOut("I13", name, NOT_CHECKED, "evidence.json not loaded")
+
+    safety_map = path_safety or {}
+    nc_errors: list[dict[str, str]] = []
+
+    for eid, ev in idx.by_kind["evidence"].items():
+        loc = ev.get("locator") if isinstance(ev.get("locator"), dict) else {}
+        lt = loc.get("locator_type")
+        if lt not in I13_LOCATOR_TYPES:
+            continue
+
+        safety = safety_map.get(eid)
+        if safety == "unsafe":
+            reason = "i11_unsafe"
+        elif safety is not None and safety != "safe":
+            reason = "i11_unresolved"
+        else:
+            # Option B: no deterministic finder in 0.1.0.
+            reason = "no_finder"
+
+        nc_errors.append(
+            {
+                "path": f"{REL_EVIDENCE}#{eid}/locator",
+                "message": (
+                    f"{eid} locator_type={lt!r} not checked for findability ({reason})"
+                ),
+            }
+        )
+
+    # FAIL > NOT_CHECKED > PASS — Option B emits no FAIL for findability.
+    if nc_errors:
+        return CheckOut(
+            "I13",
+            name,
+            NOT_CHECKED,
+            f"{len(nc_errors)} non-line_range locator(s) not checked (no finder)",
+            errors=nc_errors[:50],
+        )
+    return CheckOut(
+        "I13",
+        name,
+        PASS,
+        "no section/json_pointer/anchor/page_range locators (empty applicable set)",
+    )
+
+
+def check_i14(
+    idx: PackageIndex,
+    package: Path,
+    path_safety: dict[str, str] | None = None,
+    i12_item_status: dict[str, str] | None = None,
+    i12_text_snapshot: dict[str, str] | None = None,
+) -> CheckOut:
+    """I14 excerpt text match — frozen L3-C / I14.
+
+    line_range: consume per-item I12 status + I12 UTF-8 text snapshot for window
+    match. Does **not** re-read source files (no TOCTOU vs I12). Missing snapshot
+    when I12 status is pass → NOT_CHECKED (no remedial read).
+    Non-line_range (section/json_pointer/anchor/page_range): per-item NOT_CHECKED
+    (no finder); these contribute to rollup NOT_CHECKED.
+    Empty loaded evidence (no items) → PASS. Rollup: FAIL > NOT_CHECKED > PASS.
+    Does not paste excerpt text into messages.
+    """
+    name = "Excerpt text match"
+    if not _evidence_loaded(idx):
+        return CheckOut("I14", name, NOT_CHECKED, "evidence.json not loaded")
+
+    safety_map = path_safety or {}
+    i12_map = i12_item_status or {}
+    snapshots = i12_text_snapshot or {}
+    source_loaded = _source_loaded(idx)
+    sources = idx.by_kind["source"] if source_loaded else {}
+    fail_errors: list[dict[str, str]] = []
+    nc_errors: list[dict[str, str]] = []
+    checked_ok = 0
+
+    def _nc(eid: str, reason: str) -> None:
+        nc_errors.append(
+            {
+                "path": f"{REL_EVIDENCE}#{eid}/locator",
+                "message": f"{eid} excerpt not checked ({reason})",
+            }
+        )
+
+    for eid, ev in idx.by_kind["evidence"].items():
+        loc = ev.get("locator") if isinstance(ev.get("locator"), dict) else {}
+        lt = loc.get("locator_type")
+
+        if lt in I13_LOCATOR_TYPES:
+            _nc(eid, "out_of_scope_type")
+            continue
+
+        if lt != "line_range":
+            # Unknown / missing type: do not invent a match PASS.
+            _nc(eid, "out_of_scope_type")
+            continue
+
+        i12_st = i12_map.get(eid)
+        if i12_st == "fail":
+            _nc(eid, "i12_failed")
+            continue
+        if i12_st != "pass":
+            # I12 not_checked or missing from map — refine reason from I11 when possible.
+            safety = safety_map.get(eid)
+            if safety == "unsafe":
+                _nc(eid, "i11_unsafe")
+            elif safety is not None and safety != "safe":
+                _nc(eid, "i11_unresolved")
+            elif i12_st == "not_checked":
+                _nc(eid, "i12_not_checked")
+            else:
+                _nc(eid, "i12_not_checked")
+            continue
+
+        # I12 pass for this evidence — still require readable confirmation.
+        if not source_loaded:
+            _nc(eid, "source_readable_unresolved")
+            continue
+        sid = loc.get("source_id")
+        if not isinstance(sid, str) or sid not in sources:
+            # Unknown source_id is I09's FAIL domain; I14 must not PASS match.
+            _nc(eid, "source_readable_unresolved")
+            continue
+        if sources[sid].get("readable") is False:
+            _nc(eid, "readable_false")
+            continue
+
+        start_kind, start_n = line_number_value(loc.get("start"))
+        end_kind, end_n = line_number_value(loc.get("end"))
+        # I12 already validated bounds; re-check locally only to build the window.
+        if (
+            start_kind != "ok"
+            or end_kind != "ok"
+            or start_n is None
+            or end_n is None
+        ):
+            _nc(eid, "i12_failed")
+            continue
+
+        # Use I12's in-memory snapshot only — never re-read the package file.
+        text = snapshots.get(eid)
+        if not isinstance(text, str):
+            _nc(eid, "snapshot_missing")
+            continue
+
+        window = line_range_window_text(text, start_n, end_n)
+        missing = False
+        for line in excerpt_nonempty_lines(loc.get("excerpt")):
+            if line not in window:
+                missing = True
+                break
+        if missing:
+            fail_errors.append(
+                {
+                    "path": f"{REL_EVIDENCE}#{eid}/locator/excerpt",
+                    "message": f"{eid} excerpt line not in window (excerpt_line_missing)",
+                }
+            )
+            continue
+
+        checked_ok += 1
+
+    detail = (fail_errors + nc_errors)[:50]
+    if fail_errors:
+        return CheckOut(
+            "I14",
+            name,
+            FAIL,
+            (
+                f"{len(fail_errors)} excerpt match error(s)"
+                + (f"; {len(nc_errors)} not checked" if nc_errors else "")
+            ),
+            errors=detail,
+        )
+    if nc_errors:
+        return CheckOut(
+            "I14",
+            name,
+            NOT_CHECKED,
+            f"{len(nc_errors)} evidence locator(s) not checked for excerpt match",
+            errors=detail,
+        )
+    if checked_ok == 0:
+        return CheckOut(
+            "I14",
+            name,
+            PASS,
+            "no evidence locators (empty applicable set)",
+        )
+    return CheckOut(
+        "I14",
+        name,
+        PASS,
+        f"all {checked_ok} line_range excerpt(s) match window",
+    )
+
+
 def check_i16(idx: PackageIndex) -> CheckOut:
     """I16 readable:false sources — frozen Option C.
 
@@ -1112,11 +1565,16 @@ def run_l3_batch_a(
     schema_results: dict[str, str],
     manifest_obj: Any | None,
 ) -> list[CheckOut]:
-    """Run L3-A + L3-B1 (I11/I10) + L3-B2 (I16); stub remaining L3-B/C as NOT_CHECKED."""
+    """Run L3-A + B1–B4 + C1 (I14); stub remaining L3-C (I20) as NOT_CHECKED."""
     idx = build_package_index(parsed_objects, parse_ok, schema_results, manifest_obj)
 
     i11_result, path_safety = check_i11(idx, package)
     i10_result = check_i10(idx, package, path_safety)
+    i12_result, i12_item_status, i12_text_snapshot = check_i12(idx, package, path_safety)
+    i13_result = check_i13(idx, path_safety)
+    i14_result = check_i14(
+        idx, package, path_safety, i12_item_status, i12_text_snapshot
+    )
 
     results: list[CheckOut] = [
         check_i01(idx, parsed_objects, parse_ok, schema_results),
@@ -1130,6 +1588,9 @@ def run_l3_batch_a(
         check_i09(idx),
         i10_result,
         i11_result,
+        i12_result,
+        i13_result,
+        i14_result,
         check_i15(idx),
         check_i16(idx),
         check_i17(schema_results),
@@ -1138,9 +1599,6 @@ def run_l3_batch_a(
     ]
 
     deferred_names = {
-        "I12": "line_range bounds",
-        "I13": "Other locator types",
-        "I14": "Excerpt text match",
         "I20": "Checksum (optional)",
     }
     for iid, reason in L3_DEFERRED_IDS.items():
