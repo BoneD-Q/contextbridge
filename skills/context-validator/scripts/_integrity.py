@@ -6,14 +6,16 @@ L3-B Batch B2: I16 readable:false sources (Option C).
 L3-B Batch B3: I12 line_range bounds.
 L3-B Batch B4: I13 other locator types (Option B — no finders).
 L3-C Batch C1: I14 excerpt text match (line_range windows only).
+L3-C Batch C2: I20 checksum (optional package_copy SHA-256).
 
-Still NOT_CHECKED: I20.
 L4 is never automated here.
 """
 
 from __future__ import annotations
 
+import hashlib
 import math
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -40,9 +42,11 @@ L3A_IDS = {
     "I19",
 }
 
-L3_DEFERRED_IDS = {
-    "I20": "Phase 3B: checksum verification not implemented (Q3)",
-}
+# No remaining deferred L3 integrity checks in 0.1.0 automation.
+L3_DEFERRED_IDS: dict[str, str] = {}
+
+_SHA256_HEX_RE = re.compile(r"^[0-9a-fA-F]{64}$")
+_I20_CHUNK = 65536
 
 # I13 applicable locator_type values (line_range is I12 only).
 I13_LOCATOR_TYPES = frozenset({"section", "json_pointer", "anchor", "page_range"})
@@ -1557,6 +1561,230 @@ def check_i19(idx: PackageIndex) -> CheckOut:
     return CheckOut("I19", name, PASS, "no orphan evidence (all have non-empty supports)")
 
 
+def _sha256_file(path: Path) -> str:
+    """SHA-256 of exact raw file bytes; lowercase hex. No text decoding."""
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(_I20_CHUNK), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _i20_classify_checksum(src: dict[str, Any]) -> tuple[str, str]:
+    """Classify source checksum for I20.
+
+    Returns (kind, reason_code):
+      excluded | not_checked | applicable
+    Excluded entries MUST be item-level NOT_CHECKED but do not participate in rollup.
+    """
+    if "checksum" not in src:
+        return "excluded", "checksum_absent"
+    checksum = src.get("checksum")
+    if checksum is None:
+        return "excluded", "checksum_null"
+    if not isinstance(checksum, dict):
+        return "not_checked", "checksum_not_object"
+    if "value" not in checksum:
+        return "excluded", "value_absent"
+    value = checksum.get("value")
+    if value is None:
+        return "excluded", "value_null"
+    if value == "":
+        return "excluded", "value_empty"
+    if not isinstance(value, str):
+        return "not_checked", "value_not_string"
+    alg = checksum.get("alg")
+    if alg != "sha256":
+        return "not_checked", "alg_unsupported_or_missing"
+    of = checksum.get("of")
+    if of != "package_copy":
+        return "not_checked", "of_unsupported_or_missing"
+    if _SHA256_HEX_RE.fullmatch(value) is None:
+        return "not_checked", "value_malformed"
+    return "applicable", ""
+
+
+def _i20_resolve_and_hash(
+    package: Path,
+    rel: Any,
+    cache: dict[str, str],
+) -> tuple[str, str | None, str]:
+    """Resolve package_path and hash raw bytes when safe.
+
+    Returns (kind, digest_or_none, reason_code):
+      ok | unsafe | unresolved | missing | not_file | read_failed
+    Unsafe/unresolved never open file contents.
+    Cache key = resolved absolute posix path.
+    """
+    if not isinstance(rel, str):
+        return "unsafe", None, "forbidden_path_form"
+    safety, safety_reason = classify_locator_path_safety(package, rel)
+    if safety == "unsafe":
+        return "unsafe", None, safety_reason or "path_unsafe"
+    if safety == "unresolved":
+        return "unresolved", None, safety_reason or "path_unresolved"
+    try:
+        root = package.resolve()
+        resolved = (package / rel).resolve()
+        resolved.relative_to(root)
+    except (ValueError, OSError):
+        return "unsafe", None, "path_escapes_or_unresolvable"
+    try:
+        if not resolved.is_file():
+            # Distinguish missing path vs non-file (dir/special).
+            if not resolved.exists():
+                return "missing", None, "package_copy_missing"
+            return "not_file", None, "package_copy_not_file"
+    except OSError:
+        return "unresolved", None, "symlink_unresolvable"
+
+    cache_key = resolved.as_posix()
+    if cache_key in cache:
+        return "ok", cache[cache_key], ""
+    try:
+        digest = _sha256_file(resolved)
+    except OSError:
+        return "read_failed", None, "read_failed"
+    cache[cache_key] = digest
+    return "ok", digest, ""
+
+
+def check_i20(idx: PackageIndex, package: Path) -> CheckOut:
+    """I20 optional per-source package_copy SHA-256 (frozen L3-C).
+
+    Excluded (no applicable value): item NOT_CHECKED, excluded from rollup.
+    Applicable shape/path/read failures: item NOT_CHECKED, participate.
+    Digest match PASS; mismatch FAIL. Never WARNING.
+    Rollup among applicable only: FAIL > NOT_CHECKED > PASS.
+    Zero applicable → overall NOT_CHECKED (not PASS).
+    Does not use I12/I14 text snapshots.
+    """
+    name = "Checksum (optional)"
+    if not _source_loaded(idx):
+        return CheckOut(
+            "I20",
+            name,
+            NOT_CHECKED,
+            "source-index not loaded",
+            path=REL_SOURCE,
+        )
+
+    sources = idx.by_kind["source"]
+    digest_cache: dict[str, str] = {}
+    excluded_errors: list[dict[str, str]] = []
+    fail_errors: list[dict[str, str]] = []
+    nc_errors: list[dict[str, str]] = []
+    applicable_statuses: list[str] = []
+    pass_count = 0
+
+    for sid, src in sources.items():
+        if not isinstance(src, dict):
+            continue
+        kind, reason = _i20_classify_checksum(src)
+        checksum_path = f"{REL_SOURCE}#{sid}/checksum"
+
+        if kind == "excluded":
+            excluded_errors.append(
+                {
+                    "path": checksum_path,
+                    "message": f"{sid} checksum not checked ({reason})",
+                }
+            )
+            continue
+
+        if kind == "not_checked":
+            applicable_statuses.append("not_checked")
+            nc_errors.append(
+                {
+                    "path": checksum_path,
+                    "message": f"{sid} checksum not checked ({reason})",
+                }
+            )
+            continue
+
+        # applicable shape — normalize declared value to lowercase before compare
+        checksum = src.get("checksum")
+        if not isinstance(checksum, dict):
+            applicable_statuses.append("not_checked")
+            nc_errors.append(
+                {
+                    "path": checksum_path,
+                    "message": f"{sid} checksum not checked (checksum_not_object)",
+                }
+            )
+            continue
+        declared = str(checksum.get("value")).lower()
+        rel = src.get("package_path")
+        path_kind, digest, path_reason = _i20_resolve_and_hash(
+            package, rel, digest_cache
+        )
+        if path_kind != "ok" or digest is None:
+            applicable_statuses.append("not_checked")
+            nc_errors.append(
+                {
+                    "path": f"{REL_SOURCE}#{sid}/package_path",
+                    "message": f"{sid} checksum not checked ({path_reason})",
+                }
+            )
+            continue
+
+        if digest == declared:
+            applicable_statuses.append("pass")
+            pass_count += 1
+        else:
+            applicable_statuses.append("fail")
+            fail_errors.append(
+                {
+                    "path": f"{REL_SOURCE}#{sid}/checksum/value",
+                    "message": f"{sid} checksum mismatch (digest_mismatch)",
+                }
+            )
+
+    detail_errors = (fail_errors + nc_errors + excluded_errors)[:50]
+    excluded_n = len(excluded_errors)
+    applicable_n = len(applicable_statuses)
+
+    if applicable_n == 0:
+        return CheckOut(
+            "I20",
+            name,
+            NOT_CHECKED,
+            f"zero applicable checksum values ({excluded_n} excluded)",
+            path=REL_SOURCE,
+            errors=detail_errors,
+        )
+
+    fail_n = sum(1 for s in applicable_statuses if s == "fail")
+    nc_n = sum(1 for s in applicable_statuses if s == "not_checked")
+
+    if fail_n:
+        return CheckOut(
+            "I20",
+            name,
+            FAIL,
+            f"{fail_n} checksum mismatch(es); {nc_n} not checked; {pass_count} match; {excluded_n} excluded",
+            path=REL_SOURCE,
+            errors=detail_errors,
+        )
+    if nc_n:
+        return CheckOut(
+            "I20",
+            name,
+            NOT_CHECKED,
+            f"{nc_n} applicable checksum(s) not checked; {pass_count} match; {excluded_n} excluded",
+            path=REL_SOURCE,
+            errors=detail_errors,
+        )
+    return CheckOut(
+        "I20",
+        name,
+        PASS,
+        f"all {pass_count} applicable checksum(s) match ({excluded_n} excluded)",
+        path=REL_SOURCE,
+        errors=detail_errors if excluded_errors else [],
+    )
+
+
 def run_l3_batch_a(
     *,
     package: Path,
@@ -1565,7 +1793,7 @@ def run_l3_batch_a(
     schema_results: dict[str, str],
     manifest_obj: Any | None,
 ) -> list[CheckOut]:
-    """Run L3-A + B1–B4 + C1 (I14); stub remaining L3-C (I20) as NOT_CHECKED."""
+    """Run L3-A + B1–B4 + C1 (I14) + C2 (I20)."""
     idx = build_package_index(parsed_objects, parse_ok, schema_results, manifest_obj)
 
     i11_result, path_safety = check_i11(idx, package)
@@ -1575,6 +1803,7 @@ def run_l3_batch_a(
     i14_result = check_i14(
         idx, package, path_safety, i12_item_status, i12_text_snapshot
     )
+    i20_result = check_i20(idx, package)
 
     results: list[CheckOut] = [
         check_i01(idx, parsed_objects, parse_ok, schema_results),
@@ -1596,14 +1825,12 @@ def run_l3_batch_a(
         check_i17(schema_results),
         check_i18(manifest_obj, parse_ok, package, schema_results),
         check_i19(idx),
+        i20_result,
     ]
 
-    deferred_names = {
-        "I20": "Checksum (optional)",
-    }
     for iid, reason in L3_DEFERRED_IDS.items():
         results.append(
-            CheckOut(iid, deferred_names.get(iid, f"Integrity check {iid}"), NOT_CHECKED, reason)
+            CheckOut(iid, f"Integrity check {iid}", NOT_CHECKED, reason)
         )
 
     # Stable order I01..I20

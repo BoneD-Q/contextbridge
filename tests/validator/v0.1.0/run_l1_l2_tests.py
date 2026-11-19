@@ -219,11 +219,11 @@ def test_generated_output() -> None:
     check("generated-output L1 not FAIL", report["layers"]["L1"] != "FAIL")
     check("generated-output L2 not FAIL", report["layers"]["L2"] != "FAIL")
     check(
-        "generated-output final not_fully_validated",
-        report["final_status"] == "not_fully_validated",
+        "generated-output final semantically_unreviewed",
+        report["final_status"] == "semantically_unreviewed",
         report["final_status"],
     )
-    check("generated-output L3 not FAIL", report["layers"]["L3"] != "FAIL")
+    check("generated-output L3 PASS", report["layers"]["L3"] == "PASS", report["layers"]["L3"])
     check("generated-output L4 NOT_CHECKED", report["layers"]["L4"] == "NOT_CHECKED")
     check("generated-output wrote_to_package false", report["wrote_to_package"] is False)
     rm = result_map(report)
@@ -243,14 +243,22 @@ def test_generated_output() -> None:
         ok("generated-output L3-B2 I16 PASS")
     else:
         fail("generated-output L3-B2 I16", str(rm.get("I16")))
-    deferred = ["I12", "I13", "I14", "I20"]
-    if all(rm.get(i, {}).get("result") == "NOT_CHECKED" for i in deferred):
-        ok("generated-output L3 remaining deferred NOT_CHECKED")
+    if rm.get("I12", {}).get("result") == "PASS":
+        ok("generated-output L3-B3 I12 PASS")
     else:
-        fail(
-            "generated-output L3 remaining deferred",
-            str({i: rm.get(i, {}).get("result") for i in deferred}),
-        )
+        fail("generated-output L3-B3 I12", str(rm.get("I12")))
+    if rm.get("I13", {}).get("result") == "PASS":
+        ok("generated-output L3-B4 I13 PASS")
+    else:
+        fail("generated-output L3-B4 I13", str(rm.get("I13")))
+    if rm.get("I14", {}).get("result") == "PASS":
+        ok("generated-output L3-C1 I14 PASS")
+    else:
+        fail("generated-output L3-C1 I14", str(rm.get("I14")))
+    if rm.get("I20", {}).get("result") == "PASS":
+        ok("generated-output L3-C2 I20 PASS")
+    else:
+        fail("generated-output L3-C2 I20", str(rm.get("I20")))
 
 
 def test_valid_minimal_and_empty() -> None:
@@ -427,12 +435,12 @@ def test_report_structure() -> None:
         for key in required_keys:
             check(f"report has {key}", key in report)
         check(
-            "checker phase 3B-B2",
-            report["checker"]["phase"] == "3B-B2",
+            "checker phase 3B-C2",
+            report["checker"]["phase"] == "3B-C2",
         )
         check(
-            "checker L3 full false",
-            report["checker"]["scripts_implemented"]["L3_integrity"] is False,
+            "checker L3 integrity true",
+            report["checker"]["scripts_implemented"]["L3_integrity"] is True,
         )
         check(
             "checker L3-A true",
@@ -445,6 +453,26 @@ def test_report_structure() -> None:
         check(
             "checker L3-B2 true",
             report["checker"]["scripts_implemented"]["L3_B2_readable_false"] is True,
+        )
+        check(
+            "checker L3-B3 true",
+            report["checker"]["scripts_implemented"]["L3_B3_line_range_bounds"] is True,
+        )
+        check(
+            "checker L3-B4 true",
+            report["checker"]["scripts_implemented"]["L3_B4_other_locators"] is True,
+        )
+        check(
+            "checker L3-C excerpts true",
+            report["checker"]["scripts_implemented"]["L3_C_excerpts"] is True,
+        )
+        check(
+            "checker L3-C checksum true",
+            report["checker"]["scripts_implemented"]["L3_C_checksum"] is True,
+        )
+        check(
+            "checker L4 semantic false",
+            report["checker"]["scripts_implemented"]["L4_semantic"] is False,
         )
         check(
             "checker network false",

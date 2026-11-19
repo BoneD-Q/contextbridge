@@ -2,8 +2,8 @@
 """CBHF 0.1.0 deterministic validation helper for context-validator.
 
 Skills-first: this script is invoked by the Skill; it is not a product CLI.
-Phase 3B: L1 + L2 + L3-A + L3-B1 (I11/I10) + L3-B2 (I16 readable:false).
-Remaining L3-B/C (I12/I13/I14/I20) and L4 remain NOT_CHECKED.
+Phase 3B: L1 + L2 + L3-A + L3-B1–B4 + L3-C1 (I14) + L3-C2 (I20 checksum).
+L4 remains NOT_CHECKED (never automated semantic PASS).
 Never writes into the package. Never fetches schemas from the network.
 """
 
@@ -381,9 +381,10 @@ def validate_package(
     parsed_objects: dict[str, Any] = {}
     parse_ok: dict[str, bool] = {}
     limitations: list[str] = [
-        "Phase 3B Batch B2: L1 + L2 + L3-A + I11/I10 + I16.",
-        "Still NOT_CHECKED: I12, I13, I14, I20, and L4.",
-        "L3 PASS is not semantic adequacy; I14 not implemented.",
+        "Phase 3B-C2: L1 + L2 + L3-A + I11/I10 + I16 + I12 + I13 + I14 + I20 (package_copy SHA-256).",
+        "Still NOT_CHECKED: L4 (never automated semantic PASS).",
+        "I14 PASS is literal window match only — not semantic adequacy (L4).",
+        "I20 PASS is raw-byte package_copy digest match only — not authenticity or semantics.",
         "Report is session-level; package was not modified.",
         "Schemas loaded from local spec/cbhf/v0.1.0 only (no network).",
     ]
@@ -785,7 +786,7 @@ def validate_package(
             )
         )
 
-    # --- L3-A (Batch A) + deferred L3-B/C stubs ---
+    # --- L3-A + B1–B4 + C1 (I14) + C2 (I20) ---
     schema_results = {c.id: c.result for c in checks if c.id.startswith("S")}
     for item in run_l3_batch_a(
         package=package,
@@ -876,7 +877,8 @@ def _finalize_report(
     l3 = [c for c in checks if c.id.startswith("I")]
     l4 = [c for c in checks if c.id.startswith("H")]
 
-    # Batch A implemented; deferred I* remain NOT_CHECKED → still not_fully_validated.
+    # I01–I20 automated; any remaining I* NOT_CHECKED (e.g. zero-applicable I20) still
+    # keeps final_status honest via package_final_status. L4 never auto-reviewed.
     final_status = package_final_status(
         checks, l3_implemented=True, l4_reviewed=False
     )
@@ -899,16 +901,19 @@ def _finalize_report(
         "checker": {
             "name": "context-validator",
             "skill_version": "0.1.0",
-            "phase": "3B-B2",
+            "phase": "3B-C2",
             "scripts_implemented": {
                 "L1_package": True,
                 "L2_schema": True,
-                "L3_integrity": False,
+                "L3_integrity": True,
                 "L3_A_references": True,
                 "L3_B1_path_safety_exists": True,
                 "L3_B2_readable_false": True,
+                "L3_B3_line_range_bounds": True,
+                "L3_B4_other_locators": True,
                 "L3_B_locators": False,
-                "L3_C_excerpts": False,
+                "L3_C_excerpts": True,
+                "L3_C_checksum": True,
                 "L4_semantic": False,
             },
             "wrote_to_package": False,
@@ -918,7 +923,7 @@ def _finalize_report(
         "layers": {
             "L1": layer_status(l1),
             "L2": layer_status(l2),
-            # Partial L3-A: incompleteness outranks PASS and WARNING at layer level.
+            # I* incompleteness outranks PASS and WARNING at layer level.
             "L3": layer_status(
                 l3,
                 mixed_pass_not_checked=STATUS_NOT_CHECKED,
@@ -943,7 +948,7 @@ def _finalize_report(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "context-validator Phase 3B-B2 helper: L1 + L2 + L3-A + I11/I10 + I16. "
+            "context-validator Phase 3B-C2 helper: L1 + L2 + L3-A + I11/I10 + I16 + I12 + I13 + I14 + I20. "
             "Prints a session JSON report; does not modify the package."
         )
     )

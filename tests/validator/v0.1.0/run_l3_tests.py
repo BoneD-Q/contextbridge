@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Tests for context-validator L3-A + L3-B1/B2/B3/B4 + L3-C1 (I14)."""
+"""Tests for context-validator L3-A + L3-B1/B2/B3/B4 + L3-C1 (I14) + L3-C2 (I20)."""
 
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 import sys
@@ -32,7 +33,8 @@ L3_B2 = ["I16"]
 L3_B3 = ["I12"]
 L3_B4 = ["I13"]
 L3_C1 = ["I14"]
-L3_DEFERRED = ["I20"]
+L3_C2 = ["I20"]
+L3_DEFERRED: list[str] = []
 
 
 def ok(name: str) -> None:
@@ -75,14 +77,18 @@ def test_generated_temp_copy() -> None:
         report = validate_package(pkg)
         after = fingerprint_package(pkg)
         check("generated copy read-only", before == after)
-        check("generated copy final", report["final_status"] == "not_fully_validated")
+        # All I* PASS (incl. I20) → L3 PASS; L4 unfinished → semantically_unreviewed
         check(
-            "generated copy L3 layer incomplete",
-            report["layers"]["L3"] == "NOT_CHECKED",
+            "generated copy final",
+            report["final_status"] == "semantically_unreviewed",
+            report["final_status"],
+        )
+        check(
+            "generated copy L3 layer PASS",
+            report["layers"]["L3"] == "PASS",
             report["layers"]["L3"],
         )
         check("generated copy L4", report["layers"]["L4"] == "NOT_CHECKED")
-        rm = result_map(report)
         for iid in ["I01", "I02", "I03", "I04", "I05", "I06", "I07", "I08", "I09", "I15", "I17", "I18", "I19"]:
             expect_status(report, iid, "PASS", f"generated {iid}")
         for iid in L3_B1:
@@ -95,8 +101,8 @@ def test_generated_temp_copy() -> None:
             expect_status(report, iid, "PASS", f"generated {iid}")
         for iid in L3_C1:
             expect_status(report, iid, "PASS", f"generated {iid}")
-        for iid in L3_DEFERRED:
-            expect_status(report, iid, "NOT_CHECKED", f"generated deferred {iid}")
+        for iid in L3_C2:
+            expect_status(report, iid, "PASS", f"generated {iid}")
         for hid in [f"H{i:02d}" for i in range(1, 7)]:
             expect_status(report, hid, "NOT_CHECKED", f"generated {hid}")
 
@@ -117,8 +123,8 @@ def test_empty_and_minimal() -> None:
             expect_status(report, iid, "PASS", f"empty {iid}")
         for iid in L3_C1:
             expect_status(report, iid, "PASS", f"empty {iid}")
-        for iid in L3_DEFERRED:
-            expect_status(report, iid, "NOT_CHECKED", f"empty deferred {iid}")
+        # Empty sources → zero applicable checksums → I20 NOT_CHECKED
+        expect_status(report, "I20", "NOT_CHECKED", "empty I20 zero applicable")
 
         minimal = build_valid_minimal_package(Path(tmp) / "minimal")
         report_m = validate_package(minimal)
@@ -128,6 +134,8 @@ def test_empty_and_minimal() -> None:
         expect_status(report_m, "I03", "PASS", "minimal I03")
         expect_status(report_m, "I04", "PASS", "minimal I04")
         expect_status(report_m, "I09", "PASS", "minimal I09")
+        # Minimal has source but no checksum → zero applicable → I20 NOT_CHECKED
+        expect_status(report_m, "I20", "NOT_CHECKED", "minimal I20 zero applicable")
         expect_status(report_m, "I10", "PASS", "minimal I10")
         expect_status(report_m, "I11", "PASS", "minimal I11")
         expect_status(report_m, "I12", "PASS", "minimal I12")
@@ -504,7 +512,7 @@ def test_review_fix_l3_layer_mixed() -> None:
         pkg = build_valid_minimal_package(Path(tmp) / "layer")
         report = validate_package(pkg)
         check(
-            "L3 layer not full PASS with deferred I20",
+            "L3 layer not full PASS with zero-applicable I20",
             report["layers"]["L3"] == "NOT_CHECKED",
             report["layers"]["L3"],
         )
@@ -512,7 +520,7 @@ def test_review_fix_l3_layer_mixed() -> None:
         check("L2 PASS", report["layers"]["L2"] == "PASS")
         expect_status(report, "I01", "PASS", "layer mix I01 PASS")
         expect_status(report, "I14", "PASS", "layer mix I14 PASS")
-        expect_status(report, "I20", "NOT_CHECKED", "layer mix I20 NOT_CHECKED")
+        expect_status(report, "I20", "NOT_CHECKED", "layer mix I20 zero applicable")
 
 
 def test_convergence_i18_privacy_and_whitespace() -> None:
@@ -622,7 +630,7 @@ def test_convergence_mid_dir_symlink() -> None:
 
 
 def test_convergence_l3_warning_vs_not_checked() -> None:
-    """I19 WARNING must not make L3 layer look finished while I20 remains NOT_CHECKED."""
+    """I19 WARNING must not make L3 layer look finished while I20 is NOT_CHECKED."""
     with tempfile.TemporaryDirectory() as tmp:
         pkg = build_valid_minimal_package(Path(tmp) / "warn_layer")
         ev = load_json(pkg / "evidence/evidence.json")
@@ -635,7 +643,7 @@ def test_convergence_l3_warning_vs_not_checked() -> None:
         report = validate_package(pkg)
         expect_status(report, "I19", "WARNING", "warn-layer I19 WARNING")
         expect_status(report, "I14", "PASS", "warn-layer I14 PASS")
-        expect_status(report, "I20", "NOT_CHECKED", "warn-layer I20 NOT_CHECKED")
+        expect_status(report, "I20", "NOT_CHECKED", "warn-layer I20 zero applicable")
         check(
             "L3 layer NOT_CHECKED despite I19 WARNING",
             report["layers"]["L3"] == "NOT_CHECKED",
@@ -669,7 +677,7 @@ def test_report_and_offline() -> None:
             pkg = build_valid_minimal_package(Path(tmp) / "pkg")
             report = validate_package(pkg)
             check("no network", calls == [])
-            check("phase 3B-C1", report["checker"]["phase"] == "3B-C1")
+            check("phase 3B-C2", report["checker"]["phase"] == "3B-C2")
             check("L3-A flag", report["checker"]["scripts_implemented"]["L3_A_references"] is True)
             check(
                 "L3-B1 flag",
@@ -691,10 +699,19 @@ def test_report_and_offline() -> None:
                 "L3-C excerpts flag",
                 report["checker"]["scripts_implemented"]["L3_C_excerpts"] is True,
             )
+            check(
+                "L3-C checksum flag",
+                report["checker"]["scripts_implemented"]["L3_C_checksum"] is True,
+            )
+            check(
+                "L3 integrity flag",
+                report["checker"]["scripts_implemented"]["L3_integrity"] is True,
+            )
             check("L3-B full locators false", report["checker"]["scripts_implemented"]["L3_B_locators"] is False)
+            check("L4 semantic false", report["checker"]["scripts_implemented"]["L4_semantic"] is False)
             check("read_only", report["read_only"] is True)
             ids = {c["id"] for c in report["checks"]}
-            for iid in L3A + L3_B1 + L3_B2 + L3_B3 + L3_B4 + L3_C1 + L3_DEFERRED:
+            for iid in L3A + L3_B1 + L3_B2 + L3_B3 + L3_B4 + L3_C1 + L3_C2:
                 check(f"report has {iid}", iid in ids)
     finally:
         urllib.request.urlopen = original  # type: ignore[assignment]
@@ -1657,7 +1674,7 @@ def test_b4_i13_other_locators() -> None:
         report15 = validate_package(pkg3)
         check("B4 wrote_to_package false", report15["wrote_to_package"] is False)
         check("B4 network false", report15["checker"]["network"] is False)
-        check("B4 phase", report15["checker"]["phase"] == "3B-C1")
+        check("B4 phase", report15["checker"]["phase"] == "3B-C2")
 
 
 def _i14_errors(report: dict) -> list[dict]:
@@ -2247,12 +2264,12 @@ def test_c1_i14_excerpt_match() -> None:
 
         # T099 / T086 / T100 flags
         report_f = validate_package(build_valid_minimal_package(root / "flags"))
-        check("I14-T099 phase", report_f["checker"]["phase"] == "3B-C1")
+        check("I14-T099 phase", report_f["checker"]["phase"] == "3B-C2")
         check(
             "I14-T099 L3_C_excerpts",
             report_f["checker"]["scripts_implemented"]["L3_C_excerpts"] is True,
         )
-        expect_status(report_f, "I20", "NOT_CHECKED", "I14-T099 I20 deferred")
+        expect_status(report_f, "I20", "NOT_CHECKED", "I14-T099 I20 zero applicable")
         i14r = result_map(report_f)["I14"]["result"]
         check("I14-T086 status set", i14r in {"PASS", "FAIL", "NOT_CHECKED"}, i14r)
         for hid in [f"H{i:02d}" for i in range(1, 7)]:
@@ -2458,8 +2475,510 @@ def test_c1_i14_excerpt_match() -> None:
         check("I14-T107 FAIL ignores disk mutate", out107b.result == "FAIL", out107b.message)
 
 
+def _sha256_hex(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _set_src_checksum(pkg: Path, source_id: str, checksum) -> None:
+    doc = load_json(pkg / "source/source-index.json")
+    for src in doc.get("sources", []):
+        if src.get("source_id") == source_id:
+            if checksum is None and "checksum" in src:
+                del src["checksum"]
+            elif checksum == "__null__":
+                src["checksum"] = None
+            else:
+                src["checksum"] = checksum
+            break
+    save_json(pkg / "source/source-index.json", doc)
+
+
+def _set_src_package_path(pkg: Path, source_id: str, package_path: str) -> None:
+    doc = load_json(pkg / "source/source-index.json")
+    for src in doc.get("sources", []):
+        if src.get("source_id") == source_id:
+            src["package_path"] = package_path
+            break
+    save_json(pkg / "source/source-index.json", doc)
+
+
+def _i20_errors(report: dict) -> list[dict]:
+    rm = result_map(report)
+    return list(rm.get("I20", {}).get("errors") or [])
+
+
+def _i20_msgs(report: dict) -> str:
+    return " | ".join(e.get("message", "") for e in _i20_errors(report))
+
+
+def test_c2_i20_checksum() -> None:
+    """I20-T201..T222: package_copy SHA-256 via validate_package."""
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+
+        # --- T201: generated-output correct checksums ---
+        pkg201 = root / "t201"
+        shutil.copytree(GENERATED, pkg201)
+        before201 = fingerprint_package(pkg201)
+        report201 = validate_package(pkg201)
+        after201 = fingerprint_package(pkg201)
+        check("I20-T201 fingerprint unchanged", before201 == after201)
+        expect_status(report201, "I20", "PASS", "I20-T201 generated PASS")
+        check("I20-T201 L3 PASS", report201["layers"]["L3"] == "PASS")
+        check(
+            "I20-T201 final semantically_unreviewed",
+            report201["final_status"] == "semantically_unreviewed",
+            report201["final_status"],
+        )
+
+        # --- T202: wrong checksum → FAIL ---
+        pkg202 = build_valid_minimal_package(root / "t202")
+        digest202 = _sha256_hex(pkg202 / "source/original/design.md")
+        wrong = ("0" if digest202[0] != "0" else "1") + digest202[1:]
+        _set_src_checksum(
+            pkg202,
+            "src_001",
+            {"alg": "sha256", "value": wrong, "of": "package_copy"},
+        )
+        before202 = fingerprint_package(pkg202)
+        report202 = validate_package(pkg202)
+        after202 = fingerprint_package(pkg202)
+        check("I20-T202 fingerprint unchanged", before202 == after202)
+        expect_status(report202, "I20", "FAIL", "I20-T202 mismatch FAIL")
+        check("I20-T202 digest_mismatch", "digest_mismatch" in _i20_msgs(report202))
+
+        # --- T203: uppercase hex matches ---
+        pkg203 = build_valid_minimal_package(root / "t203")
+        digest203 = _sha256_hex(pkg203 / "source/original/design.md")
+        _set_src_checksum(
+            pkg203,
+            "src_001",
+            {"alg": "sha256", "value": digest203.upper(), "of": "package_copy"},
+        )
+        expect_status(validate_package(pkg203), "I20", "PASS", "I20-T203 uppercase PASS")
+
+        # --- T204: missing / null / empty → excluded → overall NOT_CHECKED ---
+        pkg204a = build_valid_minimal_package(root / "t204a")
+        expect_status(validate_package(pkg204a), "I20", "NOT_CHECKED", "I20-T204 missing")
+
+        pkg204b = build_valid_minimal_package(root / "t204b")
+        _set_src_checksum(pkg204b, "src_001", {"alg": "sha256", "value": None, "of": "package_copy"})
+        report204b = validate_package(pkg204b)
+        expect_status(report204b, "I20", "NOT_CHECKED", "I20-T204 value null")
+        check("I20-T204 value_null reason", "value_null" in _i20_msgs(report204b))
+
+        pkg204c = build_valid_minimal_package(root / "t204c")
+        _set_src_checksum(pkg204c, "src_001", {"alg": "sha256", "value": "", "of": "package_copy"})
+        report204c = validate_package(pkg204c)
+        expect_status(report204c, "I20", "NOT_CHECKED", "I20-T204 value empty")
+        check("I20-T204 value_empty reason", "value_empty" in _i20_msgs(report204c))
+
+        # --- T205: malformed non-empty value ---
+        pkg205 = build_valid_minimal_package(root / "t205")
+        _set_src_checksum(
+            pkg205,
+            "src_001",
+            {"alg": "sha256", "value": "not-a-hex-digest", "of": "package_copy"},
+        )
+        report205 = validate_package(pkg205)
+        expect_status(report205, "I20", "NOT_CHECKED", "I20-T205 malformed NC")
+        check("I20-T205 value_malformed", "value_malformed" in _i20_msgs(report205))
+
+        # --- T206: unsupported alg ---
+        pkg206 = build_valid_minimal_package(root / "t206")
+        digest206 = _sha256_hex(pkg206 / "source/original/design.md")
+        _set_src_checksum(
+            pkg206,
+            "src_001",
+            {"alg": "SHA256", "value": digest206, "of": "package_copy"},
+        )
+        report206 = validate_package(pkg206)
+        expect_status(report206, "I20", "NOT_CHECKED", "I20-T206 alg case NC")
+        check("I20-T206 alg reason", "alg_unsupported_or_missing" in _i20_msgs(report206))
+
+        pkg206b = build_valid_minimal_package(root / "t206b")
+        _set_src_checksum(
+            pkg206b,
+            "src_001",
+            {"alg": "md5", "value": digest206, "of": "package_copy"},
+        )
+        expect_status(validate_package(pkg206b), "I20", "NOT_CHECKED", "I20-T206 md5 NC")
+
+        # --- T207: missing/other of ---
+        pkg207 = build_valid_minimal_package(root / "t207")
+        _set_src_checksum(
+            pkg207,
+            "src_001",
+            {"alg": "sha256", "value": digest206, "of": "original"},
+        )
+        report207 = validate_package(pkg207)
+        expect_status(report207, "I20", "NOT_CHECKED", "I20-T207 of NC")
+        check("I20-T207 of reason", "of_unsupported_or_missing" in _i20_msgs(report207))
+
+        pkg207b = build_valid_minimal_package(root / "t207b")
+        _set_src_checksum(
+            pkg207b,
+            "src_001",
+            {"alg": "sha256", "value": digest206},
+        )
+        expect_status(validate_package(pkg207b), "I20", "NOT_CHECKED", "I20-T207 missing of")
+
+        # --- T208: normal relative path + correct hash ---
+        pkg208 = build_valid_minimal_package(root / "t208")
+        digest208 = _sha256_hex(pkg208 / "source/original/design.md")
+        _set_src_checksum(
+            pkg208,
+            "src_001",
+            {"alg": "sha256", "value": digest208, "of": "package_copy"},
+        )
+        report208 = validate_package(pkg208)
+        expect_status(report208, "I20", "PASS", "I20-T208 normal PASS")
+        # I10–I16 regression on same package
+        for iid in ["I10", "I11", "I12", "I13", "I14", "I16"]:
+            expect_status(report208, iid, "PASS", f"I20-T222 regress {iid}")
+
+        # --- T209: escaping path + zero content read of outside file ---
+        pkg209 = build_valid_minimal_package(root / "t209")
+        outside209 = root / "outside209.txt"
+        outside209.write_text("OUTSIDE-SECRET-209\n", encoding="utf-8")
+        digest209 = _sha256_hex(pkg209 / "source/original/design.md")
+        _set_src_checksum(
+            pkg209,
+            "src_001",
+            {"alg": "sha256", "value": digest209, "of": "package_copy"},
+        )
+        _set_src_package_path(pkg209, "src_001", "../outside209.txt")
+        before_o209 = outside209.read_text(encoding="utf-8")
+        opened209: list[str] = []
+        real_open209 = Path.open
+
+        def counting_open209(self, *args, **kwargs):
+            try:
+                if self.resolve() == outside209.resolve():
+                    opened209.append(self.as_posix())
+            except OSError:
+                opened209.append("unresolvable")
+            return real_open209(self, *args, **kwargs)
+
+        Path.open = counting_open209  # type: ignore[method-assign]
+        try:
+            report209 = validate_package(pkg209)
+        finally:
+            Path.open = real_open209  # type: ignore[method-assign]
+        after_o209 = outside209.read_text(encoding="utf-8")
+        expect_status(report209, "I20", "NOT_CHECKED", "I20-T209 escape NC")
+        check("I20-T209 zero outside open", opened209 == [], str(opened209))
+        check("I20-T209 outside unchanged", before_o209 == after_o209)
+
+        # --- T210: internal symlink to regular file ---
+        pkg210 = build_valid_minimal_package(root / "t210")
+        target210 = pkg210 / "source/original/design.md"
+        link210 = pkg210 / "source/original/design-link.md"
+        digest210 = _sha256_hex(target210)
+        try:
+            link210.symlink_to(target210.name)
+            _set_src_package_path(pkg210, "src_001", "source/original/design-link.md")
+            _set_src_checksum(
+                pkg210,
+                "src_001",
+                {"alg": "sha256", "value": digest210, "of": "package_copy"},
+            )
+            expect_status(validate_package(pkg210), "I20", "PASS", "I20-T210 internal symlink PASS")
+        except OSError:
+            check("I20-T210 symlink SKIPPED (host)", True)
+
+        # --- T211: symlink escaping package ---
+        pkg211 = build_valid_minimal_package(root / "t211")
+        outside211 = root / "outside211.txt"
+        outside211.write_text("OUTSIDE-SECRET-211\n", encoding="utf-8")
+        link211 = pkg211 / "source/original/escape-link.md"
+        digest211 = _sha256_hex(pkg211 / "source/original/design.md")
+        try:
+            link211.symlink_to(outside211)
+            _set_src_package_path(pkg211, "src_001", "source/original/escape-link.md")
+            _set_src_checksum(
+                pkg211,
+                "src_001",
+                {"alg": "sha256", "value": digest211, "of": "package_copy"},
+            )
+            opened211: list[str] = []
+            real_open211 = Path.open
+
+            def counting_open211(self, *args, **kwargs):
+                try:
+                    if self.resolve() == outside211.resolve():
+                        opened211.append(self.as_posix())
+                except OSError:
+                    opened211.append("unresolvable")
+                return real_open211(self, *args, **kwargs)
+
+            Path.open = counting_open211  # type: ignore[method-assign]
+            try:
+                report211 = validate_package(pkg211)
+            finally:
+                Path.open = real_open211  # type: ignore[method-assign]
+            expect_status(report211, "I20", "NOT_CHECKED", "I20-T211 escape symlink NC")
+            check("I20-T211 zero outside open", opened211 == [], str(opened211))
+        except OSError:
+            check("I20-T211 symlink SKIPPED (host)", True)
+
+        # --- T212: missing file ---
+        pkg212 = build_valid_minimal_package(root / "t212")
+        _set_src_package_path(pkg212, "src_001", "source/original/missing-copy.md")
+        _set_src_checksum(
+            pkg212,
+            "src_001",
+            {
+                "alg": "sha256",
+                "value": "a" * 64,
+                "of": "package_copy",
+            },
+        )
+        report212 = validate_package(pkg212)
+        expect_status(report212, "I20", "NOT_CHECKED", "I20-T212 missing NC")
+        check(
+            "I20-T212 missing reason",
+            "package_copy_missing" in _i20_msgs(report212)
+            or "path_escapes" in _i20_msgs(report212)
+            or "not checked" in _i20_msgs(report212),
+        )
+
+        # --- T213: directory target ---
+        pkg213 = build_valid_minimal_package(root / "t213")
+        _set_src_package_path(pkg213, "src_001", "source/original")
+        _set_src_checksum(
+            pkg213,
+            "src_001",
+            {"alg": "sha256", "value": "b" * 64, "of": "package_copy"},
+        )
+        report213 = validate_package(pkg213)
+        expect_status(report213, "I20", "NOT_CHECKED", "I20-T213 dir NC")
+        check("I20-T213 not_file", "package_copy_not_file" in _i20_msgs(report213))
+
+        # --- T214: read failure (patch I20 hasher only; keep L1 fingerprint intact) ---
+        import _integrity as _integrity_mod
+
+        pkg214 = build_valid_minimal_package(root / "t214")
+        design214 = pkg214 / "source/original/design.md"
+        digest214 = _sha256_hex(design214)
+        _set_src_checksum(
+            pkg214,
+            "src_001",
+            {"alg": "sha256", "value": digest214, "of": "package_copy"},
+        )
+        real_sha214 = _integrity_mod._sha256_file
+
+        def boom_sha214(path: Path) -> str:
+            try:
+                if path.resolve() == design214.resolve():
+                    raise OSError("simulated I20 read failure")
+            except OSError as exc:
+                if "simulated" in str(exc):
+                    raise
+            return real_sha214(path)
+
+        _integrity_mod._sha256_file = boom_sha214  # type: ignore[assignment]
+        try:
+            report214 = validate_package(pkg214)
+        finally:
+            _integrity_mod._sha256_file = real_sha214  # type: ignore[assignment]
+        expect_status(report214, "I20", "NOT_CHECKED", "I20-T214 read_failed NC")
+        check("I20-T214 read_failed reason", "read_failed" in _i20_msgs(report214))
+
+        # --- T215: multi-source FAIL + PASS → overall FAIL ---
+        pkg215 = build_valid_minimal_package(root / "t215")
+        design215 = pkg215 / "source/original/design.md"
+        extra215 = pkg215 / "source/original/extra.md"
+        extra215.write_text("extra line\n", encoding="utf-8")
+        dig_ok = _sha256_hex(design215)
+        dig_extra = _sha256_hex(extra215)
+        doc215 = load_json(pkg215 / "source/source-index.json")
+        doc215["sources"].append(
+            {
+                "source_id": "src_002",
+                "original_name": "extra.md",
+                "user_path": None,
+                "package_path": "source/original/extra.md",
+                "media_type": "text/markdown",
+                "language": "zh",
+                "role": "supporting",
+                "received_from": "user",
+                "content_transformed": None,
+                "readable": True,
+                "notes": "",
+                "checksum": {
+                    "alg": "sha256",
+                    "value": dig_extra,
+                    "of": "package_copy",
+                },
+            }
+        )
+        doc215["sources"][0]["checksum"] = {
+            "alg": "sha256",
+            "value": ("0" if dig_ok[0] != "0" else "1") + dig_ok[1:],
+            "of": "package_copy",
+        }
+        save_json(pkg215 / "source/source-index.json", doc215)
+        # Keep manifest sources_summary permissive; schema may not enforce count match.
+        report215 = validate_package(pkg215)
+        expect_status(report215, "I20", "FAIL", "I20-T215 multi FAIL")
+        msgs215 = _i20_msgs(report215)
+        check("I20-T215 has mismatch", "digest_mismatch" in msgs215)
+        check("I20-T215 keeps both sources", "src_001" in msgs215)
+
+        # --- T216: two sources same path — cache (open once for content hash) ---
+        pkg216 = build_valid_minimal_package(root / "t216")
+        design216 = pkg216 / "source/original/design.md"
+        dig216 = _sha256_hex(design216)
+        doc216 = load_json(pkg216 / "source/source-index.json")
+        doc216["sources"][0]["checksum"] = {
+            "alg": "sha256",
+            "value": dig216,
+            "of": "package_copy",
+        }
+        doc216["sources"].append(
+            {
+                "source_id": "src_002",
+                "original_name": "design.md",
+                "user_path": None,
+                "package_path": "source/original/design.md",
+                "media_type": "text/markdown",
+                "language": "zh",
+                "role": "supporting",
+                "received_from": "user",
+                "content_transformed": None,
+                "readable": True,
+                "notes": "",
+                "checksum": {
+                    "alg": "sha256",
+                    "value": dig216,
+                    "of": "package_copy",
+                },
+            }
+        )
+        save_json(pkg216 / "source/source-index.json", doc216)
+        hash_calls216: list[str] = []
+        import _integrity as _integrity_mod216
+
+        real_sha216 = _integrity_mod216._sha256_file
+
+        def counting_sha216(path: Path) -> str:
+            hash_calls216.append(path.resolve().as_posix())
+            return real_sha216(path)
+
+        _integrity_mod216._sha256_file = counting_sha216  # type: ignore[assignment]
+        try:
+            report216 = validate_package(pkg216)
+        finally:
+            _integrity_mod216._sha256_file = real_sha216  # type: ignore[assignment]
+        expect_status(report216, "I20", "PASS", "I20-T216 same path PASS")
+        check(
+            "I20-T216 message two matches",
+            "all 2 applicable" in result_map(report216)["I20"]["message"],
+            result_map(report216)["I20"]["message"],
+        )
+        check(
+            "I20-T216 digest cached once",
+            len(hash_calls216) == 1,
+            str(hash_calls216),
+        )
+
+        # --- T217: zero applicable (explicit empty checksum object missing value) ---
+        pkg217 = build_valid_minimal_package(root / "t217")
+        _set_src_checksum(pkg217, "src_001", {"alg": "sha256", "of": "package_copy"})
+        report217 = validate_package(pkg217)
+        expect_status(report217, "I20", "NOT_CHECKED", "I20-T217 zero applicable")
+        check(
+            "I20-T217 message zero",
+            "zero applicable" in result_map(report217)["I20"]["message"],
+        )
+
+        # --- T218: excluded + PASS → overall PASS ---
+        pkg218 = build_valid_minimal_package(root / "t218")
+        design218 = pkg218 / "source/original/design.md"
+        extra218 = pkg218 / "source/original/extra218.md"
+        extra218.write_text("ok\n", encoding="utf-8")
+        dig218 = _sha256_hex(design218)
+        dig218e = _sha256_hex(extra218)
+        doc218 = load_json(pkg218 / "source/source-index.json")
+        doc218["sources"][0]["checksum"] = {
+            "alg": "sha256",
+            "value": dig218,
+            "of": "package_copy",
+        }
+        doc218["sources"].append(
+            {
+                "source_id": "src_002",
+                "original_name": "extra218.md",
+                "user_path": None,
+                "package_path": "source/original/extra218.md",
+                "media_type": "text/markdown",
+                "language": "zh",
+                "role": "supporting",
+                "received_from": "user",
+                "content_transformed": None,
+                "readable": True,
+                "notes": "",
+            }
+        )
+        save_json(pkg218 / "source/source-index.json", doc218)
+        report218 = validate_package(pkg218)
+        expect_status(report218, "I20", "PASS", "I20-T218 excluded+PASS → PASS")
+        check("I20-T218 excluded detail", "src_002" in _i20_msgs(report218))
+        # silence unused
+        check("I20-T218 digests computed", dig218e != "")
+
+        # --- T219: excluded + shape NC → overall NOT_CHECKED ---
+        pkg219 = build_valid_minimal_package(root / "t219")
+        doc219 = load_json(pkg219 / "source/source-index.json")
+        doc219["sources"][0]["checksum"] = {
+            "alg": "sha256",
+            "value": "deadbeef",
+            "of": "package_copy",
+        }
+        doc219["sources"].append(
+            {
+                "source_id": "src_002",
+                "original_name": "x.md",
+                "user_path": None,
+                "package_path": "source/original/design.md",
+                "media_type": "text/markdown",
+                "language": "zh",
+                "role": "supporting",
+                "received_from": "user",
+                "content_transformed": None,
+                "readable": True,
+                "notes": "",
+            }
+        )
+        save_json(pkg219 / "source/source-index.json", doc219)
+        expect_status(validate_package(pkg219), "I20", "NOT_CHECKED", "I20-T219 excluded+NC")
+
+        # --- T220: minimal no checksum (already covered) + fingerprint ---
+        pkg220 = build_valid_minimal_package(root / "t220")
+        before220 = fingerprint_package(pkg220)
+        report220 = validate_package(pkg220)
+        after220 = fingerprint_package(pkg220)
+        expect_status(report220, "I20", "NOT_CHECKED", "I20-T220 minimal NC")
+        check("I20-T220 fingerprint", before220 == after220)
+
+        # --- T221: source-index not loaded (S03 fail via bad JSON shape kept parseable but schema fail) ---
+        pkg221 = build_valid_minimal_package(root / "t221")
+        # Break schema: remove required field media_type
+        doc221 = load_json(pkg221 / "source/source-index.json")
+        del doc221["sources"][0]["media_type"]
+        save_json(pkg221 / "source/source-index.json", doc221)
+        report221 = validate_package(pkg221)
+        expect_status(report221, "S03", "FAIL", "I20-T221 S03 FAIL")
+        expect_status(report221, "I20", "NOT_CHECKED", "I20-T221 source unloaded")
+        check(
+            "I20-T221 message",
+            "source-index not loaded" in result_map(report221)["I20"]["message"],
+        )
+
+
 def main() -> int:
-    print("== context-validator L3-A + B1–B4 + C1 (I14) tests ==")
+    print("== context-validator L3-A + B1–B4 + C1 (I14) + C2 (I20) tests ==")
     check("script exists", SCRIPT.is_file())
     check("generated-output exists", GENERATED.is_dir())
 
@@ -2489,6 +3008,7 @@ def main() -> int:
     test_b3_i12_line_range()
     test_b4_i13_other_locators()
     test_c1_i14_excerpt_match()
+    test_c2_i20_checksum()
     test_report_and_offline()
 
     print(f"\nSummary: {PASSES} passed, {len(FAILURES)} failed")
