@@ -1,0 +1,34 @@
+{
+  "questions": [
+    {
+      "question_id": "q_001",
+      "ask": {
+        "text": "Which production data-plane listen port is authoritative: 8080 or 8000?",
+        "lang": "en",
+        "i18n": {
+          "zh": "生产环境数据面监听端口以哪个为准：8080 还是 8000？",
+          "en": "Which production data-plane listen port is authoritative: 8080 or 8000?"
+        }
+      },
+      "priority": "high",
+      "related_conflict_ids": ["cfl_001"],
+      "related_unknown_ids": [],
+      "notes": "Same-subject prod conflict; do not auto-resolve."
+    },
+    {
+      "question_id": "q_002",
+      "ask": {
+        "text": "What is the production replica count per PoP, and who owns control-plane on-call?",
+        "lang": "en",
+        "i18n": {
+          "zh": "每个 PoP 的生产副本数是多少，控制面 on-call 由谁负责？",
+          "en": "What is the production replica count per PoP, and who owns control-plane on-call?"
+        }
+      },
+      "priority": "high",
+      "related_conflict_ids": [],
+      "related_unknown_ids": ["unk_001", "unk_002"],
+      "notes": ""
+    }
+  ]
+}

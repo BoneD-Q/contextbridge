@@ -1,0 +1,40 @@
+{
+  "terms": [
+    {
+      "term_id": "term_001",
+      "term": "PoP",
+      "definition": {
+        "text": "Point of Presence — an edge location running gateway instances.",
+        "lang": "en",
+        "i18n": {
+          "zh": "接入点（Point of Presence）——运行网关实例的边缘站点。",
+          "en": "Point of Presence — an edge location running gateway instances."
+        }
+      },
+      "status": "verified",
+      "aliases": ["Point of Presence"],
+      "evidence_ids": ["ev_021"],
+      "confirmation": null,
+      "conflict_ids": [],
+      "notes": ""
+    },
+    {
+      "term_id": "term_002",
+      "term": "Origin pool",
+      "definition": {
+        "text": "Set of regional backends selected by routing policy.",
+        "lang": "en",
+        "i18n": {
+          "zh": "由路由策略选择的一组区域后端。",
+          "en": "Set of regional backends selected by routing policy."
+        }
+      },
+      "status": "verified",
+      "aliases": [],
+      "evidence_ids": ["ev_022"],
+      "confirmation": null,
+      "conflict_ids": [],
+      "notes": ""
+    }
+  ]
+}

@@ -1,0 +1,403 @@
+{
+  "report_kind": "contextbridge-validation-session",
+  "report_version": "0.1.0-validator-draft",
+  "cbhf_version": "0.1.0",
+  "package_id": "pkg_northwind_edge_gateway_proposal",
+  "package_label": "generated-output",
+  "validated_at": "2026-11-19T11:02:12Z",
+  "checker": {
+    "name": "context-validator",
+    "skill_version": "0.1.0",
+    "phase": "3B-C2",
+    "scripts_implemented": {
+      "L1_package": true,
+      "L2_schema": true,
+      "L3_integrity": true,
+      "L3_A_references": true,
+      "L3_B1_path_safety_exists": true,
+      "L3_B2_readable_false": true,
+      "L3_B3_line_range_bounds": true,
+      "L3_B4_other_locators": true,
+      "L3_B_locators": false,
+      "L3_C_excerpts": true,
+      "L3_C_checksum": true,
+      "L4_semantic": false
+    },
+    "wrote_to_package": false,
+    "network": false
+  },
+  "read_only": true,
+  "layers": {
+    "L1": "PASS",
+    "L2": "PASS",
+    "L3": "PASS",
+    "L4": "NOT_CHECKED"
+  },
+  "checks": [
+    {
+      "id": "P01",
+      "name": "Required paths exist",
+      "result": "PASS",
+      "message": "all required paths present"
+    },
+    {
+      "id": "P02",
+      "name": "Markdown readable",
+      "result": "PASS",
+      "message": "overview and receiver-guide readable as UTF-8"
+    },
+    {
+      "id": "P03",
+      "name": "JSON parseable (reject duplicate keys)",
+      "result": "PASS",
+      "message": "parsed 12 JSON file(s) with duplicate-key rejection"
+    },
+    {
+      "id": "P04",
+      "name": "YAML parseable (reject duplicate keys)",
+      "result": "PASS",
+      "message": "manifest.yaml parsed with unique-key loader",
+      "path": "manifest.yaml"
+    },
+    {
+      "id": "P05",
+      "name": "Package form",
+      "result": "PASS",
+      "message": "folder/docs package layout consistent",
+      "path": "manifest.yaml"
+    },
+    {
+      "id": "P06",
+      "name": "Extra / unexpected entries",
+      "result": "PASS",
+      "message": "no unexpected top-level entries"
+    },
+    {
+      "id": "S01",
+      "name": "Load schemas",
+      "result": "PASS",
+      "message": "loaded 13 Draft 2020-12 schemas from local disk",
+      "path": "spec/cbhf/v0.1.0"
+    },
+    {
+      "id": "S02",
+      "name": "manifest schema",
+      "result": "PASS",
+      "message": "schema valid",
+      "path": "manifest.yaml"
+    },
+    {
+      "id": "S03",
+      "name": "source-index schema",
+      "result": "PASS",
+      "message": "schema valid",
+      "path": "source/source-index.json"
+    },
+    {
+      "id": "S04",
+      "name": "facts schema",
+      "result": "PASS",
+      "message": "schema valid",
+      "path": "knowledge/facts.json"
+    },
+    {
+      "id": "S05",
+      "name": "claims schema",
+      "result": "PASS",
+      "message": "schema valid",
+      "path": "knowledge/claims.json"
+    },
+    {
+      "id": "S06",
+      "name": "decisions schema",
+      "result": "PASS",
+      "message": "schema valid",
+      "path": "knowledge/decisions.json"
+    },
+    {
+      "id": "S07",
+      "name": "constraints schema",
+      "result": "PASS",
+      "message": "schema valid",
+      "path": "knowledge/constraints.json"
+    },
+    {
+      "id": "S08",
+      "name": "glossary schema",
+      "result": "PASS",
+      "message": "schema valid",
+      "path": "knowledge/glossary.json"
+    },
+    {
+      "id": "S09",
+      "name": "evidence schema",
+      "result": "PASS",
+      "message": "schema valid",
+      "path": "evidence/evidence.json"
+    },
+    {
+      "id": "S10",
+      "name": "references schema",
+      "result": "PASS",
+      "message": "schema valid",
+      "path": "evidence/references.json"
+    },
+    {
+      "id": "S11",
+      "name": "unknowns schema",
+      "result": "PASS",
+      "message": "schema valid",
+      "path": "uncertainty/unknowns.json"
+    },
+    {
+      "id": "S12",
+      "name": "conflicts schema",
+      "result": "PASS",
+      "message": "schema valid",
+      "path": "uncertainty/conflicts.json"
+    },
+    {
+      "id": "S13",
+      "name": "questions schema",
+      "result": "PASS",
+      "message": "schema valid",
+      "path": "handoff/questions.json"
+    },
+    {
+      "id": "S14",
+      "name": "recommended-actions schema",
+      "result": "PASS",
+      "message": "schema valid",
+      "path": "handoff/recommended-actions.json"
+    },
+    {
+      "id": "S15",
+      "name": "Enum/required/type/additionalProperties/if-then",
+      "result": "PASS",
+      "message": "covered by S02–S14; no additional keyword violations"
+    },
+    {
+      "id": "I01",
+      "name": "Duplicate IDs",
+      "result": "PASS",
+      "message": "all applicable id collections checked; no duplicates"
+    },
+    {
+      "id": "I02",
+      "name": "evidence.supports → knowledge exists",
+      "result": "PASS",
+      "message": "all evidence.supports resolve to knowledge objects"
+    },
+    {
+      "id": "I03",
+      "name": "knowledge.evidence_ids → evidence exists",
+      "result": "PASS",
+      "message": "all knowledge.evidence_ids resolve"
+    },
+    {
+      "id": "I04",
+      "name": "Bidirectional evidence ↔ knowledge",
+      "result": "PASS",
+      "message": "supports and evidence_ids are symmetric"
+    },
+    {
+      "id": "I05",
+      "name": "conflict.parties exist",
+      "result": "PASS",
+      "message": "all conflict parties resolve"
+    },
+    {
+      "id": "I06",
+      "name": "conflict.evidence_ids exist",
+      "result": "PASS",
+      "message": "all conflict.evidence_ids resolve"
+    },
+    {
+      "id": "I07",
+      "name": "Cross related_* / conflict_ids exist",
+      "result": "PASS",
+      "message": "related_* and conflict_ids resolve (all_ids_complete=true)"
+    },
+    {
+      "id": "I08",
+      "name": "confirmation.source_ref for user_authored_source",
+      "result": "PASS",
+      "message": "user_authored_source source_ref values resolve (or none applicable)"
+    },
+    {
+      "id": "I09",
+      "name": "locator.source_id in source-index",
+      "result": "PASS",
+      "message": "all locator.source_id values resolve"
+    },
+    {
+      "id": "I10",
+      "name": "locator.path exists",
+      "result": "PASS",
+      "message": "all 22 safe locator.path value(s) exist as package files"
+    },
+    {
+      "id": "I11",
+      "name": "Path safety",
+      "result": "PASS",
+      "message": "all evidence locator.path values are package-safe"
+    },
+    {
+      "id": "I12",
+      "name": "line_range bounds",
+      "result": "PASS",
+      "message": "all 22 line_range bound(s) valid"
+    },
+    {
+      "id": "I13",
+      "name": "Other locator types",
+      "result": "PASS",
+      "message": "no section/json_pointer/anchor/page_range locators (empty applicable set)"
+    },
+    {
+      "id": "I14",
+      "name": "Excerpt text match",
+      "result": "PASS",
+      "message": "all 22 line_range excerpt(s) match window"
+    },
+    {
+      "id": "I15",
+      "name": "verified ⇒ non-empty evidence_ids",
+      "result": "PASS",
+      "message": "all verified objects have non-empty evidence_ids"
+    },
+    {
+      "id": "I16",
+      "name": "readable:false sources",
+      "result": "PASS",
+      "message": "no readable:false quoting or verified dependency"
+    },
+    {
+      "id": "I17",
+      "name": "content_transformed shape (schema-backed)",
+      "result": "PASS",
+      "message": "content_transformed shape covered by S03 PASS",
+      "path": "source/source-index.json"
+    },
+    {
+      "id": "I18",
+      "name": "manifest.validation honesty",
+      "result": "PASS",
+      "message": "validation.present is not true; consistent with absent or optional report",
+      "path": "manifest.yaml"
+    },
+    {
+      "id": "I19",
+      "name": "Orphan evidence (empty supports)",
+      "result": "PASS",
+      "message": "no orphan evidence (all have non-empty supports)"
+    },
+    {
+      "id": "I20",
+      "name": "Checksum (optional)",
+      "result": "PASS",
+      "message": "all 4 applicable checksum(s) match (0 excluded)",
+      "path": "source/source-index.json"
+    },
+    {
+      "id": "H01",
+      "name": "Semantic boundary H01",
+      "result": "NOT_CHECKED",
+      "message": "Phase 3B-1: L4 Semantic Review not implemented (never auto semantic PASS)"
+    },
+    {
+      "id": "H02",
+      "name": "Semantic boundary H02",
+      "result": "NOT_CHECKED",
+      "message": "Phase 3B-1: L4 Semantic Review not implemented (never auto semantic PASS)"
+    },
+    {
+      "id": "H03",
+      "name": "Semantic boundary H03",
+      "result": "NOT_CHECKED",
+      "message": "Phase 3B-1: L4 Semantic Review not implemented (never auto semantic PASS)"
+    },
+    {
+      "id": "H04",
+      "name": "Semantic boundary H04",
+      "result": "NOT_CHECKED",
+      "message": "Phase 3B-1: L4 Semantic Review not implemented (never auto semantic PASS)"
+    },
+    {
+      "id": "H05",
+      "name": "Semantic boundary H05",
+      "result": "NOT_CHECKED",
+      "message": "Phase 3B-1: L4 Semantic Review not implemented (never auto semantic PASS)"
+    },
+    {
+      "id": "H06",
+      "name": "Semantic boundary H06",
+      "result": "NOT_CHECKED",
+      "message": "Phase 3B-1: L4 Semantic Review not implemented (never auto semantic PASS)"
+    },
+    {
+      "id": "P07",
+      "name": "Read-only commitment",
+      "result": "PASS",
+      "message": "package file digests unchanged after validation"
+    }
+  ],
+  "summary": {
+    "pass": 42,
+    "fail": 0,
+    "warning": 0,
+    "not_checked": 6,
+    "needs_human_review": 0
+  },
+  "failures": [],
+  "warnings": [],
+  "not_checked": [
+    {
+      "id": "H01",
+      "name": "Semantic boundary H01",
+      "result": "NOT_CHECKED",
+      "message": "Phase 3B-1: L4 Semantic Review not implemented (never auto semantic PASS)"
+    },
+    {
+      "id": "H02",
+      "name": "Semantic boundary H02",
+      "result": "NOT_CHECKED",
+      "message": "Phase 3B-1: L4 Semantic Review not implemented (never auto semantic PASS)"
+    },
+    {
+      "id": "H03",
+      "name": "Semantic boundary H03",
+      "result": "NOT_CHECKED",
+      "message": "Phase 3B-1: L4 Semantic Review not implemented (never auto semantic PASS)"
+    },
+    {
+      "id": "H04",
+      "name": "Semantic boundary H04",
+      "result": "NOT_CHECKED",
+      "message": "Phase 3B-1: L4 Semantic Review not implemented (never auto semantic PASS)"
+    },
+    {
+      "id": "H05",
+      "name": "Semantic boundary H05",
+      "result": "NOT_CHECKED",
+      "message": "Phase 3B-1: L4 Semantic Review not implemented (never auto semantic PASS)"
+    },
+    {
+      "id": "H06",
+      "name": "Semantic boundary H06",
+      "result": "NOT_CHECKED",
+      "message": "Phase 3B-1: L4 Semantic Review not implemented (never auto semantic PASS)"
+    }
+  ],
+  "needs_human_review": [],
+  "final_status": "semantically_unreviewed",
+  "limitations": [
+    "Phase 3B-C2: L1 + L2 + L3-A + I11/I10 + I16 + I12 + I13 + I14 + I20 (package_copy SHA-256).",
+    "Still NOT_CHECKED: L4 (never automated semantic PASS).",
+    "I14 PASS is literal window match only — not semantic adequacy (L4).",
+    "I20 PASS is raw-byte package_copy digest match only — not authenticity or semantics.",
+    "Report is session-level; package was not modified.",
+    "Schemas loaded from local spec/cbhf/v0.1.0 only (no network)."
+  ],
+  "wrote_to_package": false
+}

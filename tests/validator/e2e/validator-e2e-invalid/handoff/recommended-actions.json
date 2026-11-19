@@ -1,0 +1,34 @@
+{
+  "actions": [
+    {
+      "action_id": "act_001",
+      "action": {
+        "text": "Ask the user which production listen port is authoritative and record resolution for cfl_001.",
+        "lang": "en",
+        "i18n": {
+          "zh": "请用户确认生产监听端口权威值，并为 cfl_001 记录裁决。",
+          "en": "Ask the user which production listen port is authoritative and record resolution for cfl_001."
+        }
+      },
+      "priority": "high",
+      "status": "pending",
+      "related_ids": ["q_001", "cfl_001", "fact_007", "fact_008"],
+      "notes": "Not performed by exporter."
+    },
+    {
+      "action_id": "act_002",
+      "action": {
+        "text": "Collect production replica count, on-call owner, and ff_http3_preview ship state.",
+        "lang": "en",
+        "i18n": {
+          "zh": "收集生产副本数、on-call 负责人以及 ff_http3_preview 上线状态。",
+          "en": "Collect production replica count, on-call owner, and ff_http3_preview ship state."
+        }
+      },
+      "priority": "high",
+      "status": "pending",
+      "related_ids": ["q_002", "unk_001", "unk_002", "unk_003"],
+      "notes": "Not performed by exporter."
+    }
+  ]
+}

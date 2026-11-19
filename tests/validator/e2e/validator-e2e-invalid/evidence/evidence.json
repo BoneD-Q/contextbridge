@@ -1,0 +1,452 @@
+{
+  "evidence": [
+    {
+      "evidence_id": "ev_001",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_001",
+        "path": "source/original/does-not-exist-e2e.md",
+        "locator_type": "line_range",
+        "start": 13,
+        "end": 13,
+        "excerpt": "1. The control-plane API listens on path prefix `/v1/admin`."
+      },
+      "supports": [
+        {
+          "type": "fact",
+          "id": "fact_001"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    },
+    {
+      "evidence_id": "ev_002",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_001",
+        "path": "source/original/architecture-overview.md",
+        "locator_type": "line_range",
+        "start": 14,
+        "end": 14,
+        "excerpt": "2. Data-plane health checks use `GET /healthz` and expect HTTP 200."
+      },
+      "supports": [
+        {
+          "type": "fact",
+          "id": "fact_002"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    },
+    {
+      "evidence_id": "ev_003",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_001",
+        "path": "source/original/architecture-overview.md",
+        "locator_type": "line_range",
+        "start": 15,
+        "end": 15,
+        "excerpt": "3. Default idle timeout for upstream connections is **60 seconds**."
+      },
+      "supports": [
+        {
+          "type": "fact",
+          "id": "fact_003"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    },
+    {
+      "evidence_id": "ev_004",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_001",
+        "path": "source/original/architecture-overview.md",
+        "locator_type": "line_range",
+        "start": 16,
+        "end": 16,
+        "excerpt": "4. Supported TLS versions are **TLS 1.2 and TLS 1.3** only."
+      },
+      "supports": [
+        {
+          "type": "fact",
+          "id": "fact_004"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    },
+    {
+      "evidence_id": "ev_005",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_001",
+        "path": "source/original/architecture-overview.md",
+        "locator_type": "line_range",
+        "start": 17,
+        "end": 17,
+        "excerpt": "5. Configuration is stored as versioned YAML objects in the control store; object id format is `cfg_<uuid>`."
+      },
+      "supports": [
+        {
+          "type": "fact",
+          "id": "fact_005"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    },
+    {
+      "evidence_id": "ev_006",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_002",
+        "path": "source/original/ops-runbook-excerpt.md",
+        "locator_type": "line_range",
+        "start": 17,
+        "end": 17,
+        "excerpt": "> Staging data-plane listen port is **8000**."
+      },
+      "supports": [
+        {
+          "type": "fact",
+          "id": "fact_006"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    },
+    {
+      "evidence_id": "ev_007",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_002",
+        "path": "source/original/ops-runbook-excerpt.md",
+        "locator_type": "line_range",
+        "start": 9,
+        "end": 9,
+        "excerpt": "> Production data-plane listen port is **8080**."
+      },
+      "supports": [
+        {
+          "type": "fact",
+          "id": "fact_007"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    },
+    {
+      "evidence_id": "ev_008",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_002",
+        "path": "source/original/ops-runbook-excerpt.md",
+        "locator_type": "line_range",
+        "start": 25,
+        "end": 25,
+        "excerpt": "> Production data-plane listen port is **8000**."
+      },
+      "supports": [
+        {
+          "type": "fact",
+          "id": "fact_008"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    },
+    {
+      "evidence_id": "ev_009",
+      "kind": "table_cell",
+      "locator": {
+        "source_id": "src_001",
+        "path": "source/original/architecture-overview.md",
+        "locator_type": "line_range",
+        "start": 37,
+        "end": 37,
+        "excerpt": "| CPU avg | 38% |"
+      },
+      "supports": [
+        {
+          "type": "fact",
+          "id": "fact_009"
+        },
+        {
+          "type": "claim",
+          "id": "claim_001"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": "Premise for inferred claim_001."
+    },
+    {
+      "evidence_id": "ev_010",
+      "kind": "table_cell",
+      "locator": {
+        "source_id": "src_001",
+        "path": "source/original/architecture-overview.md",
+        "locator_type": "line_range",
+        "start": 38,
+        "end": 38,
+        "excerpt": "| Conn pool wait P99 | 120 ms |"
+      },
+      "supports": [
+        {
+          "type": "fact",
+          "id": "fact_010"
+        },
+        {
+          "type": "claim",
+          "id": "claim_001"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": "Premise for inferred claim_001."
+    },
+    {
+      "evidence_id": "ev_011",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_001",
+        "path": "source/original/architecture-overview.md",
+        "locator_type": "line_range",
+        "start": 29,
+        "end": 31,
+        "excerpt": "> The current bottleneck is the **upstream connection pool**, not CPU.\n\nThis conclusion is an **interpretation** of the soak numbers; it is not a verbatim measurement label in the table."
+      },
+      "supports": [
+        {
+          "type": "claim",
+          "id": "claim_001"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": "Shows the source itself marks the conclusion as interpretation."
+    },
+    {
+      "evidence_id": "ev_012",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_003",
+        "path": "source/original/decision-record.md",
+        "locator_type": "line_range",
+        "start": 5,
+        "end": 5,
+        "excerpt": "**Decision:** v1 ships API + CLI only; no standalone public Web UI."
+      },
+      "supports": [
+        {
+          "type": "decision",
+          "id": "dec_001"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    },
+    {
+      "evidence_id": "ev_013",
+      "kind": "user_message",
+      "locator": {
+        "source_id": "src_003",
+        "path": "source/original/decision-record.md",
+        "locator_type": "line_range",
+        "start": 9,
+        "end": 9,
+        "excerpt": "**Status in source wording:** \"We confirmed we will not ship a standalone Web UI in v1.\""
+      },
+      "supports": [
+        {
+          "type": "decision",
+          "id": "dec_001"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": "User-authored confirmation wording packaged as source."
+    },
+    {
+      "evidence_id": "ev_014",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_003",
+        "path": "source/original/decision-record.md",
+        "locator_type": "line_range",
+        "start": 13,
+        "end": 13,
+        "excerpt": "**Decision:** Use CBHF **folder** package form for AI-to-AI handoff of this proposal set."
+      },
+      "supports": [
+        {
+          "type": "decision",
+          "id": "dec_002"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    },
+    {
+      "evidence_id": "ev_015",
+      "kind": "user_message",
+      "locator": {
+        "source_id": "src_003",
+        "path": "source/original/decision-record.md",
+        "locator_type": "line_range",
+        "start": 17,
+        "end": 17,
+        "excerpt": "> 就按文件夹交接，不要做成单个 JSON 包。"
+      },
+      "supports": [
+        {
+          "type": "decision",
+          "id": "dec_002"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": "Confirmation quote for folder handoff."
+    },
+    {
+      "evidence_id": "ev_016",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_003",
+        "path": "source/original/decision-record.md",
+        "locator_type": "line_range",
+        "start": 21,
+        "end": 21,
+        "excerpt": "**Decision:** Allow TLS 1.2 and TLS 1.3 only at the edge terminator."
+      },
+      "supports": [
+        {
+          "type": "decision",
+          "id": "dec_003"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    },
+    {
+      "evidence_id": "ev_017",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_001",
+        "path": "source/original/architecture-overview.md",
+        "locator_type": "line_range",
+        "start": 21,
+        "end": 21,
+        "excerpt": "1. Must not introduce a standalone public Web UI in v1 (API and CLI only)."
+      },
+      "supports": [
+        {
+          "type": "constraint",
+          "id": "con_001"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    },
+    {
+      "evidence_id": "ev_018",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_001",
+        "path": "source/original/architecture-overview.md",
+        "locator_type": "line_range",
+        "start": 22,
+        "end": 22,
+        "excerpt": "2. Must not store raw customer request bodies in edge logs by default."
+      },
+      "supports": [
+        {
+          "type": "constraint",
+          "id": "con_002"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    },
+    {
+      "evidence_id": "ev_019",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_001",
+        "path": "source/original/architecture-overview.md",
+        "locator_type": "line_range",
+        "start": 23,
+        "end": 23,
+        "excerpt": "3. Production changes require a change ticket id in the deploy annotation."
+      },
+      "supports": [
+        {
+          "type": "constraint",
+          "id": "con_003"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    },
+    {
+      "evidence_id": "ev_020",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_002",
+        "path": "source/original/ops-runbook-excerpt.md",
+        "locator_type": "line_range",
+        "start": 31,
+        "end": 33,
+        "excerpt": "Production deploys must include annotation:\n\n`change_ticket=<TICKET-ID>`"
+      },
+      "supports": [
+        {
+          "type": "constraint",
+          "id": "con_003"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    },
+    {
+      "evidence_id": "ev_021",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_001",
+        "path": "source/original/architecture-overview.md",
+        "locator_type": "line_range",
+        "start": 43,
+        "end": 43,
+        "excerpt": "- **PoP**: Point of Presence — an edge location running gateway instances."
+      },
+      "supports": [
+        {
+          "type": "term",
+          "id": "term_001"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    },
+    {
+      "evidence_id": "ev_022",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_001",
+        "path": "source/original/architecture-overview.md",
+        "locator_type": "line_range",
+        "start": 44,
+        "end": 44,
+        "excerpt": "- **Origin pool**: Set of regional backends selected by routing policy."
+      },
+      "supports": [
+        {
+          "type": "term",
+          "id": "term_002"
+        }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    }
+  ]
+}

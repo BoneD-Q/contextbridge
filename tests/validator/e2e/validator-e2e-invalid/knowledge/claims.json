@@ -1,0 +1,28 @@
+{
+  "claims": [
+    {
+      "claim_id": "claim_001",
+      "statement": {
+        "text": "The current bottleneck is the upstream connection pool, not CPU.",
+        "lang": "en",
+        "i18n": {
+          "zh": "当前瓶颈在上游连接池，而非 CPU。",
+          "en": "The current bottleneck is the upstream connection pool, not CPU."
+        }
+      },
+      "context": {
+        "environment": "unspecified",
+        "version": null,
+        "time_range": null,
+        "scope": "soak-excerpt"
+      },
+      "status": "inferred",
+      "kind": "interpretation",
+      "evidence_ids": ["ev_009", "ev_010", "ev_011"],
+      "related_fact_ids": ["fact_009", "fact_010"],
+      "confirmation": null,
+      "conflict_ids": [],
+      "notes": "Inference: source labels this as an interpretation of soak numbers (high conn-pool wait with CPU under 40%), not a verbatim measurement label."
+    }
+  ]
+}

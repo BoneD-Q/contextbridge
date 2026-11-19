@@ -1,0 +1,70 @@
+{
+  "unknowns": [
+    {
+      "unknown_id": "unk_001",
+      "question": {
+        "text": "What is the actual production replica count per PoP?",
+        "lang": "en",
+        "i18n": {
+          "zh": "每个 PoP 的生产副本数实际是多少？",
+          "en": "What is the actual production replica count per PoP?"
+        }
+      },
+      "why_it_matters": {
+        "text": "Affects capacity and failover wording.",
+        "lang": "en",
+        "i18n": {
+          "zh": "影响容量与故障切换描述。",
+          "en": "Affects capacity and failover wording."
+        }
+      },
+      "related_ids": [],
+      "suggested_owner": "user",
+      "notes": "Listed in open-questions.md; not answered in sources."
+    },
+    {
+      "unknown_id": "unk_002",
+      "question": {
+        "text": "Who is the on-call owner for control-plane API pages?",
+        "lang": "en",
+        "i18n": {
+          "zh": "控制面 API 告警的 on-call 负责人是谁？",
+          "en": "Who is the on-call owner for control-plane API pages?"
+        }
+      },
+      "why_it_matters": {
+        "text": "Needed for operational handoff ownership.",
+        "lang": "en",
+        "i18n": {
+          "zh": "运维交接需要明确责任人。",
+          "en": "Needed for operational handoff ownership."
+        }
+      },
+      "related_ids": [],
+      "suggested_owner": "user",
+      "notes": ""
+    },
+    {
+      "unknown_id": "unk_003",
+      "question": {
+        "text": "Has feature flag ff_http3_preview shipped to any prod PoP?",
+        "lang": "en",
+        "i18n": {
+          "zh": "功能开关 ff_http3_preview 是否已在任何生产 PoP 上线？",
+          "en": "Has feature flag ff_http3_preview shipped to any prod PoP?"
+        }
+      },
+      "why_it_matters": {
+        "text": "Affects whether HTTP/3 preview behavior should be assumed in prod.",
+        "lang": "en",
+        "i18n": {
+          "zh": "影响是否应假设生产环境存在 HTTP/3 预览行为。",
+          "en": "Affects whether HTTP/3 preview behavior should be assumed in prod."
+        }
+      },
+      "related_ids": [],
+      "suggested_owner": "user",
+      "notes": ""
+    }
+  ]
+}

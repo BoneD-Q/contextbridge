@@ -1,0 +1,73 @@
+{
+  "constraints": [
+    {
+      "constraint_id": "con_001",
+      "statement": {
+        "text": "Must not introduce a standalone public Web UI in v1 (API and CLI only).",
+        "lang": "en",
+        "i18n": {
+          "zh": "v1 不得引入独立公共 Web UI（仅 API 与 CLI）。",
+          "en": "Must not introduce a standalone public Web UI in v1 (API and CLI only)."
+        }
+      },
+      "context": {
+        "environment": null,
+        "version": "v1",
+        "time_range": null,
+        "scope": "northwind-edge-gateway"
+      },
+      "status": "verified",
+      "priority": "must_not",
+      "evidence_ids": ["ev_017"],
+      "confirmation": null,
+      "conflict_ids": [],
+      "notes": "Aligned with DEC-01."
+    },
+    {
+      "constraint_id": "con_002",
+      "statement": {
+        "text": "Must not store raw customer request bodies in edge logs by default.",
+        "lang": "en",
+        "i18n": {
+          "zh": "默认不得在边缘日志中存储原始客户请求体。",
+          "en": "Must not store raw customer request bodies in edge logs by default."
+        }
+      },
+      "context": {
+        "environment": null,
+        "version": null,
+        "time_range": null,
+        "scope": "edge-logging"
+      },
+      "status": "verified",
+      "priority": "must_not",
+      "evidence_ids": ["ev_018"],
+      "confirmation": null,
+      "conflict_ids": [],
+      "notes": ""
+    },
+    {
+      "constraint_id": "con_003",
+      "statement": {
+        "text": "Production changes require a change ticket id in the deploy annotation.",
+        "lang": "en",
+        "i18n": {
+          "zh": "生产变更必须在部署注解中包含变更单号。",
+          "en": "Production changes require a change ticket id in the deploy annotation."
+        }
+      },
+      "context": {
+        "environment": "prod",
+        "version": null,
+        "time_range": null,
+        "scope": "deploy"
+      },
+      "status": "verified",
+      "priority": "must",
+      "evidence_ids": ["ev_019", "ev_020"],
+      "confirmation": null,
+      "conflict_ids": [],
+      "notes": ""
+    }
+  ]
+}

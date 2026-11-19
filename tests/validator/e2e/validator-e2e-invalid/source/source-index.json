@@ -1,0 +1,80 @@
+{
+  "sources": [
+    {
+      "source_id": "src_001",
+      "original_name": "architecture-overview.md",
+      "user_path": "examples/technical-proposal/input/architecture-overview.md",
+      "package_path": "source/original/architecture-overview.md",
+      "media_type": "text/markdown",
+      "language": "en",
+      "role": "primary",
+      "received_from": "workspace",
+      "content_transformed": true,
+      "transform_reason": "redaction",
+      "readable": true,
+      "notes": "Package copy; user original left untouched. Secrets masked.",
+      "checksum": {
+        "alg": "sha256",
+        "value": "3b0eb6155fa670dca2fc2f35bbe1e0e57a01c17e287058079bff8bc870107b29",
+        "of": "package_copy"
+      }
+    },
+    {
+      "source_id": "src_002",
+      "original_name": "ops-runbook-excerpt.md",
+      "user_path": "examples/technical-proposal/input/ops-runbook-excerpt.md",
+      "package_path": "source/original/ops-runbook-excerpt.md",
+      "media_type": "text/markdown",
+      "language": "en",
+      "role": "supporting",
+      "received_from": "workspace",
+      "content_transformed": true,
+      "transform_reason": "redaction",
+      "readable": true,
+      "notes": "Package copy; user original left untouched. Secrets masked.",
+      "checksum": {
+        "alg": "sha256",
+        "value": "3d9d8bf20f0ebb0d2d289e981c1ca350050d9649471ef14ba4a07182013ba66d",
+        "of": "package_copy"
+      }
+    },
+    {
+      "source_id": "src_003",
+      "original_name": "decision-record.md",
+      "user_path": "examples/technical-proposal/input/decision-record.md",
+      "package_path": "source/original/decision-record.md",
+      "media_type": "text/markdown",
+      "language": "mixed",
+      "role": "supporting",
+      "received_from": "workspace",
+      "content_transformed": false,
+      "transform_reason": "none",
+      "readable": true,
+      "notes": "Package copy; user original left untouched.",
+      "checksum": {
+        "alg": "sha256",
+        "value": "d3fea477738f9e1f278d0bcc1b47d0e5ea9f542844c97bf3e9f435d1da09bb31",
+        "of": "package_copy"
+      }
+    },
+    {
+      "source_id": "src_004",
+      "original_name": "open-questions.md",
+      "user_path": "examples/technical-proposal/input/open-questions.md",
+      "package_path": "source/original/open-questions.md",
+      "media_type": "text/markdown",
+      "language": "en",
+      "role": "supporting",
+      "received_from": "workspace",
+      "content_transformed": false,
+      "transform_reason": "none",
+      "readable": true,
+      "notes": "Package copy; user original left untouched.",
+      "checksum": {
+        "alg": "sha256",
+        "value": "351c41fcf77185b12dbc1787d4a5403af75acbb5421575610f6b2320246fed2b",
+        "of": "package_copy"
+      }
+    }
+  ]
+}
