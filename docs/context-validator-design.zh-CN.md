@@ -185,7 +185,7 @@ Smoke **未**覆盖（Validator 需补齐或明确标为未检查）：
 | I17 | content_transformed ∈ {true,false,null} | Schema | 已由 Schema 保证 | — |
 | I18 | manifest.validation 诚实性 | — | 若包内无报告却 `present:true` → `fail`；Exporter 产物期望 false | |
 | I19 | 孤儿 evidence（supports 为空） | A | 允许但 → `warn`（协议允许未指派，prefer 链接） | |
-| I20 | checksum（若存在） | — | 可选：重算 package_copy 哈希；不匹配 → `warn`/`fail`（策略见 Q3） | |
+| I20 | checksum（若存在） | — | **0.1.0 规则已冻结且已实现**（见 `validation-rules.md` §I20 / `_integrity.check_i20`）：仅 `alg=sha256` + `of=package_copy`；对 `package_path` **raw bytes** 重算；不匹配 → **`fail`（不用 warn）**；无适用 checksum.value → 整体 `not_checked` | |
 
 ### 5.4 L4 Semantic Review Boundary
 
@@ -331,7 +331,7 @@ Python 脚本约束：
 | --- | --- | --- |
 | Q1 | 未知额外文件是 `fail` 还是 `warn`？ | 0.1.0 默认 `warn` |
 | Q2 | section/page_range 找不到时？ | `warn` 或 `not_checked`，勿假装已验证 |
-| Q3 | checksum 不匹配严重级别？ | 有 checksum 则 `fail`；无则 `not_checked` |
+| Q3 | checksum 不匹配严重级别？ | **0.1.0 已关闭：** 有适用 `checksum.value` 且可验证时，不匹配 → **`fail`（不用 `warn`）**；无适用 value → `not_checked`。详见 `validation-rules.md` §I20。 |
 | Q4 | 是否默认写入包内 `validation/`？ | 默认否；用户显式要求才写 |
 | Q5 | 写入报告时是否更新 `manifest.validation`？ | 若写包内报告，则应更新 present/report_path；属 Validator 清单字段 |
 | Q6 | validation-report 的 CBHF Schema 何时冻结？ | 等 Validator MVP 稳定后再进 `spec/`（协议 Q#8） |
@@ -420,7 +420,7 @@ Python 脚本约束：
 
 ### 协议歧义（Open Questions）
 
-见 §11（额外文件策略、section/page 定位深度、checksum 级别、是否写包内报告、report Schema 冻结时机、Importer 门禁等）。**均不在本阶段改协议。**
+见 §11（额外文件策略、section/page 定位深度、是否写包内报告、report Schema 冻结时机、Importer 门禁等）。**Q3 checksum 不匹配级别已在 0.1.0 关闭（FAIL，见 `validation-rules.md` §I20）。** 其余开放项仍不在未授权阶段改协议。
 
 ### 最小可行实施顺序
 

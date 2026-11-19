@@ -7,7 +7,7 @@ Authority: `docs/context-validator-design.zh-CN.md` + `spec/cbhf/v0.1.0/*.schema
 
 `PASS` | `FAIL` | `WARNING` | `NOT_CHECKED` | `NEEDS_HUMAN_REVIEW`
 
-## Capability note (Phase 3B-C1)
+## Capability note (Phase 3B-C2)
 
 All checks below are **defined**. Automation status:
 
@@ -21,7 +21,7 @@ All checks below are **defined**. Automation status:
 | L3-B3 (I12) | Implemented in `scripts/_integrity.py` (line_range bounds) |
 | L3-B4 (I13) | Implemented in `scripts/_integrity.py` (Option B — no finders) |
 | L3-C I14 | **Rules frozen** and **automated** in `scripts/_integrity.py` (line_range excerpt match) |
-| L3-C I20 | **Not** implemented — report `NOT_CHECKED` |
+| L3-C I20 | **Rules frozen** and **automated** in `scripts/_integrity.py` (optional package_copy SHA-256) |
 | L4 (H01–H06) | **Not** automated — never semantic PASS |
 
 Anything not actually executed → `NOT_CHECKED`.  
@@ -342,10 +342,22 @@ Frozen semantics (**Option C**). Does not judge excerpt↔window match (I14) or 
 
 ### I20 — Checksum (optional)
 
-| Logic | If checksum.value present, recompute package copy hash when possible |
-| PASS | Match |
-| FAIL/WARNING | Mismatch (severity Open Question Q3; recommend FAIL when value present) |
-| NOT_CHECKED | No checksum or cannot hash |
+Frozen semantics (**L3-C / I20**, CBHF 0.1.0). Optional per-source integrity check of the **package copy**. Does not invent Schema fields. Does not prove source authenticity, chain of custody, or semantic adequacy (L4). **Rules frozen and automated** in `scripts/_integrity.py`.
+
+| Field | Content |
+| --- | --- |
+| Scope | Loaded `source/source-index.json` entries. Object file = `sources[].package_path` resolved under the package root. |
+| Applicable vs excluded | **No applicable checksum value** when: missing `checksum` object; `checksum` is `null`; missing `value`; `value` is `null`; or `value` is `""`. Each such source entry **MUST** be marked item-level `NOT_CHECKED` and **MUST** be **excluded from package-level aggregation** (does not participate in rollup). **Do not** treat "zero applicable entries" like I12/I14 empty-applicable **PASS** — if every source lacks an applicable checksum value, package-level I20 **MUST** be overall **NOT_CHECKED**. |
+| Applicable (participate in rollup) | `value` is a non-empty string. Then require: `alg` exactly `"sha256"` (case-sensitive; no default); `of` exactly `"package_copy"` (case-sensitive; no default; missing/other → item `NOT_CHECKED`); `value` exactly 64 hexadecimal characters (A–F/a–f accepted; normalize declared value to **lowercase** before compare; malformed non-empty → item `NOT_CHECKED`, **not** FAIL). |
+| Hash input | Exact **raw bytes** of the resolved package-copy file (`package_path`). Do not re-apply text normalization, redaction, or encoding transforms at verify time. Digest = SHA-256 hex (lowercase compare). |
+| Path safety | Resolve `package_path` relative to package root. Final target must remain inside the package root. Allow a symbolic link **only** if its final resolved target is a **regular file** inside the package root. Escaping or unresolved symlinks are unsafe. **Unsafe / unresolved → item `NOT_CHECKED` and zero file-content reads.** Missing path, non-file, or read failure → item `NOT_CHECKED` (participates). Reuse the same containment classification approach as I11 path safety for relative paths; I20 does **not** expand I11's scope (I11 remains evidence `locator.path` only). |
+| PASS (item) | Applicable; path safe; file readable; `alg`/`of`/`value` shape OK; recomputed digest equals normalized declared value. |
+| FAIL (item) | Applicable; trusted hash obtained; digests **mismatch**. **CBHF v0.1.0: checksum mismatch is FAIL.** **Never** WARNING for mismatch. |
+| NOT_CHECKED (item, participates) | Applicable but cannot verify: bad/missing `alg` or `of`; malformed non-empty `value`; unsafe/unresolved path; missing/non-file; read failure; source-index not loaded (check-level). |
+| Rollup | Among **applicable** items only: **FAIL > NOT_CHECKED > PASS**. Excluded (no value) entries do not drive PASS. Zero applicable entries → overall **NOT_CHECKED**. |
+| WARNING | **Not** used as an I20 check result for mismatch in 0.1.0. |
+| Multi-source same path | Each source entry is compared independently. Caching reads/digests by path is allowed. |
+| Notes | Closes Open Question Q3 and L3-RQ6 for 0.1.0 (`of` must be exact `package_copy`). Read-only; no package writes; no network. Does not establish authenticity of upstream user files. |
 
 ---
 
@@ -359,6 +371,6 @@ See [semantic-review-boundary.md](semantic-review-boundary.md). L4 checks are **
 
 - Q1 Extra files: warn vs fail  
 - Q2 section/page findability depth — **0.1.0 I13 Option B frozen:** no finder; applicable items → `NOT_CHECKED` (not WARNING); empty applicable → PASS. Deeper finders / FAIL-on-missing remain future Q2 work, not claimed verified.  
-- Q3 checksum mismatch severity  
+- Q3 checksum mismatch severity — **CBHF v0.1.0 closed:** checksum mismatch is **FAIL** (not WARNING). See § I20.  
 - Q4/Q5 package write of report (deferred; Phase 1 session-only)  
 - handoff `priority` string vs future enum (cbhf-format #12)  

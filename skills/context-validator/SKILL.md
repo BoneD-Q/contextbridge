@@ -18,7 +18,7 @@ metadata:
 
 Read-only validation of a **CBHF 0.1.0** folder package.
 
-This Skill is **instructions first**. Deterministic Python helpers under `scripts/` support L1/L2 and **L3-A** (cross-file references). L3-B/C and L4 are not automated yet. Helpers are **not** a standalone product CLI.
+This Skill is **instructions first**. Deterministic Python helpers under `scripts/` support L1/L2, **L3-A**, **L3-B1–B4**, **L3-C1 I14** (line_range excerpt match), and **L3-C2 I20** (optional package_copy SHA-256). **L4** is not automated. Helpers are **not** a standalone product CLI.
 
 Design authority: [`docs/context-validator-design.zh-CN.md`](../../docs/context-validator-design.zh-CN.md).  
 Protocol / schemas: `skills/context-exporter/references/cbhf-format.md` and `spec/cbhf/v0.1.0/*.schema.json`.
@@ -48,7 +48,7 @@ Do **not** rename or treat `tests/schema/v0.1.0/package_smoke_test.py` as this S
 6. **Smoke ≠ Validator.** `package_smoke_test.py` remains a developer smoke test; do not present smoke output as a formal Validator pass.  
 7. **Privacy.** Prefer package basename / relative labels in reports; avoid dumping home/user absolute paths.
 
-## Capability honesty (Phase 3B-B2)
+## Capability honesty (Phase 3B-C2)
 
 | Layer | Defined in references? | Automated in this Phase? |
 | --- | --- | --- |
@@ -57,10 +57,14 @@ Do **not** rename or treat `tests/schema/v0.1.0/package_smoke_test.py` as this S
 | L3-A References | Yes | **Yes** — I01–I09, I15, I17–I19 via `_integrity.py` |
 | L3-B1 Path safety / exists | Yes | **Yes** — I11, I10 |
 | L3-B2 readable:false | Yes | **Yes** — I16 (Option C) |
-| L3-B/C remaining | Yes | **No** — I12, I13, I14, I20 → `NOT_CHECKED` |
+| L3-B3 line_range bounds | Yes | **Yes** — I12 |
+| L3-B4 other locators | Yes | **Yes** — I13 (Option B, no finders) |
+| L3-C I14 excerpt match | Yes — frozen in `validation-rules.md` | **Yes** — `_integrity.check_i14` (literal window match only) |
+| L3-C I20 checksum | Yes — **rules frozen** in `validation-rules.md` | **Yes** — `_integrity.check_i20` (package_copy SHA-256; optional) |
 | L4 Semantic boundary | Yes | **Never** automated PASS — H\* → `NOT_CHECKED` |
 
-Writing a check ID in references does **not** mean it is automated unless this table says so.
+Writing a check ID in references does **not** mean it is automated unless this table says so.  
+**Do not** present L4 semantic judgment as an I14 result. **I14 PASS ≠ semantic adequacy.**
 
 ## Inputs
 
@@ -87,7 +91,7 @@ Execute in order. Do not skip layers by inventing PASS.
 
 - Resolve package root.  
 - Open references listed above.  
-- Declare Phase 3B-B2 limits: L1+L2+L3-A+B1+B2 (I16) automated; I12/I13/I14/I20 and L4 not implemented.
+- Declare Phase 3B-C2 limits: L1+L2+L3-A+B1–B4+I14+I20 automated; L4 not implemented.
 
 ### 1. Run deterministic helper (preferred)
 
@@ -104,7 +108,7 @@ The script prints a **session JSON report** to stdout and:
 - Does not modify the package  
 - Does not create `validation/`  
 - Does not follow escaping symlinks into package trees  
-- Marks L3/L4 checks `NOT_CHECKED`  
+- Marks unimplemented checks (L4) `NOT_CHECKED`; I20 with zero applicable checksums also reports `NOT_CHECKED`  
 
 Interpret the JSON using [report-format.md](references/report-format.md).
 
@@ -125,8 +129,11 @@ If a file failed L1 parse/existence, dependent S\* checks must be `NOT_CHECKED` 
 - **L3-A (implemented):** I01–I09, I15, I17–I19 — use script results.  
 - **L3-B1 (implemented):** I11 path safety, I10 path exists.  
 - **L3-B2 (implemented):** I16 readable:false (Option C) — use script results.  
-- **L3-B/C remaining:** I12, I13, I14, I20 → `NOT_CHECKED`.  
-Do not invent line_range / I14 excerpt-match PASS/FAIL yet. Do not treat L3 PASS as semantic adequacy.
+- **L3-B3 (implemented):** I12 line_range bounds — use script results.  
+- **L3-B4 (implemented):** I13 other locators (Option B, no finders) — use script results.  
+- **L3-C I14 (implemented):** line_range excerpt ↔ window literal match — use script results.  
+- **L3-C I20 (implemented):** optional package_copy SHA-256 — use script results; zero applicable → `NOT_CHECKED`.  
+Do not treat L3 PASS, I14 PASS, or I20 PASS as semantic adequacy (L4).
 
 ### 5. L4 — Semantic Review Boundary
 
@@ -146,7 +153,7 @@ Use script JSON and/or [report-format.md](references/report-format.md):
 ### 7. Finish
 
 - Confirm package knowledge files were not modified.  
-- Do not claim L3/L4 automation.  
+- Do not claim L4 automation. I14/I20 PASS ≠ semantic adequacy.  
 - Suggest Importer only after the user accepts structural risks and remaining NOT_CHECKED items.
 
 ## Handling outcomes
@@ -159,12 +166,12 @@ Use script JSON and/or [report-format.md](references/report-format.md):
 | L1/L2 OK, L3/L4 unfinished | `not_fully_validated` / `semantically_unreviewed` as appropriate — **never** semantic PASS |
 | User wants package write | Refuse writing formal report into package in Phase 2 |
 
-## Out of scope (Phase 2)
+## Out of scope (this Skill version)
 
-- L3 Integrity automation  
 - L4 automatic semantic judgment  
 - CLI / Web / DB / MCP products  
 - Changing CBHF schemas or Exporter rules  
 - Editing `EXPECTED.md`, `generated-output`, inputs, or prior semantic-review conclusions  
 - Freezing validation-report Schema  
 - Renaming smoke test to Validator  
+

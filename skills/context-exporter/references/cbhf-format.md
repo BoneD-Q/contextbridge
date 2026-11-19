@@ -322,7 +322,7 @@ Avoid unknown top-level keys — use `notes` until the formal spec freezes them.
 | `content_transformed` | yes | `true` \| `false` \| `null` — see below |
 | `transform_reason` | no | e.g. `redaction`, `encoding_normalization`, `none`, `unknown` |
 | `readable` | yes | `true` only if exporter extracted usable content; opaque binary copies use `false` |
-| `checksum` | no | Prefer hashing the **package copy**; set `of: package_copy` |
+| `checksum` | no | Optional. When present for CBHF 0.1.0 Validator I20 alignment: `alg` must be exactly `sha256` (no default); `of` must be exactly `package_copy` (no default); `value` is either `null`/omitted/empty (**no applicable checksum**) or exactly **64 hex** chars (A–F/a–f; compare lowercase). Hash the **exact raw bytes** of the package-copy file at `package_path`. Missing/unsupported `alg` or `of` must **not** be silently defaulted. Hosts are **not** required to emit checksums. |
 
 #### `content_transformed`
 
@@ -831,7 +831,7 @@ If a category has no items, write the file with an empty array under its standar
 | 1 | Where is the normative schema published? | Human semantics: this file; machine shapes: `spec/cbhf/v0.1.0/*.schema.json` |
 | 2 | Bilingual storage | Single files; `i18n.zh` / `i18n.en` + narrative bilingual sections |
 | 3 | Fact vs Claim boundary | Facts = descriptive atoms; Claims = assertive/interpretive; prefer one canonical record |
-| 4 | Checksum required? | Optional; hash package copy when available |
+| 4 | Checksum required? | Optional. When emitted for 0.1.0: `alg=sha256`, `of=package_copy`, hash **raw bytes** of package copy; see Validator I20 frozen rule |
 | 5 | PDF locators | `page_range` when known; else `section` + excerpt; unread/opaque PDF → `readable: false` + limitation |
 | 6 | Confirmation without retained quote | Allowed with `confirmation_text: null` + `limitations` explaining why |
 | 7 | Package root naming | User-chosen directory; stable id is `package_id` |
