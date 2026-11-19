@@ -1,178 +1,178 @@
-# Claim & status rules (CBHF 0.1.0)
+# 主张与状态规则（CBHF 0.1.0）
 
-Used by `context-exporter` when classifying knowledge items and assigning **KnowledgeStatus**.
+`context-exporter` 在分类知识项并分配 **知识状态（KnowledgeStatus）** 时使用。
 
-- **Field shapes / shared types:** [cbhf-format.md](cbhf-format.md) (authority for schemas; do not fork field names here)
-- **Evidence / locators / redaction practice:** [evidence-rules.md](evidence-rules.md)
+- **字段形态 / 共享类型：** [cbhf-format.md](cbhf-format.md)（schema 权威；此处不得分叉字段名）
+- **证据 / 定位器 / 脱敏实践：** [evidence-rules.md](evidence-rules.md)
 
-This file does **not** redefine package layout. If a field shape here drifts from `cbhf-format.md`, fix this file.
+本文件**不**重新定义包布局。若此处字段形态偏离 `cbhf-format.md`，修正本文件。
 
-## Object types
+## 对象类型
 
-| Type | File | What it is | What it is not |
+| 类型 | 文件 | 是什么 | 不是什么 |
 | --- | --- | --- | --- |
-| **Fact** | `facts.json` | Descriptive atom from sources (“X is Y”) | Not a recommendation; not automatic truth |
-| **Claim** | `claims.json` | Assertion/interpretation needing epistemology | Not a dump of whole paragraphs |
-| **Decision** | `decisions.json` | A choice that was made (or claimed made) | Not a vague goal |
-| **Constraint** | `constraints.json` | Requirement or prohibition | Not an observation |
-| **Term** | `glossary.json` | Defined vocabulary | Not verified merely by being listed |
-| **Unknown** | `unknowns.json` | Material gap the receiver must not invent | Not trivia |
-| **Conflict** | `conflicts.json` | Same-subject, same-context, mutually exclusive pair | Not env/version mismatch |
+| **事实（Fact）** | `facts.json` | 来自来源的描述性原子（“X 是 Y”） | 不是建议；不是自动真理 |
+| **主张（Claim）** | `claims.json` | 需要认识论处理的断言/诠释 | 不是整段原文倾倒 |
+| **决策（Decision）** | `decisions.json` | 已做出（或声称已做出）的选择 | 不是模糊目标 |
+| **约束（Constraint）** | `constraints.json` | 要求或禁止 | 不是观察 |
+| **术语（Term）** | `glossary.json` | 已定义词汇 | 仅因列出并不等于已验证 |
+| **未知（Unknown）** | `unknowns.json` | 接收方不得捏造的重要缺口 | 不是琐事 |
+| **冲突（Conflict）** | `conflicts.json` | 同主体、同上下文、互斥的一对 | 不是环境/版本不匹配 |
 
-### Extraction heuristics
+### 提取启发式
 
-1. Split compound sentences when statuses might differ.
-2. Keep `statement.text` / `summary.text` / `definition.text` in the source language; translations only in `i18n`.
-3. Fact + conclusion in one sentence → two records (fact + inferred claim) when needed.
-4. Unreadable diagrams/binaries → Unknown — do not invent contents.
-5. Fill optional `context` when environment/version/time/scope is stated or clearly implied.
+1. 当状态可能不同时，拆分复合句。
+2. `statement.text` / `summary.text` / `definition.text` 保持源语言；译文仅放 `i18n`。
+3. 一句中既有事实又有结论 → 需要时拆成两条（fact + inferred claim）。
+4. 不可读图表/二进制 → Unknown——不得捏造内容。
+5. 当环境/版本/时间/范围已陈述或明显隐含时，填写可选 `context`。
 
-### Presence ≠ verified
+### 存在 ≠ verified
 
-Creating a row in `facts.json`, `claims.json`, `decisions.json`, `constraints.json`, or `glossary.json` does **not** assign `verified`. Status is always explicit and earned.
+在 `facts.json`、`claims.json`、`decisions.json`、`constraints.json` 或 `glossary.json` 中创建一行**不会**赋予 `verified`。状态始终显式且须挣得。
 
 ---
 
-## KnowledgeStatus values (closed set)
+## KnowledgeStatus 值（封闭集）
 
 `verified` | `user_confirmed` | `inferred` | `unverified` | `unknown` | `disputed`
 
-Same spelling everywhere (SKILL, format, evidence rules).
+各处拼写相同（SKILL、format、evidence rules）。
 
-**Not** the same as `references[].status` (**ReferenceStatus** in cbhf-format), action `status` (`pending` \| `blocked` \| `cancelled`), or `manifest.validation`.
+**不是**与 `references[].status`（cbhf-format 中的 **ReferenceStatus**）、动作 `status`（`pending` \| `blocked` \| `cancelled`）或 `manifest.validation` 相同。
 
-### Allowed statuses by object type
+### 按对象类型允许的状态
 
-| Status | facts | claims | decisions | constraints | glossary terms |
+| 状态 | facts | claims | decisions | constraints | glossary terms |
 | --- | --- | --- | --- | --- | --- |
-| `verified` | yes | yes | yes | yes | yes |
-| `user_confirmed` | yes | yes | yes | yes | yes |
-| `inferred` | yes* | yes | yes* | yes* | yes* |
-| `unverified` | yes | yes | yes | yes | yes |
-| `unknown` | yes | yes | yes | yes | yes |
-| `disputed` | yes | yes | yes | yes | yes |
+| `verified` | 是 | 是 | 是 | 是 | 是 |
+| `user_confirmed` | 是 | 是 | 是 | 是 | 是 |
+| `inferred` | 是* | 是 | 是* | 是* | 是* |
+| `unverified` | 是 | 是 | 是 | 是 | 是 |
+| `unknown` | 是 | 是 | 是 | 是 | 是 |
+| `disputed` | 是 | 是 | 是 | 是 | 是 |
 
-\* Prefer moving pure interpretive leaps to **claims** with `inferred`. For facts/decisions/constraints/terms, use `inferred` only when the object type still fits but wording was not explicit (e.g. glossary definition synthesized from multiple spans).
+\* 纯诠释性跳跃优先移到带 `inferred` 的 **claims**。对 facts/decisions/constraints/terms，仅当对象类型仍适合但措辞不显式时使用 `inferred`（例如术语定义由多个片段综合）。
 
-### Per-type judgment notes
+### 分类型判定说明
 
 #### facts
 
-- Prefer atoms that are explicitly stated.
-- `verified` only with adequate evidence (see evidence-rules).
-- `inferred` rare — if the leap is interpretive, emit a **claim** instead.
-- Env-specific facts SHOULD set `context.environment` (e.g. prod vs test).
+- 优先明确陈述的原子。
+- `verified` 仅在有充分证据时（见 evidence-rules）。
+- `inferred` 少见——若跳跃属诠释，改为发出 **claim**。
+- 环境特定事实**应当**设置 `context.environment`（例如 prod vs test）。
 
 #### claims
 
-- Default home for assertive/interpretive content.
-- All six statuses common.
-- `inferred` MUST include an `Inference:` note explaining the leap.
+- 断言/诠释内容的默认归属。
+- 六种状态均常见。
+- `inferred` **必须**包含解释跳跃的 `Inference:` 说明。
 
 #### decisions
 
-- `verified`: source explicitly records that the decision was made + adequate evidence.
-- `user_confirmed`: user confirms **this decision** in-session (with `confirmation`).
-- `inferred`: exporter infers a decision was made though sources only hint — label clearly; do not present as settled policy in overview.
-- Mention of a future option ≠ decision.
+- `verified`：来源明确记录该决策已做出 + 充分证据。
+- `user_confirmed`：用户在会话中确认**该决策**（带 `confirmation`）。
+- `inferred`：Exporter 推断已做出决策而来源仅暗示——须清楚标注；不得在 overview 中当作既定政策呈现。
+- 提及未来选项 ≠ 决策。
 
 #### constraints
 
-- `verified` / `unverified` from sourced requirement text.
-- `user_confirmed` when the user confirms that constraint applies.
-- Soft wishes (“maybe we should”) are not `must` constraints; downgrade priority or use a claim.
+- `verified` / `unverified` 来自有来源的需求文本。
+- 当用户确认该约束适用时用 `user_confirmed`。
+- 软愿望（“或许我们应当”）不是 `must` 约束；降低 priority 或改用 claim。
 
 #### glossary terms
 
-- `verified`: definition (or equivalent) appears in sources with adequate evidence.
-- `inferred`: exporter wrote a gloss not verbatim in sources.
-- `unverified`: term appears but definition not pinned.
-- `unknown`: term used but meaning not established — prefer also an Unknown row if material.
-- **Never** default `verified` because a term was entered.
+- `verified`：定义（或等价物）出现在来源中且有充分证据。
+- `inferred`：Exporter 写了非来源原文的释义。
+- `unverified`：术语出现但定义未钉死。
+- `unknown`：使用了术语但含义未确立——若重要，最好另加 Unknown 行。
+- **切勿**因录入术语就默认 `verified`。
 
 ---
 
-## Decision tree (all object types)
+## 决策树（全部对象类型）
 
-Apply in order; stop at first full match.
+按序应用；在首次完整匹配处停止。
 
 ```
-1. Is there a TRUE conflict with another item?
-   (same subject AND context aligned AND mutually exclusive)
-   YES → status disputed + conflicts.json entry; do not pick a winner.
-   NO  → continue
-   If subject/context alignment is UNCERTAIN → do NOT dispute yet;
-   file a question/unknown instead; continue with other statuses.
+1. 是否存在与另一项的真冲突？
+   （同一主体 且 上下文已对齐 且 互斥）
+   是 → status disputed + conflicts.json 条目；不要选赢家。
+   否 → 继续
+   若主体/上下文对齐不确定 → 暂不要 disputed；
+   改记 question/unknown；继续用其他状态处理。
 
-2. Did the user explicitly confirm THIS proposition
-   (not a guess/suggestion/uncertainty)?
-   YES → user_confirmed + REQUIRED confirmation object
-   NO  → continue
+2. 用户是否明确确认了本命题
+   （不是猜测/建议/不确定）？
+   是 → user_confirmed + 必需的 confirmation 对象
+   否 → 继续
 
-3. Explicitly present in sources AND adequate evidence+locator
-   (and redaction did not destroy support)?
-   YES → verified
-   NO  → continue
+3. 明确出现在来源中 且 证据+定位器充分
+   （且脱敏未破坏支撑）？
+   是 → verified
+   否 → 继续
 
-4. Present in sources BUT evidence/locator inadequate
-   (unread binary, weak locator, redaction damage, …)?
-   YES → unverified
-   NO  → continue
+4. 出现在来源中 但 证据/定位器不充分
+   （未读二进制、弱定位器、脱敏损伤等）？
+   是 → unverified
+   否 → 继续
 
-5. Reasonable conclusion not verbatim, grounded in cited premises?
-   YES → inferred (notes explain leap; never sell as verified)
-   NO  → continue
+5. 合理结论但非原文，且有据可查的前提？
+   是 → inferred（notes 解释跳跃；绝不当作 verified 售卖）
+   否 → 继续
 
-6. Needed for handoff but not established?
-   YES → unknown (+ usually unknowns.json)
-   NO  → do not emit the record
+6. 交接需要但尚未确立？
+   是 → unknown（通常同时写 unknowns.json）
+   否 → 不要发出该记录
 ```
 
 ---
 
-## Status definitions
+## 状态定义
 
 ### `verified`
 
-- ≥1 adequate evidence item with concrete locator + excerpt inside the package copy.
-- No reliance on outside knowledge or unread files.
-- **Forbidden:** model prior, “common practice”, unfetched URLs, tests not run, unread PDF/DOCX/image claims.
+- ≥1 条充分证据项，含包内副本中的具体定位器 + 摘录。
+- 不依赖外部知识或未读文件。
+- **禁止：** 模型先验、“常见做法”、未获取的 URL、未运行的测试、未读 PDF/DOCX/图片主张。
 
 ### `user_confirmed`
 
-- User explicitly affirmed **this specific proposition**.
-- Guess / suggestion / “也许” / “我觉得可能” / brainstorming ≠ confirmation.
-- AI inference must never be labeled `user_confirmed`.
-- Silence ≠ confirmation.
-- **Required field:** `confirmation` (see below).
+- 用户明确肯定**该具体命题**。
+- 猜测 / 建议 / “也许” / “我觉得可能” / 头脑风暴 ≠ 确认。
+- AI 推断绝不可标为 `user_confirmed`。
+- 沉默 ≠ 确认。
+- **必需字段：** `confirmation`（见下）。
 
 ### `inferred`
 
-- Follows from sources but not stated verbatim.
-- Link premise evidence when possible; `notes` include `Inference: …`.
-- Must not be described as verified in overview / receiver-guide.
+- 可从来源推出但非原文陈述。
+- 尽可能链接前提证据；`notes` 含 `Inference: …`。
+- 不得在 overview / receiver-guide 中描述为 verified。
 
 ### `unverified`
 
-- Said in sources (or user text) but not adequately pinned — including support lost to redaction.
-- Receiver treats as “said somewhere, not pinned”.
+- 来源（或用户文本）中有说，但未充分钉死——包括脱敏导致支撑丢失。
+- 接收方视为“某处说过，未钉死”。
 
 ### `unknown`
 
-- Not established; material for continuing work.
-- Prefer `unk_*` with `why_it_matters`.
-- **Forbidden:** web fill or training-data guesses.
+- 未确立；对继续工作重要。
+- 优先带 `why_it_matters` 的 `unk_*`。
+- **禁止：** 网页补全或训练数据猜测。
 
 ### `disputed`
 
-- Only with a true Conflict (`cfl_*`) under the conflict rules below.
-- `resolution` stays `null` until the user resolves it.
+- 仅在下方冲突规则下存在真 Conflict（`cfl_*`）时。
+- 在用户裁决前 `resolution` 保持 `null`。
 
 ---
 
-## `confirmation` object (`user_confirmed` only)
+## `confirmation` 对象（仅 `user_confirmed`）
 
-Required shape (normative shared type: cbhf-format `Confirmation`):
+必需形态（规范性共享类型：cbhf-format `Confirmation`）：
 
 ```json
 {
@@ -187,146 +187,146 @@ Required shape (normative shared type: cbhf-format `Confirmation`):
 }
 ```
 
-| Field | Rule |
+| 字段 | 规则 |
 | --- | --- |
-| `confirmed_by` | Always `user` in 0.1.0 for this status |
-| `source_type` | `conversation` \| `user_authored_source` \| `other` (meanings below) |
-| `source_ref` | Depends on `source_type` (table below) |
-| `confirmation_text` | Exact wording for **this** proposition when retainable |
-| `confirmed_at` | ISO-8601 UTC if known; else `null` |
-| `limitations` | Required when `confirmation_text` is `null`/incomplete, or when `source_type` is `other` |
+| `confirmed_by` | 0.1.0 对该状态始终为 `user` |
+| `source_type` | `conversation` \| `user_authored_source` \| `other`（含义见下） |
+| `source_ref` | 取决于 `source_type`（下表） |
+| `confirmation_text` | 可保留时，针对**该**命题的原话 |
+| `confirmed_at` | 已知则为 ISO-8601 UTC；否则 `null` |
+| `limitations` | 当 `confirmation_text` 为 `null`/不完整，或 `source_type` 为 `other` 时必需 |
 
-### `source_type` meanings
+### `source_type` 含义
 
-| Value | Meaning |
+| 取值 | 含义 |
 | --- | --- |
-| `conversation` | User explicitly affirmed this proposition in the **current** agent session / chat |
-| `user_authored_source` | Affirmation text lives in a **packaged** user-authored file (indexed `source_id`) |
-| `other` | Affirmation is attributed to the user but arrived via a channel that is **neither** this session **nor** a packaged user-authored source (e.g. user forwards their own prior note; paste from an external ticket **without** packaging that ticket as a source). Must explain the channel in `confirmation.limitations`. Must **not** invent a fake `source_id`. |
+| `conversation` | 用户在**当前** agent 会话 / 聊天中明确肯定该命题 |
+| `user_authored_source` | 肯定文本位于**已打包**的用户撰写文件（已索引的 `source_id`） |
+| `other` | 肯定归属于用户，但渠道**既非**本会话**也非**已打包用户撰写来源（例如用户转发自己的旧笔记；从外部工单粘贴且**未**将该工单打包为来源）。必须在 `confirmation.limitations` 中说明渠道。**不得**捏造假 `source_id`。 |
 
-### `source_ref` by `source_type`
+### 按 `source_type` 的 `source_ref`
 
-| `source_type` | `source_ref` rule |
+| `source_type` | `source_ref` 规则 |
 | --- | --- |
-| `conversation` | `null`, or a privacy-safe host message id if available |
-| `user_authored_source` | **MUST** be a `source_id` present in `source/source-index.json` |
-| `other` | `null`, or a short **non-`src_*`** channel label; **MUST NOT** be a `source_id` that does not exist; prefer `null` + `limitations` over fabricating `src_*` |
+| `conversation` | `null`，或可用时的隐私安全宿主消息 id |
+| `user_authored_source` | **必须**为存在于 `source/source-index.json` 的 `source_id` |
+| `other` | `null`，或简短的**非 `src_*`** 渠道标签；**不得**为不存在的 `source_id`；优先 `null` + `limitations` 而非伪造 `src_*` |
 
-Rules:
+规则：
 
-1. Confirm the proposition you store — not a vague adjacent topic.
-2. If the user confirms only part of a compound statement, split atoms; confirm only the affirmed atom.
-3. Guess / suggestion / uncertainty from the user ≠ confirmation (any `source_type`).
-4. AI inference must never receive `user_confirmed`.
-5. If exact wording cannot be retained, set `confirmation_text: null` and explain in `limitations` (also mention in `manifest.limitations` when systemic).
-6. For `user_authored_source`, still prefer packaging/quoting that confirmation span as evidence (`kind: user_message` or excerpt) when possible.
-7. For `other`, do not silently upgrade trust: keep honest `limitations`; attach evidence only if a real packaged span exists.
-8. For non-`user_confirmed` statuses, set `"confirmation": null` (prefer explicit `null`).
+1. 确认你所存储的命题——不是模糊的相邻话题。
+2. 若用户仅确认复合陈述的一部分，拆分原子；只确认被肯定的原子。
+3. 用户的猜测 / 建议 / 不确定 ≠ 确认（任何 `source_type`）。
+4. AI 推断绝不可获得 `user_confirmed`。
+5. 若无法保留原话，设 `confirmation_text: null` 并在 `limitations` 中说明（系统性时也写入 `manifest.limitations`）。
+6. 对 `user_authored_source`，仍尽量将该确认片段打包/引用为证据（`kind: user_message` 或 excerpt）。
+7. 对 `other`，不要静默抬高信任：保持诚实的 `limitations`；仅当存在真实已打包片段时附着证据。
+8. 对非 `user_confirmed` 状态，设 `"confirmation": null`（优先显式 `null`）。
 
 ---
 
-## Mapping examples
+## 映射示例
 
-| Situation | Typical status |
+| 情形 | 典型状态 |
 | --- | --- |
-| “生产端口为 8080” + line locator | `verified` (fact, `context.environment: prod`) |
-| User: “对，生产就是 8080” | `user_confirmed` + `confirmation` |
-| User: “也许端口是 8080吧” | not confirmation → likely `unverified`/`unknown` or ignore |
-| Latency table → “瓶颈在连接池” | `inferred` claim |
-| Unread scanned PDF assertion | `unverified` or `unknown` + limitation |
-| Test:8000 vs Prod:8080 | **not** a conflict; two facts with different `context` |
-| Two prod docs: 8080 vs 8000 | `disputed` + conflict |
-| Glossary term coined by exporter | `inferred` term |
+| “生产端口为 8080” + 行定位器 | `verified`（fact，`context.environment: prod`） |
+| 用户：“对，生产就是 8080” | `user_confirmed` + `confirmation` |
+| 用户：“也许端口是 8080吧” | 非确认 → 多为 `unverified`/`unknown` 或忽略 |
+| 延迟表 → “瓶颈在连接池” | `inferred` 主张（claim） |
+| 未读扫描 PDF 中的断言 | `unverified` 或 `unknown` + limitation |
+| 测试:8000 vs 生产:8080 | **不是**冲突；两条不同 `context` 的 facts |
+| 两份生产文档：8080 vs 8000 | `disputed` + conflict |
+| Exporter 自造术语 | `inferred` 术语（term） |
 | “副本数 TBD” | `unknown` |
 
 ---
 
-## Forbidden upgrades
+## 禁止升级
 
-| From | To | Allowed? |
+| 从 | 到 | 允许？ |
 | --- | --- | --- |
-| `inferred` | `verified` | Only with new explicit excerpt support |
-| `inferred` | `user_confirmed` | Only after explicit user confirmation of that proposition |
-| `unverified` | `verified` | Only after adequate locator/evidence (post-redaction still adequate) |
-| `disputed` | other | Only after user resolution recorded |
-| `unknown` | `verified` | Only with new sourced evidence — never by guessing |
+| `inferred` | `verified` | 仅在有新的明确摘录支撑时 |
+| `inferred` | `user_confirmed` | 仅在用户明确确认该命题后 |
+| `unverified` | `verified` | 仅在定位器/证据充分后（脱敏后仍充分） |
+| `disputed` | 其他 | 仅在记录用户裁决后 |
+| `unknown` | `verified` | 仅在有新的有来源证据时——绝不可靠猜测 |
 
-Never majority-vote conflicts. Never delete one side to “clean” the package.
+不得对冲突多数表决。不得为“清理”包而删除一方。
 
 ---
 
 ## Facts vs claims vs decisions vs constraints vs terms
 
-Gate:
+闸门：
 
-1. Rule/requirement? → **constraint**  
-2. Chosen option among alternatives? → **decision**  
-3. Vocabulary definition? → **term**  
-4. Bare descriptive atom? → **fact**  
-5. Otherwise assertive/interpretive? → **claim**  
+1. 规则/需求？ → **constraint**
+2. 在备选中已选选项？ → **decision**
+3. 词汇定义？ → **term**
+4. 纯描述性原子？ → **fact**
+5. 否则属断言/诠释？ → **claim**
 
-If unsure between fact and claim, prefer **claim** with conservative status.  
-Do not duplicate the same sentence across all files.
+若在 fact 与 claim 之间不确定，优先保守状态的 **claim**。
+不要把同一句话复制到所有文件。
 
 ---
 
-## Conflicts (strict)
+## 冲突（严格）
 
-### Create a Conflict only when ALL hold
+### 仅当全部成立时创建 Conflict
 
-1. **Same subject** — both statements are about the same object of discourse.  
-2. **Context aligned** — environment / version / time / scope are the same or explicitly identical (`context_alignment: same`).  
-3. **Mutually exclusive** — they cannot both be true under that context.
+1. **同一主体** — 两条陈述关于同一话语对象。
+2. **上下文对齐** — 环境 / 版本 / 时间 / 范围相同或明确同一（`context_alignment: same`）。
+3. **互斥** — 在该上下文下不能同真。
 
-### Do NOT create a Conflict when
+### 不要在以下情况创建 Conflict
 
-- Environments differ (test `8000` vs prod `8080`)  
-- Versions/time ranges differ and both can be historically true  
-- Wording differs but meaning is compatible  
-- Context alignment is **uncertain**
+- 环境不同（测试 `8000` vs 生产 `8080`）
+- 版本/时间范围不同且历史上可同真
+- 措辞不同但含义兼容
+- 上下文对齐**不确定**
 
-### When context is uncertain
+### 当上下文不确定时
 
-- Do **not** write `conflicts.json` for that pair.
-- Add `questions.json` (and optionally `unknowns.json` + `recommended-actions.json`).
-- Keep each statement at the best non-`disputed` status it independently earns (`verified` / `unverified` / …).
-- Optionally note the potential tension in `notes` without declaring `disputed`.
+- **不要**为该对写入 `conflicts.json`。
+- 添加 `questions.json`（可选加 `unknowns.json` + `recommended-actions.json`）。
+- 各陈述保持其独立挣得的最佳非 `disputed` 状态（`verified` / `unverified` / …）。
+- 可在 `notes` 中注明潜在张力而不声明 `disputed`。
 
-### When a true Conflict exists
+### 当存在真 Conflict 时
 
-1. Emit `cfl_*` with `same_subject: true`, `context_alignment: same`, `shared_context`, parties, evidence.  
-2. Set involved items to `disputed` and link `conflict_ids`.  
-3. Add `q_*` / `act_*` (`pending`) for user resolution.  
-4. Leave `resolution: null` until the user resolves.
+1. 发出带 `same_subject: true`、`context_alignment: same`、`shared_context`、parties、evidence 的 `cfl_*`。
+2. 将相关项设为 `disputed` 并链接 `conflict_ids`。
+3. 添加供用户裁决的 `q_*` / `act_*`（`pending`）。
+4. 在用户裁决前保持 `resolution: null`。
 
 ---
 
 ## Unknowns
 
-Create when missing information would likely cause invention:
+在缺失信息很可能导致捏造时创建：
 
-- Env-specific values not in docs  
-- Owners / on-call  
-- Whether a feature shipped  
-- Content inside unread binaries  
-- Confirmations lacking retainable text when that absence blocks trust  
+- 文档中没有的环境特定值
+- 负责人 / 值班
+- 某功能是否已上线
+- 未读二进制内部内容
+- 缺少可保留文本且该缺失阻碍信任的确认
 
-Do not spam trivia.
-
----
-
-## Bilingual fidelity
-
-- Preserve epistemic force in translations (“可能” must not become “is”).
-- Unsafe to translate → leave target empty + `manifest.limitations`.
+不要滥发琐事。
 
 ---
 
-## Redaction interaction
+## 双语保真
 
-If redaction removes or alters the only supporting excerpt / locator adequacy:
+- 译文中保留认识力（“可能”不得变成 “is”）。
+- 不宜翻译 → 目标侧留空 + `manifest.limitations`。
 
-1. Do **not** keep `verified`.  
-2. Downgrade to `unverified`, or Unknown if the content is no longer usable.  
-3. Never re-expand secrets to preserve verification.  
-4. Record in evidence `notes` / `redaction_applied` and manifest redaction limitations (best-effort, not complete discovery).
+---
+
+## 与脱敏的交互
+
+若脱敏移除或改变了唯一支撑摘录 / 定位器充分性：
+
+1. **不要**保留 `verified`。
+2. 降级为 `unverified`；若内容已不可用则用 Unknown。
+3. 切勿为保留验证而重新展开密钥。
+4. 记入证据 `notes` / `redaction_applied` 与 manifest 脱敏 limitations（尽力而为，非完整发现）。

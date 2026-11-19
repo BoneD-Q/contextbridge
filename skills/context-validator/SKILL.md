@@ -1,11 +1,7 @@
 ---
 name: context-validator
 description: >
-  Read-only validation of a CBHF 0.1.0 handover folder for package structure,
-  schema shape, referential integrity, and semantic-review prompts. Use when
-  checking a ContextBridge package before import or distribution, or when the
-  user asks to run context-validator. Does not invent validation passes or
-  rewrite package knowledge.
+  只读校验 CBHF 0.1.0 交接包的包结构、Schema 形态、引用完整性与语义审查提示。用于在导入或分发前检查 ContextBridge 包，或用户要求运行 context-validator。不得捏造验证通过，不得改写包内知识。
 license: Apache-2.0
 metadata:
   author: contextbridge
@@ -16,162 +12,161 @@ metadata:
 
 # context-validator
 
-Read-only validation of a **CBHF 0.1.0** folder package.
+只读校验 **CBHF 0.1.0** 文件夹包。
 
-This Skill is **instructions first**. Deterministic Python helpers under `scripts/` support L1/L2, **L3-A**, **L3-B1–B4**, **L3-C1 I14** (line_range excerpt match), and **L3-C2 I20** (optional package_copy SHA-256). **L4** is not automated. Helpers are **not** a standalone product CLI.
+本 Skill **以说明为先**。`scripts/` 下的确定性 Python 辅助覆盖 L1/L2、**L3-A**、**L3-B1–B4**、**L3-C1 I14**（line_range 摘录字面匹配）与 **L3-C2 I20**（可选 package_copy SHA-256）。**L4 不做自动化**。辅助脚本**不是**独立产品 CLI。
 
-Design authority: [`docs/context-validator-design.zh-CN.md`](../../docs/context-validator-design.zh-CN.md).  
-Protocol / schemas: `skills/context-exporter/references/cbhf-format.md` and `spec/cbhf/v0.1.0/*.schema.json`.
+设计权威：[`docs/context-validator-design.zh-CN.md`](../../docs/context-validator-design.zh-CN.md)。
+协议 / Schema：`skills/context-exporter/references/cbhf-format.md` 与 `spec/cbhf/v0.1.0/*.schema.json`。
 
-Before validating, read:
+校验前请阅读：
 
-1. [references/validation-rules.md](references/validation-rules.md) — L1/L2/L3 check catalog  
-2. [references/report-format.md](references/report-format.md) — session report shape  
-3. [references/semantic-review-boundary.md](references/semantic-review-boundary.md) — L4: never auto semantic PASS  
+1. [references/validation-rules.md](references/validation-rules.md) — L1/L2/L3 检查目录
+2. [references/report-format.md](references/report-format.md) — 会话报告形态
+3. [references/semantic-review-boundary.md](references/semantic-review-boundary.md) — L4：永不自动语义 PASS
 
-## When to use
+## 何时使用
 
-- User asks to validate / check a CBHF or ContextBridge handoff package  
-- User names this skill: `context-validator`  
-- Before import/distribution when structural honesty matters  
+- 用户要求校验 / 检查 CBHF 或 ContextBridge 交接包
+- 用户点名本 skill：`context-validator`
+- 导入/分发前，需要结构诚实性时
 
-Do **not** use this skill to export packages (`context-exporter`) or to import/resume work (`context-importer`).  
-Do **not** rename or treat `tests/schema/v0.1.0/package_smoke_test.py` as this Skill.
+**不得**用本 skill 导出包（`context-exporter`）或导入/接手工作（`context-importer`）。
+**不得**将 `tests/schema/v0.1.0/package_smoke_test.py` 改名或当作本 Skill。
 
-## Hard rules (non-negotiable)
+## 硬性规则（不可协商）
 
-1. **Read-only on package knowledge.** Do not modify facts, claims, evidence, sources under `source/original/`, or other Exporter-required content while validating.  
-2. **No forged results.** Never invent PASS/FAIL. If a check was not executed, mark `NOT_CHECKED`.  
-3. **No semantic auto-PASS.** L4 items are `NEEDS_HUMAN_REVIEW` or `NOT_CHECKED` only — never “semantic PASS”.  
-4. **No protocol invention.** Do not add CBHF fields or bump version.  
-5. **Default: session report only.** Do not write `validation/validation-report.json` or flip `manifest.validation` (Phase 2 script never writes the package).  
-6. **Smoke ≠ Validator.** `package_smoke_test.py` remains a developer smoke test; do not present smoke output as a formal Validator pass.  
-7. **Privacy.** Prefer package basename / relative labels in reports; avoid dumping home/user absolute paths.
+1. **对包内知识只读。** 校验过程中不得修改 facts、claims、evidence、`source/original/` 下内容，或其他 Exporter 要求的内容。
+2. **不得伪造结果。** 不得捏造 PASS/FAIL。若某项检查未执行，标记为 `NOT_CHECKED`。
+3. **不得语义自动 PASS。** L4 项仅可为 `NEEDS_HUMAN_REVIEW` 或 `NOT_CHECKED`——永不为“语义 PASS”。
+4. **不得发明协议。** 不得新增 CBHF 字段或抬升版本。
+5. **默认：仅会话报告。** 不得写入 `validation/validation-report.json`，不得翻转 `manifest.validation`（Phase 2 脚本永不写包）。
+6. **Smoke ≠ Validator。** `package_smoke_test.py` 仍是开发者烟雾测试；不得把 smoke 输出呈现为正式 Validator 通过。
+7. **隐私。** 报告中优先使用包基名 / 相对标签；避免倾倒 home/user 绝对路径。
 
-## Capability honesty (Phase 3B-C2)
+## 能力诚实声明（Phase 3B-C2）
 
-| Layer | Defined in references? | Automated in this Phase? |
+| 层 | 是否在 references 中定义？ | 本 Phase 是否自动化？ |
 | --- | --- | --- |
-| L1 Package | Yes | **Yes** — `scripts/validate_package.py` (P01–P07) |
-| L2 Schema | Yes | **Yes** — same script (S01–S15), local Draft 2020-12 only |
-| L3-A References | Yes | **Yes** — I01–I09, I15, I17–I19 via `_integrity.py` |
-| L3-B1 Path safety / exists | Yes | **Yes** — I11, I10 |
-| L3-B2 readable:false | Yes | **Yes** — I16 (Option C) |
-| L3-B3 line_range bounds | Yes | **Yes** — I12 |
-| L3-B4 other locators | Yes | **Yes** — I13 (Option B, no finders) |
-| L3-C I14 excerpt match | Yes — frozen in `validation-rules.md` | **Yes** — `_integrity.check_i14` (literal window match only) |
-| L3-C I20 checksum | Yes — **rules frozen** in `validation-rules.md` | **Yes** — `_integrity.check_i20` (package_copy SHA-256; optional) |
-| L4 Semantic boundary | Yes | **Never** automated PASS — H\* → `NOT_CHECKED` |
+| L1 包结构 | 是 | **是** — `scripts/validate_package.py`（P01–P07） |
+| L2 Schema | 是 | **是** — 同一脚本（S01–S15），仅本地 Draft 2020-12 |
+| L3-A 引用 | 是 | **是** — I01–I09、I15、I17–I19，经 `_integrity.py` |
+| L3-B1 路径安全 / 存在 | 是 | **是** — I11、I10 |
+| L3-B2 readable:false | 是 | **是** — I16（Option C） |
+| L3-B3 line_range 边界 | 是 | **是** — I12 |
+| L3-B4 其他定位器 | 是 | **是** — I13（Option B，无 finders） |
+| L3-C I14 摘录匹配 | 是 — 冻结于 `validation-rules.md` | **是** — `_integrity.check_i14`（仅字面窗口匹配） |
+| L3-C I20 校验和 | 是 — 规则冻结于 `validation-rules.md` | **是** — `_integrity.check_i20`（package_copy SHA-256；可选） |
+| L4 语义边界 | 是 | **永不**自动化 PASS — H\* → `NOT_CHECKED` |
 
-Writing a check ID in references does **not** mean it is automated unless this table says so.  
-**Do not** present L4 semantic judgment as an I14 result. **I14 PASS ≠ semantic adequacy.**
+在 references 中写下检查 ID **并不**等于已自动化，除非本表声明如此。
+**不得**把 L4 语义判断呈现为 I14 结果。**I14 PASS ≠ 语义充分性。**
 
-## Inputs
+## 输入
 
-| Input | Required | Notes |
+| 输入 | 必需 | 说明 |
 | --- | --- | --- |
-| Package root | Yes | Directory that should contain `manifest.yaml` (CBHF folder form) |
-| Protocol expectation | Default 0.1.0 | Read `manifest.cbhf_version` / `protocol` |
-| Write report into package? | No | Default **no** (script cannot write) |
+| 包根目录 | 是 | 应包含 `manifest.yaml` 的目录（CBHF 文件夹形态） |
+| 协议期望 | 默认 0.1.0 | 读取 `manifest.cbhf_version` / `protocol` |
+| 是否写入包内报告？ | 否 | 默认 **否**（脚本不能写入） |
 
-If the path is unreadable, stop and report. Do not fabricate a package.
+若路径不可读，停止并报告。不得伪造包。
 
-## Identify protocol version
+## 识别协议版本
 
-1. Confirm `manifest.yaml` exists at package root.  
-2. Read `cbhf_version` and `protocol`.  
-3. For this Skill version, only **CBHF `0.1.0`** is in scope.  
-4. If version missing/unsupported → package-level outcome biased to `invalid` / fail identification checks; do not pretend 0.1.0 rules apply blindly without noting the mismatch.
+1. 确认包根存在 `manifest.yaml`。
+2. 读取 `cbhf_version` 与 `protocol`。
+3. 对本 Skill 版本，仅 **CBHF `0.1.0`** 在范围内。
+4. 若版本缺失/不受支持 → 包级结果偏向 `invalid` / 识别检查失败；不得在未注明不匹配的情况下假装套用 0.1.0 规则。
 
-## Workflow
+## 工作流
 
-Execute in order. Do not skip layers by inventing PASS.
+按顺序执行。不得通过捏造 PASS 跳过层级。
 
-### 0. Plan (read-only)
+### 0. 计划（只读）
 
-- Resolve package root.  
-- Open references listed above.  
-- Declare Phase 3B-C2 limits: L1+L2+L3-A+B1–B4+I14+I20 automated; L4 not implemented.
+- 解析包根。
+- 打开上文所列 references。
+- 声明 Phase 3B-C2 边界：L1+L2+L3-A+B1–B4+I14+I20 自动化；L4 未实现。
 
-### 1. Run deterministic helper (preferred)
+### 1. 运行确定性辅助（优先）
 
-From the repository root (or any cwd), invoke:
+在仓库根（或任意 cwd）调用：
 
 ```text
 python skills/context-validator/scripts/validate_package.py <package-root>
 ```
 
-Optional: `--schema-dir` pointing at a **local** `spec/cbhf/v0.1.0` copy — never download schemas.
+可选：`--schema-dir` 指向**本地** `spec/cbhf/v0.1.0` 副本——永不下载 Schema。
 
-The script prints a **session JSON report** to stdout and:
+脚本向 stdout 打印**会话 JSON 报告**，并且：
 
-- Does not modify the package  
-- Does not create `validation/`  
-- Does not follow escaping symlinks into package trees  
-- Marks unimplemented checks (L4) `NOT_CHECKED`; I20 with zero applicable checksums also reports `NOT_CHECKED`  
+- 不修改包
+- 不创建 `validation/`
+- 不跟随逃逸符号链接进入包树外
+- 将未实现检查（L4）标为 `NOT_CHECKED`；零适用校验和的 I20 也报告 `NOT_CHECKED`
 
-Interpret the JSON using [report-format.md](references/report-format.md).
+用 [report-format.md](references/report-format.md) 解释 JSON。
 
-If the script cannot run, fall back to manual L1/L2 inspection and mark unavailable checks `NOT_CHECKED`.
+若脚本无法运行，回退到手工 L1/L2 检查，并将不可用项标为 `NOT_CHECKED`。
 
-### 2. L1 — Package Validation
+### 2. L1 — 包校验
 
-Follow **P01–P07** in [validation-rules.md](references/validation-rules.md). Prefer the script results.
+遵循 [validation-rules.md](references/validation-rules.md) 中的 **P01–P07**。优先采用脚本结果。
 
-### 3. L2 — Schema Validation
+### 3. L2 — Schema 校验
 
-Follow **S01–S15**. Prefer the script results against `spec/cbhf/v0.1.0/`.
+遵循 **S01–S15**。优先对照 `spec/cbhf/v0.1.0/` 的脚本结果。
 
-If a file failed L1 parse/existence, dependent S\* checks must be `NOT_CHECKED` (not PASS).
+若某文件在 L1 解析/存在性上失败，依赖该文件的 S\* 检查必须为 `NOT_CHECKED`（不得为 PASS）。
 
-### 4. L3 — Integrity Validation
+### 4. L3 — 完整性校验
 
-- **L3-A (implemented):** I01–I09, I15, I17–I19 — use script results.  
-- **L3-B1 (implemented):** I11 path safety, I10 path exists.  
-- **L3-B2 (implemented):** I16 readable:false (Option C) — use script results.  
-- **L3-B3 (implemented):** I12 line_range bounds — use script results.  
-- **L3-B4 (implemented):** I13 other locators (Option B, no finders) — use script results.  
-- **L3-C I14 (implemented):** line_range excerpt ↔ window literal match — use script results.  
-- **L3-C I20 (implemented):** optional package_copy SHA-256 — use script results; zero applicable → `NOT_CHECKED`.  
-Do not treat L3 PASS, I14 PASS, or I20 PASS as semantic adequacy (L4).
+- **L3-A（已实现）：** I01–I09、I15、I17–I19 — 使用脚本结果。
+- **L3-B1（已实现）：** I11 路径安全、I10 路径存在。
+- **L3-B2（已实现）：** I16 readable:false（Option C）— 使用脚本结果。
+- **L3-B3（已实现）：** I12 line_range 边界 — 使用脚本结果。
+- **L3-B4（已实现）：** I13 其他定位器（Option B，无 finders）— 使用脚本结果。
+- **L3-C I14（已实现）：** line_range 摘录 ↔ 窗口字面匹配 — 使用脚本结果。
+- **L3-C I20（已实现）：** 可选 package_copy SHA-256 — 使用脚本结果；零适用 → `NOT_CHECKED`。
+不得将 L3 PASS、I14 PASS 或 I20 PASS 视为语义充分性（L4）。
 
-### 5. L4 — Semantic Review Boundary
+### 5. L4 — 语义审查边界
 
-Follow [semantic-review-boundary.md](references/semantic-review-boundary.md) if the user asks for human prompts.  
-Phase 2 script leaves H01–H06 as `NOT_CHECKED`.  
-**Never** conclude “semantic validation passed”.
+若用户需要人工提示，遵循 [semantic-review-boundary.md](references/semantic-review-boundary.md)。
+Phase 2 脚本将 H01–H06 留为 `NOT_CHECKED`。
+**永不**得出“语义验证已通过”的结论。
 
-### 6. Compose session report
+### 6. 组成会话报告
 
-Use script JSON and/or [report-format.md](references/report-format.md):
+使用脚本 JSON 和/或 [report-format.md](references/report-format.md)：
 
-- Per-check results  
-- Layer summaries  
-- Package-level status (separate from per-check)  
-- Limitations / NOT_CHECKED list  
+- 逐项检查结果
+- 分层摘要
+- 包级状态（与逐项检查分离）
+- 限制 / NOT_CHECKED 列表
 
-### 7. Finish
+### 7. 收尾
 
-- Confirm package knowledge files were not modified.  
-- Do not claim L4 automation. I14/I20 PASS ≠ semantic adequacy.  
-- Suggest Importer only after the user accepts structural risks and remaining NOT_CHECKED items.
+- 确认包内知识文件未被修改。
+- 不得声称 L4 已自动化。I14/I20 PASS ≠ 语义充分性。
+- 仅在用户接受结构风险与剩余 NOT_CHECKED 项后，再建议 Importer。
 
-## Handling outcomes
+## 结果处理
 
-| Situation | Package-level status (see report-format) |
+| 情形 | 包级状态（见 report-format） |
 | --- | --- |
-| Any L1/L2 `FAIL` | `invalid` — list failures with locations |
-| L1/L2 complete with only `WARNING` but L3 not run | Prefer `not_fully_validated` (Phase 2 honesty) |
-| Important L1/L2 checks `NOT_CHECKED` | `not_fully_validated` |
-| L1/L2 OK, L3/L4 unfinished | `not_fully_validated` / `semantically_unreviewed` as appropriate — **never** semantic PASS |
-| User wants package write | Refuse writing formal report into package in Phase 2 |
+| 任一 L1/L2 `FAIL` | `invalid` — 列出失败与位置 |
+| L1/L2 完成且仅有 `WARNING`，但 L3 未跑 | 优先 `not_fully_validated`（Phase 2 诚实） |
+| 重要 L1/L2 检查为 `NOT_CHECKED` | `not_fully_validated` |
+| L1/L2 正常，L3/L4 未完成 | `not_fully_validated` / `semantically_unreviewed`（视情况）— **永不**语义 PASS |
+| 用户要求写入包 | Phase 2 拒绝将正式报告写入包 |
 
-## Out of scope (this Skill version)
+## 本 Skill 版本范围外
 
-- L4 automatic semantic judgment  
-- CLI / Web / DB / MCP products  
-- Changing CBHF schemas or Exporter rules  
-- Editing `EXPECTED.md`, `generated-output`, inputs, or prior semantic-review conclusions  
-- Freezing validation-report Schema  
-- Renaming smoke test to Validator  
-
+- L4 自动语义裁决
+- CLI / Web / DB / MCP 产品
+- 更改 CBHF Schema 或 Exporter 规则
+- 编辑 `EXPECTED.md`、`generated-output`、输入，或既有语义审查结论
+- 冻结 validation-report Schema
+- 将 smoke 测试改名为 Validator

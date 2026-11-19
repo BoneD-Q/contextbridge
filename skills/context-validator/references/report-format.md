@@ -1,131 +1,131 @@
-# Validator report format (session-level)
+# Validator 报告格式（会话级）
 
-Defines how `context-validator` presents results.  
-**Does not freeze** a `validation-report` JSON Schema in Phase 1.  
-**Default:** session report only — **do not write** into the Package.
+定义 `context-validator` 如何呈现结果。
+Phase 1 **不冻结** `validation-report` JSON Schema。
+**默认：** 仅会话报告 — **不得写入** Package。
 
-## Privacy
+## 隐私
 
-- Prefer basename or relative demo path for package identity.
-- Avoid absolute home/user paths in shared reports unless the user requests them.
-- Do not paste secrets from excerpts into the report; cite IDs and short reasons.
+- 包身份优先使用基名或相对演示路径。
+- 除非用户要求，共享报告中避免绝对 home/user 路径。
+- 不得将摘录中的秘密粘贴进报告；引用 ID 与简短原因即可。
 
-## Required report sections
+## 必需报告章节
 
-1. **Package identity** — privacy-safe path / package_id if known  
-2. **CBHF version** — from `manifest.cbhf_version` or unresolved  
-3. **Validation time** — ISO-8601 UTC or local with offset  
-4. **Checker capability declaration** — honest Phase / what was actually runnable  
-5. **Layer summaries** — L1 / L2 / L3 / L4 rollups  
-6. **Check detail** — one row/item per executed or intentionally skipped check  
-7. **Error locations** — file + JSON path / line when known  
-8. **Failure reasons** — factual, not invented  
-9. **Warnings**  
-10. **Not checked** — with reason (tool missing, dependency failed, out of scope)  
-11. **Needs human review** — L4 and any borderline item  
-12. **Final package verdict** — distinct from per-check status  
+1. **包身份** — 隐私安全的路径 / 已知的 package_id
+2. **CBHF 版本** — 来自 `manifest.cbhf_version`，或 unresolved
+3. **校验时间** — ISO-8601 UTC，或带偏移的本地时间
+4. **检查器能力声明** — 诚实声明 Phase / 实际可运行项
+5. **分层摘要** — L1 / L2 / L3 / L4 汇总
+6. **检查明细** — 每个已执行或有意跳过的检查一行/一项
+7. **错误位置** — 已知时给出文件 + JSON path / 行号
+8. **失败原因** — 基于事实，不得捏造
+9. **警告**
+10. **未检查** — 附原因（工具缺失、依赖失败、范围外）
+11. **需人工审查** — L4 及任何边界项
+12. **最终包裁决** — 与逐项状态区分
 
-## Per-check status
+## 逐项检查状态
 
-| Status | Meaning |
+| 状态 | 含义 |
 | --- | --- |
-| `PASS` | Check ran and succeeded |
-| `FAIL` | Check ran and found a defect |
-| `WARNING` | Check ran; non-blocking concern |
-| `NOT_CHECKED` | Defined but not executed, or prerequisite missing |
-| `NEEDS_HUMAN_REVIEW` | Requires judgment; **never** auto-promote to semantic PASS |
+| `PASS` | 检查已运行且成功 |
+| `FAIL` | 检查已运行且发现缺陷 |
+| `WARNING` | 检查已运行；非阻断性问题 |
+| `NOT_CHECKED` | 已定义但未执行，或前置条件缺失 |
+| `NEEDS_HUMAN_REVIEW` | 需要判断；**永不**自动提升为语义 PASS |
 
-## Layer summary status (distinct from per-check and final_status)
+## 分层摘要状态（与逐项检查、final_status 区分）
 
-| Layer | Rollup rule |
+| 层 | 汇总规则 |
 | --- | --- |
-| L1 / L2 | `FAIL` > `WARNING` > all-`PASS` > mixed PASS+NOT_CHECKED → **PASS** (historical) |
-| L3 | `FAIL` > any `NOT_CHECKED` → **NOT_CHECKED** (incompleteness outranks WARNING) > else `WARNING` > all-`PASS` |
-| L4 | Never semantic PASS; typically `NOT_CHECKED` / `NEEDS_HUMAN_REVIEW` |
+| L1 / L2 | `FAIL` > `WARNING` > 全 `PASS` > 混合 PASS+NOT_CHECKED → **PASS**（历史约定） |
+| L3 | `FAIL` > 任一 `NOT_CHECKED` → **NOT_CHECKED**（不完整性优先于 WARNING）> 否则 `WARNING` > 全 `PASS` |
+| L4 | 永不语义 PASS；通常为 `NOT_CHECKED` / `NEEDS_HUMAN_REVIEW` |
 
-Rationale for L3: deferred checks (e.g. L3-B/C) must not let a single executed WARNING (e.g. orphan evidence) make the layer look finished. Per-check WARNING rows remain in `warnings[]`. Package `final_status` is separate and already treats important I\* `NOT_CHECKED` as `not_fully_validated`.
+L3 理由：延迟检查（如 L3-B/C）不得因单项已执行的 WARNING（如孤儿 evidence）使该层看起来“已完成”。逐项 WARNING 仍保留在 `warnings[]`。包级 `final_status` 独立，且已将重要 I\* `NOT_CHECKED` 视为 `not_fully_validated`。
 
-## Package final status (rollup; distinct from per-check)
+## 包最终状态（汇总；与逐项检查区分）
 
-Preferred package-level labels (design doc §6.2):
+优先包级标签（设计文档 §6.2）：
 
-| Package status | When |
+| 包状态 | 何时 |
 | --- | --- |
-| `invalid` | Any hard L1/L2/L3 `FAIL` |
-| `structurally_valid` | No L1–L3 `FAIL`; may still have warnings / not_checked / needs_human |
-| `structurally_valid_with_warnings` | No `FAIL`, but one or more `WARNING` |
-| `not_fully_validated` | Important L1–L3 checks were `NOT_CHECKED` (host limits) |
-| `semantically_unreviewed` | Structure OK-ish, but L4 human review not completed |
+| `invalid` | 任一硬性 L1/L2/L3 `FAIL` |
+| `structurally_valid` | 无 L1–L3 `FAIL`；仍可有 warnings / not_checked / needs_human |
+| `structurally_valid_with_warnings` | 无 `FAIL`，但有一项或多项 `WARNING` |
+| `not_fully_validated` | 重要 L1–L3 检查为 `NOT_CHECKED`（主机限制） |
+| `semantically_unreviewed` | 结构大致正常，但 L4 人工审查未完成 |
 
-Also allowed as a coarse session label: map `invalid`↔structural FAIL, keep L4 as `NEEDS_HUMAN_REVIEW` / `NOT_CHECKED` in the layer summary — **never** package-level “semantic PASS”.
+亦允许作为粗粒度会话标签：将 `invalid`↔结构性 FAIL，L4 在分层摘要中保持 `NEEDS_HUMAN_REVIEW` / `NOT_CHECKED` — **永不**出现包级“语义 PASS”。
 
-**Do not** set final structural certainty solely because smoke or schema fixtures elsewhere passed.  
-**Do not** treat per-check `PASS` as “full package validation complete”.
+**不得**仅因其他处 smoke 或 schema 夹具通过，就设定最终结构确定性。
+**不得**将逐项 `PASS` 视为“完整包校验已完成”。
 
-## Suggested markdown template
+## 建议 Markdown 模板
 
 ```markdown
-# ContextBridge validation report
+# ContextBridge 校验报告
 
-- package: <privacy-safe path>
-- package_id: <id or unknown>
-- cbhf_version: <version or unresolved>
-- validated_at: <timestamp>
-- checker: context-validator Phase 3B-1 (L1+L2+L3-A; L3-B/C and L4 not automated)
+- package: <隐私安全路径>
+- package_id: <id 或 unknown>
+- cbhf_version: <版本或 unresolved>
+- validated_at: <时间戳>
+- checker: context-validator Phase 3B-1（L1+L2+L3-A；L3-B/C 与 L4 未自动化）
 
-## Capability declaration
+## 能力声明
 
-- L1–L2: automated via `scripts/validate_package.py`
-- L3-A: automated (I01–I09, I15, I17–I19)
-- L3-B/C: **not implemented** → per-check NOT_CHECKED; layer typically NOT_CHECKED
-- L4: boundary + human review only; **no automatic semantic PASS**
-- Package mutation: none (read-only)
+- L1–L2：经 `scripts/validate_package.py` 自动化
+- L3-A：已自动化（I01–I09, I15, I17–I19）
+- L3-B/C：**未实现** → 逐项 NOT_CHECKED；该层通常为 NOT_CHECKED
+- L4：仅边界 + 人工审查；**无自动语义 PASS**
+- 包变更：无（只读）
 
-## Layer summary
+## 分层摘要
 
-| Layer | Result |
+| 层 | 结果 |
 | --- | --- |
 | L1 Package | PASS / FAIL / WARNING / NOT_CHECKED |
 | L2 Schema | ... |
 | L3 Integrity | ... |
-| L4 Semantic boundary | NEEDS_HUMAN_REVIEW / NOT_CHECKED (never semantic PASS) |
+| L4 Semantic boundary | NEEDS_HUMAN_REVIEW / NOT_CHECKED（永不语义 PASS） |
 
-## Check details
+## 检查明细
 
-| ID | Status | Location | Reason |
+| ID | 状态 | 位置 | 原因 |
 | --- | --- | --- | --- |
 | P01 | ... | ... | ... |
 
-## Failures
+## 失败
 
 - ...
 
-## Warnings
+## 警告
 
 - ...
 
-## Not checked
+## 未检查
 
-- <id>: <why>
+- <id>: <原因>
 
-## Needs human review
+## 需人工审查
 
 - ...
 
-## Final package status
+## 最终包状态
 
 `<invalid | structurally_valid | structurally_valid_with_warnings | not_fully_validated | semantically_unreviewed>`
 
-### Notes
+### 说明
 
-- This report was **not** written into the Package by default.
-- Do not treat this as a forged completed validation if checks were skipped.
-- L4 layer must not show automatic semantic PASS.
+- 本报告默认**未**写入 Package。
+- 若检查被跳过，不得将本报告当作伪造的完整校验。
+- L4 层不得显示自动语义 PASS。
 ```
 
-## Optional machine-readable sketch (not normative)
+## 可选机器可读草图（非规范）
 
-If the user asks for JSON in-session, a non-frozen sketch may look like:
+若用户要求会话内 JSON，非冻结草图可类似：
 
 ```json
 {
@@ -160,9 +160,9 @@ If the user asks for JSON in-session, a non-frozen sketch may look like:
 }
 ```
 
-Do not invent pass/fail rows for checks that were not run.
+不得为未运行的检查捏造 pass/fail 行。
 
-## Writing into Package (deferred)
+## 写入 Package（延期）
 
-Writing `validation/` or flipping `manifest.validation.present` is **out of Phase 1 default**.  
-If a future phase writes reports, it must still keep knowledge/evidence/source copies immutable and must not forge results.
+写入 `validation/` 或翻转 `manifest.validation.present` **不在 Phase 1 默认范围内**。
+若未来阶段写入报告，仍必须保持 knowledge/evidence/source 副本不可变，且不得伪造结果。

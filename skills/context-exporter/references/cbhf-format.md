@@ -1,37 +1,37 @@
-# CBHF 0.1.0 — Folder format (working definition)
+# CBHF 0.1.0 — 文件夹格式（工作定义）
 
-**Status:** Working definition for ContextBridge first version.  
-**Machine-readable schemas:** [`spec/cbhf/v0.1.0/`](../../../spec/cbhf/v0.1.0/) (JSON Schema Draft 2020-12).
+**状态：** ContextBridge 首版工作定义。
+**机器可读 schema：** [`spec/cbhf/v0.1.0/`](../../../spec/cbhf/v0.1.0/)（JSON Schema Draft 2020-12）。
 
-Document roles (do not fork definitions):
+文档角色（不得分叉定义）：
 
-| Document | Authority |
+| 文档 | 权威性 |
 | --- | --- |
-| **This file (`cbhf-format.md`)** | Human-readable field semantics, layout rules, and examples |
-| **`spec/cbhf/v0.1.0/*.schema.json`** | Machine-readable field shapes / enums / nullability for structured JSON (and JSON-equivalent manifest) |
-| [`claim-rules.md`](claim-rules.md) | Knowledge object classification + Knowledge Status judgment |
-| [`evidence-rules.md`](evidence-rules.md) | Sources, locators, evidence links, redaction practice |
-| [`../SKILL.md`](../SKILL.md) | Exporter execution workflow (must not contradict this file) |
+| **本文件（`cbhf-format.md`）** | 人工可读字段语义、布局规则与示例 |
+| **`spec/cbhf/v0.1.0/*.schema.json`** | 结构化 JSON（及 JSON 等价 manifest）的机器可读字段形态 / 枚举 / 可空性 |
+| [`claim-rules.md`](claim-rules.md) | 知识对象分类 + 知识状态（Knowledge Status）判定 |
+| [`evidence-rules.md`](evidence-rules.md) | 来源、定位器、证据链接、脱敏实践 |
+| [`../SKILL.md`](../SKILL.md) | Exporter 执行工作流（不得与本文件冲突） |
 
-If schema and this file disagree on **field shape**, update them together; do not silently fork. Cross-file / policy checks remain Validator-stage (not fully expressible in JSON Schema). If this file is silent on **judgment policy**, claim-rules / evidence-rules win.
+若 schema 与本文件在**字段形态**上不一致，须一并更新；不得静默分叉。跨文件 / 策略检查仍属 Validator 阶段（无法完全用 JSON Schema 表达）。若本文件对**判定策略**沉默，则以 claim-rules / evidence-rules 为准。
 
-Do not invent alternate top-level layouts or bump the protocol version.
+不得发明替代顶层布局或抬升协议版本。
 
-- **Scenario:** technical document handoff (`docs`)
-- **Form:** standard folder (`folder`)
-- **Protocol id:** `CBHF`
-- **Protocol version:** `0.1.0`
+- **场景（Scenario）：** 技术文档交接（`docs`）
+- **形态（Form）：** 标准文件夹（`folder`）
+- **协议 id：** `CBHF`
+- **协议版本：** `0.1.0`
 
-## Package layout
+## 包布局
 
-### Exporter-required tree
+### Exporter 必需树
 
 ```
 <package-root>/
 ├── manifest.yaml
 ├── source/
 │   ├── source-index.json
-│   └── original/                 # package copies (NOT a guarantee of byte-identity with user files)
+│   └── original/                 # 包内副本（并不保证与用户文件字节同一）
 ├── knowledge/
 │   ├── overview.md
 │   ├── facts.json
@@ -51,164 +51,163 @@ Do not invent alternate top-level layouts or bump the protocol version.
     └── recommended-actions.json
 ```
 
-### Validator-optional tree
+### Validator 可选树
 
 ```
 <package-root>/
-└── validation/                   # OPTIONAL — created by context-validator after a real run
+└── validation/                   # 可选 — 由 context-validator 在真实运行后创建
     └── validation-report.json
 ```
 
-Rules:
+规则：
 
-- `context-exporter` MUST write the Exporter-required tree.
-- `context-exporter` MUST NOT create `validation/` or invent `validation-report.json`.
-- Absence of `validation/` means “not validated yet”, not “validation passed”.
-- Shape of `validation-report.json` is owned by the Validator skill (deferred). Exporter only acknowledges the path reservation.
+- `context-exporter` **必须**写入 Exporter 必需树。
+- `context-exporter` **不得**创建 `validation/` 或捏造 `validation-report.json`。
+- 缺少 `validation/` 表示“尚未校验”，而非“校验已通过”。
+- `validation-report.json` 的形态由 Validator skill 拥有（延后）。Exporter 仅承认该路径预留。
 
-All JSON files use UTF-8, 2-space indent preferred. YAML uses UTF-8.
+所有 JSON 文件使用 UTF-8，建议 2 空格缩进。YAML 使用 UTF-8。
 
-### User originals vs `source/original/`
+### 用户原件 vs `source/original/`
 
-| Location | Meaning |
+| 位置 | 含义 |
 | --- | --- |
-| User’s file on disk / chat paste source | **Read-only.** Never modified by exporter. |
-| `source/original/` | **Package copy** used for handoff and locators. May differ from the user file after redaction or host-normalized writes. |
+| 用户磁盘文件 / 聊天粘贴来源 | **只读。** Exporter 永不修改。 |
+| `source/original/` | 用于交接与定位器的**包内副本**。脱敏或宿主规范化写入后可能与用户文件不同。 |
 
-- Do not claim byte-identity unless `content_transformed: false` (known identical). If identity is unknown → `content_transformed: null` (never invent `false`).
-- **Redaction** (secret/PII masking) MUST be recorded in `manifest.redaction` (`applied: true` only when redaction ran) and summarized in `manifest.limitations`.
-- Other copy transforms (encoding normalization, line-ending changes, etc.) affect `content_transformed` / `transform_reason` — they do **not** by themselves set `manifest.redaction.applied`.
-- Best-effort redaction ≠ complete secret/PII discovery — never claim full coverage.
-- If a file cannot be packaged safely, omit it, stop that file’s ingest, and tell the user.
+- 除非 `content_transformed: false`（已知同一），否则不得声称字节同一。若同一性未知 → `content_transformed: null`（不得捏造 `false`）。
+- **脱敏**（密钥/PII 掩码）**必须**记录在 `manifest.redaction`（仅在实际脱敏时 `applied: true`），并在 `manifest.limitations` 中摘要。
+- 其他副本变换（编码规范化、换行变更等）影响 `content_transformed` / `transform_reason`——它们**本身不会**设置 `manifest.redaction.applied`。
+- 尽力脱敏 ≠ 完整密钥/PII 发现——不得声称全覆盖。
+- 若某文件无法安全打包，省略之，停止该文件摄入，并告知用户。
 
-### Host capability boundary
+### 宿主能力边界
 
-Skills hosts differ in read / write / copy support.
+Skills 宿主在读 / 写 / 复制支持上存在差异。
 
-- Only files actually **read as text/extractable content** may back knowledge or evidence excerpts.
-- Only files actually **copied** may appear under `source/original/`.
-- **Copyable but unreadable binaries** (e.g. PDF/DOCX/image the host can copy but cannot extract text from): may be packaged as opaque copies with `readable: false`; must **not** yield `verified` knowledge, invented locators, or fabricated excerpts; record `manifest.limitations`.
-- Uncopied paths → `manifest.limitations` (and Unknowns when material).
-- Do not claim processing of unread PDF, DOCX, images, or other binaries.
+- 仅实际**作为文本/可提取内容读取**的文件可作为知识或证据摘录的依据。
+- 仅实际**已复制**的文件可出现在 `source/original/` 下。
+- **可复制但不可读的二进制**（例如宿主能复制但无法提取文本的 PDF/DOCX/图片）：可以不透明副本打包且 `readable: false`；**不得**产出 `verified` 知识、捏造定位器或伪造摘录；须记入 `manifest.limitations`。
+- 未复制路径 → `manifest.limitations`（重要时加 Unknowns）。
+- 不得声称处理了未读 PDF、DOCX、图片或其他二进制。
 
-### Package path safety
+### 包路径安全
 
-All exporter writes MUST stay inside `<package-root>/`.
+Exporter 的所有写入**必须**留在 `<package-root>/` 内。
 
-1. Treat every package-relative path as relative to `<package-root>`; resolve and reject escape.
-2. **Forbid** path segments `..`, absolute paths, drive prefixes (`C:\...`), and UNC paths in any package-relative field (`package_path`, locator `path`, `integrity.files_touched`, etc.).
-3. Sanitize user-derived filenames when writing under `source/original/` (replace path separators with `__`; do not preserve directory escape).
-4. **Do not follow symlinks** (or equivalent host links) that resolve outside `<package-root>` when creating or overwriting package files.
-5. Never use package write APIs to modify user originals or any path outside the package root.
-6. On violation → refuse that write, record `manifest.limitations`, and continue only with safe paths.
+1. 将每个包相对路径视为相对 `<package-root>`；解析并拒绝逃逸。
+2. **禁止**在任何包相对字段（`package_path`、定位器 `path`、`integrity.files_touched` 等）中出现路径段 `..`、绝对路径、盘符前缀（`C:\...`）与 UNC 路径。
+3. 写入 `source/original/` 时净化用户派生文件名（路径分隔符替换为 `__`；不保留目录逃逸）。
+4. 创建或覆盖包文件时，**不得跟随**解析到 `<package-root>` 外的符号链接（或等价宿主链接）。
+5. 不得用包写入 API 修改用户原件或包根外的任何路径。
+6. 违规时 → 拒绝该次写入，记入 `manifest.limitations`，仅继续安全路径。
 
-### ID conventions (0.1.0)
+### ID 约定（0.1.0）
 
-| Kind | Pattern | Example |
+| 种类 | 模式 | 示例 |
 | --- | --- | --- |
-| Package | `pkg_<slug>` | `pkg_api_gateway_design` |
-| Source | `src_<nnn>` | `src_001` |
-| Fact | `fact_<nnn>` | `fact_014` |
-| Claim | `claim_<nnn>` | `claim_003` |
-| Decision | `dec_<nnn>` | `dec_002` |
-| Constraint | `con_<nnn>` | `con_010` |
-| Term | `term_<nnn>` | `term_004` |
-| Evidence | `ev_<nnn>` | `ev_021` |
-| Reference | `ref_<nnn>` | `ref_007` |
-| Unknown | `unk_<nnn>` | `unk_001` |
-| Conflict | `cfl_<nnn>` | `cfl_001` |
-| Question | `q_<nnn>` | `q_003` |
-| Action | `act_<nnn>` | `act_002` |
+| 包（Package） | `pkg_<slug>` | `pkg_api_gateway_design` |
+| 来源（Source） | `src_<nnn>` | `src_001` |
+| 事实（Fact） | `fact_<nnn>` | `fact_014` |
+| 主张（Claim） | `claim_<nnn>` | `claim_003` |
+| 决策（Decision） | `dec_<nnn>` | `dec_002` |
+| 约束（Constraint） | `con_<nnn>` | `con_010` |
+| 术语（Term） | `term_<nnn>` | `term_004` |
+| 证据（Evidence） | `ev_<nnn>` | `ev_021` |
+| 引用（Reference） | `ref_<nnn>` | `ref_007` |
+| 未知（Unknown） | `unk_<nnn>` | `unk_001` |
+| 冲突（Conflict） | `cfl_<nnn>` | `cfl_001` |
+| 问题（Question） | `q_<nnn>` | `q_003` |
+| 动作（Action） | `act_<nnn>` | `act_002` |
 
-Numbers are zero-padded to 3 digits within a package, unique per kind. Do not reuse IDs after deletion in the same export run.
+编号在包内按种类零填充至 3 位且唯一。同一次导出中删除后不得复用 ID。
 
-### Shared field types
+### 共享字段类型
 
 ```text
-# Knowledge Status — facts, claims, decisions, constraints, glossary terms only
+# Knowledge Status — 仅用于 facts、claims、decisions、constraints、glossary terms
 KnowledgeStatus = verified | user_confirmed | inferred | unverified | unknown | disputed
 
-# Reference Status — evidence/references.json only (NOT KnowledgeStatus)
-# 0.1.0 defined portable value:
+# Reference Status — 仅用于 evidence/references.json（不是 KnowledgeStatus）
+# 0.1.0 已定义的可移植值：
 ReferenceStatus = unverified
-# Do NOT put KnowledgeStatus values (verified, user_confirmed, inferred, unknown, disputed)
-# on references. Expanding ReferenceStatus is an open question — do not invent ad-hoc values.
+# 不得将 KnowledgeStatus 值（verified、user_confirmed、inferred、unknown、disputed）
+# 写到 references 上。扩展 ReferenceStatus 属开放问题 — 不得发明临时值。
 
 BilingualText = {
-  "zh": string,    # Chinese; may be "" if not produced
-  "en": string     # English; may be "" if not produced
+  "zh": string,    # 中文；未产出时可为 ""
+  "en": string     # 英文；未产出时可为 ""
 }
 
 LocalizedString = {
   "text": string,
   "lang": "zh" | "en" | "mixed" | "und",
-  "i18n": BilingualText   # optional; default yes for bilingual packaging
+  "i18n": BilingualText   # 可选；双语打包时默认有
 }
 
-# Optional but recommended on facts/claims/decisions/constraints when env/version matters.
+# 当环境/版本相关时，facts/claims/decisions/constraints 上可选但建议填写。
 KnowledgeContext = {
   "environment": "prod" | "staging" | "test" | "dev" | "local" | "unspecified" | null,
   "version": string | null,
-  "time_range": string | null,   # free text / ISO interval if known
-  "scope": string | null         # e.g. "api-gateway", "eu-region"
+  "time_range": string | null,   # 自由文本 / 已知时用 ISO interval
+  "scope": string | null         # 例如 "api-gateway"、"eu-region"
 }
 
-# REQUIRED when status == user_confirmed on any knowledge object.
+# 任一知识对象 status == user_confirmed 时必需。
 Confirmation = {
   "confirmed_by": "user",
   "source_type": "conversation" | "user_authored_source" | "other",
   "source_ref": string | null,
-  "confirmation_text": string | null,  # exact user wording for THIS proposition
-  "confirmed_at": string | null,       # ISO-8601 UTC if known
-  "limitations": string | null         # set when exact quote cannot be retained
+  "confirmation_text": string | null,  # 针对本命题的用户原话
+  "confirmed_at": string | null,       # 已知时为 ISO-8601 UTC
+  "limitations": string | null         # 无法保留原话时设置
 }
 
-# source_type meanings:
-#   conversation         — user affirmed in the current agent session / chat
-#   user_authored_source — affirmation text lives in a packaged user-authored file
-#   other                — affirmation is attributed to the user but arrived via a
-#                          channel that is neither this session nor a packaged
-#                          user-authored source (e.g. user forwards their own prior
-#                          note, paste from an external ticket without packaging it).
-#                          MUST explain the channel in confirmation.limitations.
-#                          MUST NOT invent a fake source_id.
+# source_type 含义：
+#   conversation         — 用户在当前 agent 会话 / 聊天中肯定
+#   user_authored_source — 肯定文本位于已打包的用户撰写文件
+#   other                — 肯定归属于用户，但渠道既非本会话也非已打包
+#                          用户撰写来源（例如用户转发自己的旧笔记，或从外部
+#                          工单粘贴且未打包该工单）。
+#                          必须在 confirmation.limitations 中说明渠道。
+#                          不得捏造假 source_id。
 
-# source_ref by source_type:
-#   conversation         → null, or a non-sensitive host message id if available
-#   user_authored_source → MUST be a source_id that exists in source-index.json
-#   other                → null, or a short non-src_* label of the channel;
-#                          MUST NOT be a source_id that does not exist;
-#                          prefer null + limitations over a fabricated src_* id
+# 按 source_type 的 source_ref：
+#   conversation         → null，或可用时的非敏感宿主消息 id
+#   user_authored_source → 必须是 source-index.json 中存在的 source_id
+#   other                → null，或渠道的短非 src_* 标签；
+#                          不得为不存在的 source_id；
+#                          优先 null + limitations，而非伪造 src_* id
 
 Locator = {
   "source_id": string,
-  "path": string,                # package-relative; usually source/original/...; no .. escape
+  "path": string,                # 包相对；通常 source/original/...；无 .. 逃逸
   "locator_type": "line_range" | "section" | "json_pointer" | "anchor" | "page_range",
-  "start": string | number | null,   # type depends on locator_type (see table below)
+  "start": string | number | null,   # 类型取决于 locator_type（见下表）
   "end": string | number | null,
-  "excerpt": string              # short quote; redacted; <= 500 chars recommended
+  "excerpt": string              # 短引用；已脱敏；建议 <= 500 字符
 }
 ```
 
-#### Locator `start` / `end` by `locator_type`
+#### 定位器 `start` / `end` 按 `locator_type`
 
 | `locator_type` | `start` | `end` |
 | --- | --- | --- |
-| `line_range` | number (1-based line) or null | number (1-based line) or null |
-| `section` | **single** heading `string` or `null` | **single** heading `string` or `null` |
-| `json_pointer` | JSON Pointer `string` or null | null (unused) or same pointer |
-| `anchor` | anchor id `string` or null | null or end anchor `string` |
-| `page_range` | number (page) or null | number (page) or null |
+| `line_range` | number（1-based 行号）或 null | number（1-based 行号）或 null |
+| `section` | **单个**标题 `string` 或 `null` | **单个**标题 `string` 或 `null` |
+| `json_pointer` | JSON Pointer `string` 或 null | null（未用）或同一 pointer |
+| `anchor` | 锚点 id `string` 或 null | null 或结束锚点 `string` |
+| `page_range` | number（页码）或 null | number（页码）或 null |
 
-For `section`: do **not** use arrays, comma-joined multi-heading lists, or free-form path expressions in `start`/`end`. One heading string per field. If only a start heading is known, set `end: null`.
+对 `section`：**不要**在 `start`/`end` 中使用数组、逗号拼接的多标题列表或自由路径表达式。每个字段一个标题字符串。若仅知起始标题，设 `end: null`。
 
-**Open point:** whether `page_range` is required for PDFs. Until decided: `line_range` for text; `page_range` when pages known; else `section` + excerpt. Unreadable / non-extractable PDFs must not back `verified` knowledge.
+**开放点：** `page_range` 是否对 PDF 必需。在决定前：文本用 `line_range`；页码已知时用 `page_range`；否则 `section` + excerpt。不可读 / 不可提取的 PDF 不得支撑 `verified` 知识。
 
 ---
 
 ## `manifest.yaml`
 
-Required keys:
+必需键：
 
 ```yaml
 cbhf_version: "0.1.0"
@@ -225,40 +224,40 @@ generator:
   skill_version: "0.1.0"
 locale:
   narratives: ["zh", "en"]
-  primary_source_lang: zh            # or en / mixed
+  primary_source_lang: zh            # 或 en / mixed
 sources_summary:
   count: 2
   source_ids: ["src_001", "src_002"]
 integrity:
-  # Optional inventory of package-relative paths the exporter wrote or intended to write.
-  # NOT a checksum pass, NOT validator success, NOT proof of package completeness.
+  # 可选：Exporter 已写入或打算写入的包相对路径清单。
+  # 不是 checksum 通过，不是 validator 成功，也不是包完整性证明。
   files_touched: []
-limitations:                         # REQUIRED — honest gaps / host limits
-  - "design.pdf copied as opaque binary; text not extracted; readable=false."
-  - "Redaction is best-effort; complete secret/PII discovery is not claimed."
+limitations:                         # 必需 — 诚实的缺口 / 宿主限制
+  - "design.pdf 以不透明二进制复制；未提取文本；readable=false。"
+  - "脱敏为尽力而为；不声称已完整发现密钥/PII。"
 redaction:
-  applied: true                      # true ONLY if secret/PII redaction was performed
+  applied: true                      # 仅在实际执行了密钥/PII 脱敏时为 true
   policy: "default_secrets_and_pii"
-  completeness: "best_effort"        # NEVER use a value that implies full coverage
-  notes: "Masked token-like strings in src_001 copy and excerpts."
+  completeness: "best_effort"        # 切勿使用暗示全覆盖的值
+  notes: "已在 src_001 副本与摘录中掩码类令牌字符串。"
 validation:
-  present: false                     # exporter always leaves false / omits report
-  report_path: null                  # set only by validator when validation/ exists
+  present: false                     # exporter 始终为 false / 省略 report
+  report_path: null                  # 仅在 validation/ 存在时由 validator 设置
 ```
 
-`manifest.redaction.applied`:
+`manifest.redaction.applied`：
 
-- `true` — exporter performed secret/PII redaction on one or more package texts/copies.
-- `false` — no redaction pass was performed.
-- Does **not** mean “any file transform occurred”. Encoding normalization or other non-redaction changes belong in `content_transformed` / `transform_reason`, not here.
+- `true` — Exporter 对一份或多份包内文本/副本执行了密钥/PII 脱敏。
+- `false` — 未执行脱敏遍。
+- **不**表示“发生了任何文件变换”。编码规范化或其他非脱敏变更属于 `content_transformed` / `transform_reason`，不在此处。
 
-`integrity.files_touched`:
+`integrity.files_touched`：
 
-- Optional list of package-relative paths written during export.
-- Presence of paths does **not** mean integrity verification passed, hashes matched, or Validator ran.
+- 导出期间写入的包相对路径可选列表。
+- 路径存在**不**表示完整性核验通过、哈希匹配或 Validator 已运行。
 
-Optional keys: `owners`, `tags`, `related_packages`, `notes`, `host_capabilities_notes`.  
-Avoid unknown top-level keys — use `notes` until the formal spec freezes them.
+可选键：`owners`、`tags`、`related_packages`、`notes`、`host_capabilities_notes`。
+避免未知顶层键——正式规范冻结前放入 `notes`。
 
 ---
 
@@ -279,7 +278,7 @@ Avoid unknown top-level keys — use `notes` until the formal spec freezes them.
       "content_transformed": true,
       "transform_reason": "redaction",
       "readable": true,
-      "notes": "Package copy redacted; user file left untouched.",
+      "notes": "包内副本已脱敏；用户原件未动。",
       "checksum": {
         "alg": "sha256",
         "value": null,
@@ -298,7 +297,7 @@ Avoid unknown top-level keys — use `notes` until the formal spec freezes them.
       "content_transformed": false,
       "transform_reason": "none",
       "readable": false,
-      "notes": "Opaque binary copy only; text not extracted by host.",
+      "notes": "仅不透明二进制副本；宿主未提取文本。",
       "checksum": {
         "alg": "sha256",
         "value": null,
@@ -309,55 +308,55 @@ Avoid unknown top-level keys — use `notes` until the formal spec freezes them.
 }
 ```
 
-| Field | Required | Meaning |
+| 字段 | 必需 | 含义 |
 | --- | --- | --- |
-| `source_id` | yes | Stable id |
-| `original_name` | yes | User-facing filename (basename preferred) |
-| `user_path` | no | Privacy-limited pointer to the user file; see below |
-| `package_path` | yes | Safe path inside package (no `..` / absolute / symlink escape) |
-| `media_type` | yes | Best-effort MIME |
-| `language` | no | `zh` / `en` / `mixed` / `und` |
-| `role` | yes | `primary` \| `supporting` \| `reference_material` |
-| `received_from` | yes | `user` \| `workspace` \| `other` |
-| `content_transformed` | yes | `true` \| `false` \| `null` — see below |
-| `transform_reason` | no | e.g. `redaction`, `encoding_normalization`, `none`, `unknown` |
-| `readable` | yes | `true` only if exporter extracted usable content; opaque binary copies use `false` |
-| `checksum` | no | Optional. When present for CBHF 0.1.0 Validator I20 alignment: `alg` must be exactly `sha256` (no default); `of` must be exactly `package_copy` (no default); `value` is either `null`/omitted/empty (**no applicable checksum**) or exactly **64 hex** chars (A–F/a–f; compare lowercase). Hash the **exact raw bytes** of the package-copy file at `package_path`. Missing/unsupported `alg` or `of` must **not** be silently defaulted. Hosts are **not** required to emit checksums. |
+| `source_id` | 是 | 稳定 id |
+| `original_name` | 是 | 面向用户的文件名（优先 basename） |
+| `user_path` | 否 | 指向用户文件的隐私受限指针；见下文 |
+| `package_path` | 是 | 包内安全路径（无 `..` / 绝对路径 / 符号链接逃逸） |
+| `media_type` | 是 | 尽力 MIME |
+| `language` | 否 | `zh` / `en` / `mixed` / `und` |
+| `role` | 是 | `primary` \| `supporting` \| `reference_material` |
+| `received_from` | 是 | `user` \| `workspace` \| `other` |
+| `content_transformed` | 是 | `true` \| `false` \| `null` — 见下文 |
+| `transform_reason` | 否 | 例如 `redaction`、`encoding_normalization`、`none`、`unknown` |
+| `readable` | 是 | 仅当 Exporter 提取了可用内容时为 `true`；不透明二进制副本用 `false` |
+| `checksum` | 否 | 可选。为与 CBHF 0.1.0 Validator I20 对齐而出现时：`alg` 必须恰好为 `sha256`（无默认）；`of` 必须恰好为 `package_copy`（无默认）；`value` 为 `null`/省略/空（**无适用校验和**）或恰好 **64 位十六进制**字符（A–F/a–f；比较时小写）。对 `package_path` 处包内副本文件的**精确原始字节**哈希。缺失/不支持的 `alg` 或 `of` **不得**静默默认。宿主**不**被要求发出校验和。 |
 
 #### `content_transformed`
 
-| Value | When to use |
+| 取值 | 何时使用 |
 | --- | --- |
-| `true` | Known: package copy bytes differ from the user file (e.g. redaction, normalization) |
-| `false` | Known: package copy is byte-identical to the user file |
-| `null` | **Unknown** whether bytes match — host cannot compare, copy path unclear, or comparison not performed. **Do not invent `false`.** |
+| `true` | 已知：包内副本字节与用户文件不同（例如脱敏、规范化） |
+| `false` | 已知：包内副本与用户文件字节同一 |
+| `null` | **未知**字节是否匹配——宿主无法比较、复制路径不清或未做比较。**不得捏造 `false`。** |
 
-`content_transformed` is about byte identity of the package copy vs the user file. It is independent of `manifest.redaction.applied` (though redaction usually implies `true` when redaction changed the copy).
+`content_transformed` 关乎包内副本相对用户文件的字节同一性。它独立于 `manifest.redaction.applied`（尽管脱敏在改变副本时通常意味着 `true`）。
 
-#### `user_path` privacy
+#### `user_path` 隐私
 
-- Optional. Prefer `null` when the path adds little value.
-- Prefer workspace-relative paths over absolute home paths.
-- Do **not** store paths that embed secrets, tokens, personal directories you can avoid, or customer-sensitive folder names when a basename (`original_name`) suffices.
-- If a path segment is sensitive, redact it or set `user_path` to `null` and note the limitation.
-- `user_path` never authorizes modifying the user file.
+- 可选。路径增值很小时优先 `null`。
+- 优先工作区相对路径，而非绝对家目录路径。
+- **不要**存储嵌入密钥、令牌、可避免的个人目录，或在 basename（`original_name`）已足够时仍写入客户敏感文件夹名。
+- 若某路径段敏感，脱敏之或将 `user_path` 设为 `null` 并注明 limitation。
+- `user_path` 永不授权修改用户文件。
 
-#### Copyable but unreadable binaries
+#### 可复制但不可读的二进制
 
-Allowed in `source/original/` when the host can copy bytes but cannot extract text:
+当宿主能复制字节但无法提取文本时，允许放入 `source/original/`：
 
 - `readable: false`
-- No evidence excerpts / line locators pretending to quote inner text
-- No KnowledgeStatus `verified` derived from that file’s unread content
-- `manifest.limitations` MUST mention the opaque packaging
+- 无假装引用内部文本的证据摘录 / 行定位器
+- 无源自该文件未读内容的 KnowledgeStatus `verified`
+- `manifest.limitations` **必须**提及不透明打包
 
-Skipped / not-copied user files do **not** get a fake packaged entry; record them in `manifest.limitations` instead (optional future: a `skipped_sources` list — not required in 0.1.0).
+跳过 / 未复制的用户文件**不要**伪造已打包条目；改为记入 `manifest.limitations`（可选未来：`skipped_sources` 列表——0.1.0 不要求）。
 
 ---
 
 ## `knowledge/overview.md`
 
-Markdown, bilingual sections required:
+Markdown，双语章节必需：
 
 ```markdown
 # Overview / 概览
@@ -378,18 +377,18 @@ Markdown, bilingual sections required:
 ...
 ```
 
-Do not put disputed resolutions here. Link to unknowns/conflicts by id in prose if helpful. State that `source/original/` are package copies.
+不要在此写入争议裁决。若有帮助，可在正文中按 id 链接 unknowns/conflicts。说明 `source/original/` 是包内副本。
 
 ---
 
-## Status field (all structured knowledge)
+## 状态字段（全部结构化知识）
 
-`facts`, `claims`, `decisions`, `constraints`, and `glossary` terms **all** carry KnowledgeStatus `status`.  
-Writing a row does **not** make it `verified`. Allowed statuses and judgment rules: [claim-rules.md](claim-rules.md).
+`facts`、`claims`、`decisions`、`constraints` 与 `glossary` 术语**都**携带 KnowledgeStatus `status`。
+写入一行**不会**使其成为 `verified`。允许的状态与判定规则：[claim-rules.md](claim-rules.md)。
 
-When `status` is `user_confirmed`, `confirmation` is **required** (see `Confirmation` shared type above).
+当 `status` 为 `user_confirmed` 时，`confirmation` **必需**（见上文共享类型 `Confirmation`）。
 
-Optional `context` (`KnowledgeContext`) SHOULD be filled when environment/version/time/scope affects meaning or conflict detection.
+当环境/版本/时间/范围影响含义或冲突检测时，可选 `context`（`KnowledgeContext`）**应当**填写。
 
 ---
 
@@ -425,7 +424,7 @@ Optional `context` (`KnowledgeContext`) SHOULD be filled when environment/versio
 }
 ```
 
-Facts must not contain prescriptions (“should”, “must”) — those belong in `constraints` or `decisions`.
+事实不得含规范用语（“应当”“必须”）——那些属于 `constraints` 或 `decisions`。
 
 ---
 
@@ -456,13 +455,13 @@ Facts must not contain prescriptions (“should”, “must”) — those belong
       "related_fact_ids": ["fact_010"],
       "confirmation": null,
       "conflict_ids": [],
-      "notes": "Inference: derived from latency table; not explicitly stated."
+      "notes": "Inference: 由延迟表推导；非原文明确陈述。"
     }
   ]
 }
 ```
 
-`kind`: `assertion` | `interpretation` | `prediction` | `requirement_claim` | `other`.
+`kind`：`assertion` | `interpretation` | `prediction` | `requirement_claim` | `other`。
 
 ---
 
@@ -548,13 +547,13 @@ Facts must not contain prescriptions (“should”, “must”) — those belong
 }
 ```
 
-`priority`: `must` | `should` | `may` | `must_not` | `unspecified`.
+`priority`：`must` | `should` | `may` | `must_not` | `unspecified`。
 
 ---
 
 ## `knowledge/glossary.json`
 
-Terms also require `status`. Listing a term does **not** mean it is `verified`.
+术语也需要 `status`。列出术语**并不**意味着它是 `verified`。
 
 ```json
 {
@@ -581,7 +580,7 @@ Terms also require `status`. Listing a term does **not** mean it is `verified`.
 }
 ```
 
-If a definition is exporter-synthesized without a source span → `inferred` or `unverified`, never `verified`.
+若定义由 Exporter 综合且无来源片段 → `inferred` 或 `unverified`，绝非 `verified`。
 
 ---
 
@@ -611,12 +610,12 @@ If a definition is exporter-synthesized without a source span → `inferred` or 
 }
 ```
 
-`kind`: `excerpt` | `table_cell` | `figure_caption` | `metadata` | `user_message` | `other`.  
-`supports[].type`: `fact` | `claim` | `decision` | `constraint` | `term`.
+`kind`：`excerpt` | `table_cell` | `figure_caption` | `metadata` | `user_message` | `other`。
+`supports[].type`：`fact` | `claim` | `decision` | `constraint` | `term`。
 
-Bidirectional consistency required between `evidence_ids` and `supports`.
+`evidence_ids` 与 `supports` 之间要求双向一致。
 
-If `redaction_applied` (or package-copy redaction) damages meaning/locatability → downgrade supported objects; do not keep `verified`.
+若 `redaction_applied`（或包内副本脱敏）损害含义/可定位性 → 降级被支撑对象；不得保留 `verified`。
 
 ---
 
@@ -632,24 +631,24 @@ If `redaction_applied` (or package-copy redaction) damages meaning/locatability 
       "url": null,
       "mentioned_in": ["src_001"],
       "status": "unverified",
-      "notes": "Listed in source; not fetched."
+      "notes": "来源中列出；未获取原文。"
     }
   ]
 }
 ```
 
-#### ReferenceStatus (independent of KnowledgeStatus)
+#### ReferenceStatus（独立于 KnowledgeStatus）
 
-| Value (0.1.0) | Meaning |
+| 取值 (0.1.0) | 含义 |
 | --- | --- |
-| `unverified` | Citation recorded as stated in sources; the referenced work was **not** obtained/checked inside this package. **Default and only defined portable value in 0.1.0.** |
+| `unverified` | 按来源所述记录引用；被引作品**未**在本包内获取/核验。**0.1.0 中默认且唯一已定义的可移植值。** |
 
-Rules:
+规则：
 
-1. `references[].status` uses **ReferenceStatus**, not KnowledgeStatus.
-2. Do **not** assign `verified`, `user_confirmed`, `inferred`, `unknown`, or `disputed` to a reference — those are KnowledgeStatus values and would be ambiguous here.
-3. A real-looking URL does **not** upgrade ReferenceStatus.
-4. Even if the user later packages the cited work as a source, knowledge claims still need their own evidence; do not overload ReferenceStatus to mean knowledge `verified` (additional ReferenceStatus values are an open question — do not invent them in exporters).
+1. `references[].status` 使用 **ReferenceStatus**，而非 KnowledgeStatus。
+2. **不要**给引用赋 `verified`、`user_confirmed`、`inferred`、`unknown` 或 `disputed`——那些是 KnowledgeStatus 值，在此会歧义。
+3. 看起来真实的 URL **不会**提升 ReferenceStatus。
+4. 即便用户稍后将被引作品打包为来源，知识主张仍需各自证据；不要用 ReferenceStatus 兼指知识 `verified`（额外 ReferenceStatus 值属开放问题——Exporter 不得发明）。
 
 ---
 
@@ -684,19 +683,19 @@ Rules:
 }
 ```
 
-Use Unknowns (and/or questions) when two statements **might** conflict but context alignment is unclear — do **not** emit a definitive Conflict in that case.
+当两条陈述**可能**冲突但上下文对齐不清时，使用 Unknowns（和/或 questions）——此时**不要**发出确定性 Conflict。
 
 ---
 
 ## `uncertainty/conflicts.json`
 
-Create a Conflict **only if all** are true:
+**仅当全部**成立时创建 Conflict：
 
-1. Same subject / object of discourse  
-2. Context (environment, version, time, scope, …) is the same or explicitly identical  
-3. The two statements cannot both be true  
+1. 同一主体 / 话语对象
+2. 上下文（环境、版本、时间、范围等）相同或明确同一
+3. 两条陈述不能同真
 
-Otherwise: question / unknown — not a conflict.
+否则：question / unknown——不是冲突。
 
 ```json
 {
@@ -725,34 +724,34 @@ Otherwise: question / unknown — not a conflict.
       ],
       "evidence_ids": ["ev_001", "ev_009"],
       "resolution": null,
-      "notes": "Do not auto-resolve."
+      "notes": "不得自动裁决。"
     }
   ]
 }
 ```
 
-`context_alignment`: `same` | `different` | `uncertain`.  
-Only `same` (with `same_subject: true` and mutual exclusion) yields a Conflict row.  
-If `uncertain` → do not write this file entry; use `questions.json` / `unknowns.json` instead.
+`context_alignment`：`same` | `different` | `uncertain`。
+仅 `same`（且 `same_subject: true` 与互斥）产生 Conflict 行。
+若 `uncertain` → 不要写此文件条目；改用 `questions.json` / `unknowns.json`。
 
-`resolution` remains `null` unless the user explicitly resolves it; then follow claim-rules for status updates. Exporter never invents a resolution.
+除非用户明确裁决，`resolution` 保持 `null`；之后按 claim-rules 更新状态。Exporter 永不捏造裁决。
 
-**Non-example:** test port `8000` vs prod port `8080` → `context_alignment: different` → **no** Conflict.
+**反例：** 测试端口 `8000` vs 生产端口 `8080` → `context_alignment: different` → **无** Conflict。
 
 ---
 
 ## `handoff/receiver-guide.md`
 
-Bilingual operator guide. Must include:
+双语操作指南。必须包含：
 
-1. Package purpose  
-2. Trust boundaries (`verified` vs `user_confirmed` vs `inferred`, etc.)  
-3. User originals are untouched; `source/original/` are package copies  
-4. How to use unknowns/conflicts (and that env mismatches ≠ conflicts)  
-5. Limitations / redaction best-effort caveat  
-6. That missing `validation/` means not yet validated  
+1. 包目的
+2. 信任边界（`verified` vs `user_confirmed` vs `inferred` 等）
+3. 用户原件未动；`source/original/` 是包内副本
+4. 如何使用 unknowns/conflicts（以及环境不匹配 ≠ 冲突）
+5. Limitations / 尽力脱敏注意事项
+6. 缺少 `validation/` 表示尚未校验
 
-Structure with `## English` and `## 中文` sections.
+用 `## English` 与 `## 中文` 分节。
 
 ---
 
@@ -774,7 +773,7 @@ Structure with `## English` and `## 中文` sections.
       "priority": "high",
       "related_conflict_ids": [],
       "related_unknown_ids": ["unk_002"],
-      "notes": "Context alignment uncertain — not recorded as a conflict."
+      "notes": "上下文对齐不确定 — 未记为冲突。"
     }
   ]
 }
@@ -800,43 +799,43 @@ Structure with `## English` and `## 中文` sections.
       "priority": "high",
       "status": "pending",
       "related_ids": ["q_001", "unk_002"],
-      "notes": "Not performed by exporter."
+      "notes": "Exporter 未执行该动作。"
     }
   ]
 }
 ```
 
-Action `status`: `pending` | `blocked` | `cancelled`. Never mark export-time suggestions completed.  
-Do not use action status values from knowledge `Status`.
+动作 `status`：`pending` | `blocked` | `cancelled`。切勿将导出时建议标为已完成。
+不要使用知识 `Status` 的动作状态值。
 
 ---
 
 ## `validation/validation-report.json`
 
-- **Optional** path reserved for `context-validator`.  
-- Not an Exporter output.  
-- Schema deferred until Validator work begins.  
-- Exporter must set `manifest.validation.present: false` (or equivalent honesty in limitations) and must not claim a full validation pass.
+- 为 `context-validator` **预留**的可选路径。
+- 不是 Exporter 输出。
+- Schema 延至 Validator 工作开始。
+- Exporter 必须设置 `manifest.validation.present: false`（或在 limitations 中等价诚实），且不得声称完整校验通过。
 
 ---
 
-## Empty collections
+## 空集合
 
-If a category has no items, write the file with an empty array under its standard key, e.g. `{ "conflicts": [] }`. Do not omit Exporter-required files. Omit `validation/` entirely when not validated.
+若某类别无条目，在标准键下写空数组，例如 `{ "conflicts": [] }`。不得省略 Exporter 必需文件。未校验时完全省略 `validation/`。
 
-## Open questions (do not fork the layout)
+## 开放问题（不得分叉布局）
 
-| # | Ambiguity | Recommendation for 0.1.0 |
+| # | 歧义 | 0.1.0 建议 |
 | --- | --- | --- |
-| 1 | Where is the normative schema published? | Human semantics: this file; machine shapes: `spec/cbhf/v0.1.0/*.schema.json` |
-| 2 | Bilingual storage | Single files; `i18n.zh` / `i18n.en` + narrative bilingual sections |
-| 3 | Fact vs Claim boundary | Facts = descriptive atoms; Claims = assertive/interpretive; prefer one canonical record |
-| 4 | Checksum required? | Optional. When emitted for 0.1.0: `alg=sha256`, `of=package_copy`, hash **raw bytes** of package copy; see Validator I20 frozen rule |
-| 5 | PDF locators | `page_range` when known; else `section` + excerpt; unread/opaque PDF → `readable: false` + limitation |
-| 6 | Confirmation without retained quote | Allowed with `confirmation_text: null` + `limitations` explaining why |
-| 7 | Package root naming | User-chosen directory; stable id is `package_id` |
-| 8 | `validation-report.json` schema | Deferred to Validator skill |
-| 9 | `skipped_sources` formal list | Optional future; use `limitations` for now |
-| 10 | Expand `ReferenceStatus` beyond `unverified`? | Deferred — do not invent ad-hoc values |
-| 11 | Host message-id format for `confirmation.source_ref` | Optional opaque string; privacy-safe; else `null` |
-| 12 | Closed enum for handoff `priority` (`questions` / `recommended-actions`)? | Example uses `high` only; Schema keeps `string` until enum is ratified |
+| 1 | 规范性 schema 发布在何处？ | 人工语义：本文件；机器形态：`spec/cbhf/v0.1.0/*.schema.json` |
+| 2 | 双语存储 | 单文件；`i18n.zh` / `i18n.en` + 叙述双语章节 |
+| 3 | Fact vs Claim 边界 | Facts = 描述性原子；Claims = 断言/诠释；优先一条规范记录 |
+| 4 | 校验和是否必需？ | 可选。0.1.0 发出时：`alg=sha256`，`of=package_copy`，对包内副本**原始字节**哈希；见 Validator I20 冻结规则 |
+| 5 | PDF 定位器 | 已知时用 `page_range`；否则 `section` + excerpt；未读/不透明 PDF → `readable: false` + limitation |
+| 6 | 无保留原文的确认 | 允许 `confirmation_text: null` + 说明原因的 `limitations` |
+| 7 | 包根命名 | 用户自选目录；稳定 id 为 `package_id` |
+| 8 | `validation-report.json` schema | 延至 Validator skill |
+| 9 | `skipped_sources` 正式列表 | 可选未来；当前用 `limitations` |
+| 10 | 将 `ReferenceStatus` 扩展到 `unverified` 之外？ | 延后——不得发明临时值 |
+| 11 | `confirmation.source_ref` 的宿主 message-id 格式 | 可选不透明字符串；隐私安全；否则 `null` |
+| 12 | handoff `priority`（`questions` / `recommended-actions`）封闭枚举？ | 示例仅用 `high`；Schema 在枚举批准前保持 `string` |

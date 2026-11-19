@@ -1,164 +1,164 @@
-# Validation rules catalog (CBHF 0.1.0)
+# 校验规则目录（CBHF 0.1.0）
 
-Authority: `docs/context-validator-design.zh-CN.md` + `spec/cbhf/v0.1.0/*.schema.json` + exporter references.  
-**Do not invent protocol fields.**
+权威：`docs/context-validator-design.zh-CN.md` + `spec/cbhf/v0.1.0/*.schema.json` + exporter references。
+**不得发明协议字段。**
 
-## Result codes (per check)
+## 结果码（逐项检查）
 
 `PASS` | `FAIL` | `WARNING` | `NOT_CHECKED` | `NEEDS_HUMAN_REVIEW`
 
-## Capability note (Phase 3B-C2)
+## 能力说明（Phase 3B-C2）
 
-All checks below are **defined**. Automation status:
+下列检查均已**定义**。自动化状态：
 
-| Layer | Automation |
+| 层 | 自动化 |
 | --- | --- |
-| L1 (P01–P07) | Implemented in `scripts/validate_package.py` |
-| L2 (S01–S15) | Implemented in `scripts/validate_package.py` |
-| L3-A (I01–I09, I15, I17–I19) | Implemented in `scripts/_integrity.py` |
-| L3-B1 (I11, I10) | Implemented in `scripts/_integrity.py` |
-| L3-B2 (I16) | Implemented in `scripts/_integrity.py` (Option C) |
-| L3-B3 (I12) | Implemented in `scripts/_integrity.py` (line_range bounds) |
-| L3-B4 (I13) | Implemented in `scripts/_integrity.py` (Option B — no finders) |
-| L3-C I14 | **Rules frozen** and **automated** in `scripts/_integrity.py` (line_range excerpt match) |
-| L3-C I20 | **Rules frozen** and **automated** in `scripts/_integrity.py` (optional package_copy SHA-256) |
-| L4 (H01–H06) | **Not** automated — never semantic PASS |
+| L1 (P01–P07) | 已在 `scripts/validate_package.py` 实现 |
+| L2 (S01–S15) | 已在 `scripts/validate_package.py` 实现 |
+| L3-A (I01–I09, I15, I17–I19) | 已在 `scripts/_integrity.py` 实现 |
+| L3-B1 (I11, I10) | 已在 `scripts/_integrity.py` 实现 |
+| L3-B2 (I16) | 已在 `scripts/_integrity.py` 实现（Option C） |
+| L3-B3 (I12) | 已在 `scripts/_integrity.py` 实现（line_range 边界） |
+| L3-B4 (I13) | 已在 `scripts/_integrity.py` 实现（Option B — 无 finders） |
+| L3-C I14 | **规则已冻结**，且在 `scripts/_integrity.py` **已自动化**（line_range 摘录匹配） |
+| L3-C I20 | **规则已冻结**，且在 `scripts/_integrity.py` **已自动化**（可选 package_copy SHA-256） |
+| L4 (H01–H06) | **未**自动化 — 永不语义 PASS |
 
-Anything not actually executed → `NOT_CHECKED`.  
-`tests/schema/v0.1.0/package_smoke_test.py` is **not** this catalog’s automation.
+任何未实际执行的项 → `NOT_CHECKED`。
+`tests/schema/v0.1.0/package_smoke_test.py` **不是**本目录的自动化。
 
-## Tier reminder (L3)
+## 层级提醒（L3）
 
-| Tier | Meaning | Layer |
+| 档 | 含义 | 层 |
 | --- | --- | --- |
-| A | Reference ID exists | L3 |
-| B | Locator path/range valid | L3 |
-| C | Excerpt text matchable in window | L3 |
-| D | Excerpt semantically adequate for proposition/status | **L4 only** |
+| A | 引用 ID 存在 | L3 |
+| B | Locator 路径/范围有效 | L3 |
+| C | 摘录文本可在窗口内匹配 | L3 |
+| D | 摘录对命题/状态在语义上充分 | **仅 L4** |
 
-File exists ≠ parseable ≠ schema-valid ≠ reference exists ≠ locator valid ≠ excerpt matchable ≠ semantically adequate.
+文件存在 ≠ 可解析 ≠ schema-valid ≠ 引用存在 ≠ locator 有效 ≠ 摘录可匹配 ≠ 语义充分。
 
 ---
 
-## L1 — Package Validation
+## L1 — 包校验
 
-### P01 — Required paths exist
+### P01 — 必需路径存在
 
-| Field | Content |
+| 字段 | 内容 |
 | --- | --- |
-| Object | Package root |
-| Input | Directory listing |
-| Logic | Require Exporter-required tree: `manifest.yaml`, `source/source-index.json`, `source/original/`, `knowledge/overview.md`, `knowledge/facts.json`, `knowledge/claims.json`, `knowledge/decisions.json`, `knowledge/constraints.json`, `knowledge/glossary.json`, `evidence/evidence.json`, `evidence/references.json`, `uncertainty/unknowns.json`, `uncertainty/conflicts.json`, `handoff/receiver-guide.md`, `handoff/questions.json`, `handoff/recommended-actions.json` |
-| PASS | All present |
-| FAIL | Any missing |
-| NOT_CHECKED | Cannot list directory |
-| Output | List missing paths |
+| 对象 | 包根 |
+| 输入 | 目录列表 |
+| 逻辑 | 要求 Exporter 必需树：`manifest.yaml`、`source/source-index.json`、`source/original/`、`knowledge/overview.md`、`knowledge/facts.json`、`knowledge/claims.json`、`knowledge/decisions.json`、`knowledge/constraints.json`、`knowledge/glossary.json`、`evidence/evidence.json`、`evidence/references.json`、`uncertainty/unknowns.json`、`uncertainty/conflicts.json`、`handoff/receiver-guide.md`、`handoff/questions.json`、`handoff/recommended-actions.json` |
+| PASS | 全部存在 |
+| FAIL | 任一缺失 |
+| NOT_CHECKED | 无法列出目录 |
+| 输出 | 缺失路径列表 |
 
-### P02 — Markdown readable
+### P02 — Markdown 可读
 
-| Field | Content |
+| 字段 | 内容 |
 | --- | --- |
-| Object | `knowledge/overview.md`, `handoff/receiver-guide.md` |
-| Input | File bytes |
-| Logic | UTF-8 readable text |
-| PASS | Both readable |
-| FAIL | Unreadable / missing after P01 |
-| NOT_CHECKED | Host cannot read files |
-| Output | Which file failed |
+| 对象 | `knowledge/overview.md`、`handoff/receiver-guide.md` |
+| 输入 | 文件字节 |
+| 逻辑 | UTF-8 可读文本 |
+| PASS | 两者均可读 |
+| FAIL | 不可读 / P01 后仍缺失 |
+| NOT_CHECKED | 主机无法读取文件 |
+| 输出 | 哪个文件失败 |
 
-### P03 — JSON parseable (reject duplicate keys)
+### P03 — JSON 可解析（拒绝重复键）
 
-| Field | Content |
+| 字段 | 内容 |
 | --- | --- |
-| Object | All package `.json` files |
-| Input | File text |
-| Logic | Parse as JSON; **duplicate keys must FAIL** (silent overwrite parsers are insufficient alone) |
-| PASS | All parse; no duplicate keys detected |
-| FAIL | Syntax error or duplicate key |
-| NOT_CHECKED | No duplicate-key-aware parser available |
-| Output | File + parse error |
+| 对象 | 包内全部 `.json` 文件 |
+| 输入 | 文件文本 |
+| 逻辑 | 解析为 JSON；**重复键必须 FAIL**（仅靠会静默覆盖的解析器不够） |
+| PASS | 全部解析；未检测到重复键 |
+| FAIL | 语法错误或重复键 |
+| NOT_CHECKED | 无感知重复键的解析器可用 |
+| 输出 | 文件 + 解析错误 |
 
-### P04 — YAML parseable (reject duplicate keys)
+### P04 — YAML 可解析（拒绝重复键）
 
-| Field | Content |
+| 字段 | 内容 |
 | --- | --- |
-| Object | `manifest.yaml` |
-| Input | File text |
-| Logic | Parse YAML with unique-key enforcement |
-| PASS | Parses; no duplicate keys |
-| FAIL | Syntax / duplicate key |
-| NOT_CHECKED | No unique-key YAML loader |
-| Output | Error detail |
+| 对象 | `manifest.yaml` |
+| 输入 | 文件文本 |
+| 逻辑 | 以唯一键强制解析 YAML |
+| PASS | 解析成功；无重复键 |
+| FAIL | 语法 / 重复键 |
+| NOT_CHECKED | 无唯一键 YAML 加载器 |
+| 输出 | 错误详情 |
 
-### P05 — Package form
+### P05 — 包形态
 
-| Field | Content |
+| 字段 | 内容 |
 | --- | --- |
-| Object | Layout + manifest `package_form` / `scenario` when readable |
-| Input | Tree + parsed manifest if available |
-| Logic | Expect folder package; `package_form` should be `folder`, `scenario` `docs` for 0.1.0 docs scenario |
-| PASS | Folder layout consistent |
-| FAIL | Clearly not a CBHF folder root |
-| NOT_CHECKED | Manifest unreadable |
-| Output | Observed form |
+| 对象 | 布局 + 可读时的 manifest `package_form` / `scenario` |
+| 输入 | 树 + 可用时已解析的 manifest |
+| 逻辑 | 期望文件夹包；对 0.1.0 docs 场景，`package_form` 应当为 `folder`，`scenario` 为 `docs` |
+| PASS | 文件夹布局一致 |
+| FAIL | 明显不是 CBHF 文件夹根 |
+| NOT_CHECKED | Manifest 不可读 |
+| 输出 | 观察到的形态 |
 
-### P06 — Extra / unexpected entries
+### P06 — 额外 / 意外条目
 
-| Field | Content |
+| 字段 | 内容 |
 | --- | --- |
-| Object | Top-level and notable extras |
-| Input | Tree enum |
-| Logic | Unknown top-level → **WARNING** (allowlist not frozen — Open Question Q1). `validation/` allowed only if a prior/explicit Validator write exists |
-| PASS | No unexpected top-level |
-| WARNING | Unexpected extras |
-| FAIL | (reserved; not default in 0.1.0) |
-| NOT_CHECKED | Cannot enumerate |
-| Output | Extra paths |
+| 对象 | 顶层与显著额外项 |
+| 输入 | 树枚举 |
+| 逻辑 | 未知顶层 → **WARNING**（白名单未冻结 — 开放问题 Q1）。仅当存在先前/显式 Validator 写入时才允许 `validation/` |
+| PASS | 无意外顶层 |
+| WARNING | 存在意外额外项 |
+| FAIL | （保留；0.1.0 默认不用） |
+| NOT_CHECKED | 无法枚举 |
+| 输出 | 额外路径 |
 
-### P07 — Read-only commitment
+### P07 — 只读承诺
 
-| Field | Content |
+| 字段 | 内容 |
 | --- | --- |
-| Object | Validator runtime behavior |
-| Input | Process intent |
-| Logic | Must not modify knowledge/evidence/source copies. Phase 1: do not write package reports by default |
-| PASS | No package mutation |
-| FAIL | Package knowledge mutated during validation |
-| NOT_CHECKED | Cannot verify filesystem mtimes/hashes |
-| Output | Mutation evidence if any |
+| 对象 | Validator 运行时行为 |
+| 输入 | 进程意图 |
+| 逻辑 | 不得修改 knowledge/evidence/source 副本。Phase 1：默认不写包内报告 |
+| PASS | 无包变更 |
+| FAIL | 校验期间包内知识被变更 |
+| NOT_CHECKED | 无法核验文件系统 mtimes/hashes |
+| 输出 | 若有，变更证据 |
 
 ---
 
-## L2 — Schema Validation
+## L2 — Schema 校验
 
-Schemas live under `spec/cbhf/v0.1.0/` (Draft 2020-12).
+Schema 位于 `spec/cbhf/v0.1.0/`（Draft 2020-12）。
 
-### S01 — Load schemas
+### S01 — 加载 Schema
 
-| Field | Content |
+| 字段 | 内容 |
 | --- | --- |
-| Object | `*.schema.json` |
-| Input | Spec directory |
-| Logic | Load + `check_schema` |
-| PASS | All load |
-| FAIL | Schema files corrupt (Validator tooling error) |
-| NOT_CHECKED | Spec path unavailable |
-| Output | Schema load errors |
+| 对象 | `*.schema.json` |
+| 输入 | Spec 目录 |
+| 逻辑 | 加载 + `check_schema` |
+| PASS | 全部加载 |
+| FAIL | Schema 文件损坏（Validator 工具错误） |
+| NOT_CHECKED | Spec 路径不可用 |
+| 输出 | Schema 加载错误 |
 
-Common fields for **S02–S14** (each is a separate check):
+**S02–S14** 共用字段（各项为独立检查）：
 
-| Field | Content |
+| 字段 | 内容 |
 | --- | --- |
-| Input | Parsed JSON/YAML object from L1 |
-| Logic | Validate against listed Draft 2020-12 schema (no invented fields) |
-| PASS | Instance validates |
-| FAIL | Any schema error |
-| NOT_CHECKED | Schema engine unavailable, S01 failed, or L1 parse failed |
-| Output | File path + schema `$id` + error paths/messages |
+| 输入 | 来自 L1 的已解析 JSON/YAML 对象 |
+| 逻辑 | 对照所列 Draft 2020-12 schema 校验（不得发明字段） |
+| PASS | 实例校验通过 |
+| FAIL | 任一 schema 错误 |
+| NOT_CHECKED | Schema 引擎不可用、S01 失败，或 L1 解析失败 |
+| 输出 | 文件路径 + schema `$id` + 错误路径/消息 |
 
-| ID | Object | Schema |
+| ID | 对象 | Schema |
 | --- | --- | --- |
-| S02 | `manifest.yaml` (parsed) | `manifest.schema.json` |
+| S02 | `manifest.yaml`（已解析） | `manifest.schema.json` |
 | S03 | `source/source-index.json` | `source.schema.json` |
 | S04 | `knowledge/facts.json` | `fact.schema.json` |
 | S05 | `knowledge/claims.json` | `claim.schema.json` |
@@ -174,203 +174,203 @@ Common fields for **S02–S14** (each is a separate check):
 
 ### S15 — Enum / required / type / additionalProperties / if-then
 
-| Field | Content |
+| 字段 | 内容 |
 | --- | --- |
-| Object | All schema-validated instances |
-| Input | Same as S02–S14 (rollup of keyword-level failures) |
-| Logic | Covered by schema keywords (e.g. KnowledgeStatus enums, `verified`→`evidence_ids` minItems, `user_confirmed`→non-null `confirmation`, ReferenceStatus=`unverified` only) |
-| PASS | No schema violations beyond those already reported under S02–S14 |
-| FAIL | Illegal enum, missing required, wrong type, forbidden extras, failed if-then |
-| NOT_CHECKED | Schema engine unavailable |
-| Output | JSON Pointer-like paths when possible |  
+| 对象 | 全部经 schema 校验的实例 |
+| 输入 | 与 S02–S14 相同（关键字级失败的汇总） |
+| 逻辑 | 由 schema 关键字覆盖（如 KnowledgeStatus 枚举、`verified`→`evidence_ids` minItems、`user_confirmed`→非 null `confirmation`、ReferenceStatus 仅为 `unverified`） |
+| PASS | 除已在 S02–S14 报告者外，无 schema 违规 |
+| FAIL | 非法枚举、缺 required、类型错误、禁止的额外字段、if-then 失败 |
+| NOT_CHECKED | Schema 引擎不可用 |
+| 输出 | 可能时使用类 JSON Pointer 路径 |
 
 ---
 
-## L3 — Integrity Validation
+## L3 — 完整性校验
 
-### I01 — Duplicate IDs (tier A)
+### I01 — 重复 ID（档 A）
 
-| Field | Content |
+| 字段 | 内容 |
 | --- | --- |
-| Object | All typed IDs (`source_id`, `fact_id`, `claim_id`, `decision_id`, `constraint_id`, `term_id`, `evidence_id`, `reference_id`, `unknown_id`, `conflict_id`, `question_id`, `action_id`, `package_id`) |
-| Logic | Unique **within each kind** (cross-kind identical strings allowed) |
-| PASS | Every applicable id collection loaded and checked; no within-kind duplicates |
-| FAIL | Duplicate confirmed in any **loaded** kind (even if other collections are missing) |
-| NOT_CHECKED | No confirmed duplicate, but one or more applicable collections not loaded / not schema-ok |
-| Output | Duplicated ids |
+| 对象 | 全部有类型的 ID（`source_id`、`fact_id`、`claim_id`、`decision_id`、`constraint_id`、`term_id`、`evidence_id`、`reference_id`、`unknown_id`、`conflict_id`、`question_id`、`action_id`、`package_id`） |
+| 逻辑 | **在各类内部**唯一（跨类相同字符串允许） |
+| PASS | 每个适用 id 集合均已加载并检查；无类内重复 |
+| FAIL | 在任一**已加载**类中确认重复（即使其他集合缺失） |
+| NOT_CHECKED | 无已确认重复，但一个或多个适用集合未加载 / 非 schema-ok |
+| 输出 | 重复的 ids |
 
-### I02 — evidence.supports → knowledge exists (A)
+### I02 — evidence.supports → knowledge 存在（A）
 
-| Logic | Each `supports[{type,id}]` resolves |
-| PASS/FAIL/NOT_CHECKED | as usual |
+| 逻辑 | 每个 `supports[{type,id}]` 可解析 |
+| PASS/FAIL/NOT_CHECKED | 按常规 |
 
-### I03 — knowledge.evidence_ids → evidence exists (A)
+### I03 — knowledge.evidence_ids → evidence 存在（A）
 
-| Logic | Each evidence_id in facts/claims/decisions/constraints/terms exists in evidence.json |
+| 逻辑 | facts/claims/decisions/constraints/terms 中每个 evidence_id 在 evidence.json 中存在 |
 
-### I04 — Bidirectional consistency (A)
+### I04 — 双向一致性（A）
 
-| Logic | If A lists ev_X and ev_X.supports includes A (matching type), and converse |
-| FAIL | One-way link |
+| 逻辑 | 若 A 列出 ev_X 且 ev_X.supports 包含 A（类型匹配），反之亦然 |
+| FAIL | 单向链接 |
 
-### I05 — conflict.parties exist (A)
+### I05 — conflict.parties 存在（A）
 
-| Logic | party type+id resolves to knowledge object |
+| 逻辑 | party type+id 解析到 knowledge 对象 |
 
-### I06 — conflict.evidence_ids exist (A)
+### I06 — conflict.evidence_ids 存在（A）
 
-| Logic | Each id in evidence.json |
+| 逻辑 | 每个 id 在 evidence.json 中 |
 
-### I07 — Cross related_* ids (A)
+### I07 — 交叉 related_* ids（A）
 
-| Object | `related_conflict_ids`, `related_unknown_ids`, `related_ids`, `conflict_ids`, `related_fact_ids` |
-| Logic | Targets exist; **FAIL** if missing (design recommendation) |
-| WARNING | Only if policy later softens (Open Question) |
+| 对象 | `related_conflict_ids`、`related_unknown_ids`、`related_ids`、`conflict_ids`、`related_fact_ids` |
+| 逻辑 | 目标存在；缺失则 **FAIL**（设计建议） |
+| WARNING | 仅当策略日后软化时（开放问题） |
 
-### I08 — confirmation.source_ref for user_authored_source (A)
+### I08 — confirmation.source_ref 对应 user_authored_source（A）
 
-| Logic | When `source_type=user_authored_source`, `source_ref` must be a real `source_id` |
-| FAIL | Missing / unknown source_id |
+| 逻辑 | 当 `source_type=user_authored_source` 时，`source_ref` 必须是真实的 `source_id` |
+| FAIL | 缺失 / 未知 source_id |
 
-### I09 — locator.source_id in index (A)
+### I09 — locator.source_id 在索引中（A）
 
-| Logic | Every evidence locator.source_id ∈ source-index |
+| 逻辑 | 每个 evidence locator.source_id ∈ source-index |
 
-### I10 — locator.path exists (B)
+### I10 — locator.path 存在（B）
 
-| Logic | Path relative to package root; file exists |
-| FAIL | Missing file |
+| 逻辑 | 相对包根的路径；文件存在 |
+| FAIL | 文件缺失 |
 
-### I11 — Path safety (B)
+### I11 — 路径安全（B）
 
-| Logic | Reject `..`, absolute paths, drive letters, UNC; resolved path must stay under package root; do not follow escaping symlinks |
-| FAIL | Escape / forbidden form |
-| NOT_CHECKED | Cannot resolve symlinks on host |
+| 逻辑 | 拒绝 `..`、绝对路径、盘符、UNC；解析后路径必须留在包根下；不跟随逃逸符号链接 |
+| FAIL | 逃逸 / 禁止形态 |
+| NOT_CHECKED | 主机无法解析符号链接 |
 
-### I12 — line_range bounds (B)
+### I12 — line_range 边界（B）
 
-Frozen semantics (**L3-B3 / I12**). Does not implement I13 findability or I14 excerpt match. Does not invent Schema fields.
+冻结语义（**L3-B3 / I12**）。不实现 I13 可发现性或 I14 摘录匹配。不发明 Schema 字段。
 
-| Field | Content |
+| 字段 | 内容 |
 | --- | --- |
-| Scope | Only evidence items with `locator_type == "line_range"` among **loaded** evidence. Non-`line_range` locators are **skipped** here (I13). |
-| Evidence FAIL | For each applicable item, after I11/I10 gates (below): `start` and `end` must each be non-null, finite, and integer-valued numbers; `start >= 1`; `end >= start`; `end <=` file line count. Any unmet condition → FAIL (including either `start` or `end` being `null` — **no** coalescing `end=null` to `start`). |
-| Line count | `path.read_text(encoding="utf-8").splitlines()` then `len(lines)` — same definition as package smoke’s line_range check. Successful reads are retained as an **in-memory text snapshot** (per evidence_id) for I14; snapshots are **not** written to the validation report or error messages. |
-| Gates (do not read path) | If I11 classifies the locator.path as unsafe or unresolved → this item is NOT_CHECKED (no file read). If I10 does not confirm the path exists as a package file → this item is NOT_CHECKED (no file read). |
-| Read failures | UTF-8 decode failure or other read error after gates → this item NOT_CHECKED (not FAIL for bounds); no snapshot for that evidence. |
-| PASS | Evidence is loaded; there is no FAIL item; and there is no applicable item left NOT_CHECKED. Includes: loaded evidence with **zero** `line_range` items (empty applicable set) → PASS. |
-| NOT_CHECKED | Evidence not loaded; **or** no FAIL but at least one applicable `line_range` item was gated/unread (I11/I10/read failure). Non-`line_range` items do **not** by themselves make I12 NOT_CHECKED. |
-| Rollup | Per check: **FAIL > NOT_CHECKED > PASS**. Partial skips must retain per-item NOT_CHECKED reasons in `errors` (or equivalent detail). Must **not** report overall PASS when any applicable item remained unchecked. |
-| Notes | Schema may still allow `null` start/end for `line_range`; I12 FAIL on null is intentional (closes plan item L3-RQ2 as FAIL). Unknown path safety remains I11; existence I10. Automated in Phase 3B-B3. |
+| 范围 | 仅针对**已加载** evidence 中 `locator_type == "line_range"` 的项。非 `line_range` locator 在此**跳过**（I13）。 |
+| Evidence FAIL | 对每个适用项，在通过 I11/I10 门控（见下）之后：`start` 与 `end` 必须各自非 null、有限、且为整数值；`start >= 1`；`end >= start`；`end <=` 文件行数。任一条件不满足 → FAIL（包括 `start` 或 `end` 任一为 `null` — **不得**将 `end=null` 合并为 `start`）。 |
+| 行数计算 | `path.read_text(encoding="utf-8").splitlines()` 然后 `len(lines)` — 与 `package_smoke` 的 line_range 检查定义相同。成功读取保留为**内存文本快照**（按 evidence_id），供 I14 使用；快照**不得**写入校验报告或错误消息。 |
+| 门控（不读路径） | 若 I11 将 locator.path 归为不安全或未解析 → 该项 NOT_CHECKED（不读文件）。若 I10 未确认路径作为包内文件存在 → 该项 NOT_CHECKED（不读文件）。 |
+| 读取失败 | 门控之后 UTF-8 解码失败或其他读错误 → 该项 NOT_CHECKED（不对边界 FAIL）；该 evidence 无快照。 |
+| PASS | Evidence 已加载；无 FAIL 项；且无适用项仍为 NOT_CHECKED。包括：已加载 evidence 中 **零** 个 `line_range` 项（空适用集）→ PASS。 |
+| NOT_CHECKED | Evidence 未加载；**或**无 FAIL，但至少一个适用 `line_range` 项被门控/未读（I11/I10/读失败）。非 `line_range` 项**本身不会**使 I12 变为 NOT_CHECKED。 |
+| 汇总 | 逐项检查：**FAIL > NOT_CHECKED > PASS**。部分跳过必须在 `errors`（或等价明细）中保留逐项 NOT_CHECKED 原因。任何适用项仍未检查时，**不得**报告整体 PASS。 |
+| 说明 | Schema 仍可能允许 `line_range` 的 `null` start/end；I12 对 null 的 FAIL 是有意的（将计划项 L3-RQ2 关闭为 FAIL）。未知路径安全仍属 I11；存在性属 I10。Phase 3B-B3 已自动化。 |
 
-### I13 — Other locator types (B)
+### I13 — 其他 locator 类型（B）
 
-Frozen semantics (**Option B**, L3-B4 / I13). Does not invent Schema fields. Does not implement finders. Does not judge excerpt↔window match (I14) or semantic adequacy (L4).
+冻结语义（**Option B**，L3-B4 / I13）。不发明 Schema 字段。不实现 finders。不裁决摘录↔窗口匹配（I14）或语义充分性（L4）。
 
-| Field | Content |
+| 字段 | 内容 |
 | --- | --- |
-| Scope | Loaded evidence with `locator_type` in `{section, json_pointer, anchor, page_range}` only. **`line_range` is out of scope** (I12). |
-| FAIL | **None for target findability in 0.1.0.** Do not re-FAIL locator shape (L2 Schema), line_range bounds (I12), path safety (I11), or path existence (I10). |
-| PASS | Evidence collection is fully loaded **and** there are **zero** I13-applicable items (e.g. only `line_range`, or empty evidence array). |
-| NOT_CHECKED | Evidence not loaded; **or** one or more I13-applicable items exist and 0.1.0 has **no** deterministic finder for them; **or** an applicable item is gated by I11 unsafe/unresolved / I10 missing / read-or-parse conditions that prevent reliable checking. Legal locator field shape alone must **not** be treated as “findable”. |
-| Gates | Same as I12: I11 unsafe/unresolved → item NOT_CHECKED, do not read; I10 does not confirm file exists → item NOT_CHECKED, do not read; no out-of-package reads; no new path-resolution policy beyond I11/I10. |
-| Rollup | **FAIL > NOT_CHECKED > PASS**. Retain per-item detail. Must not report overall PASS while any applicable item remains NOT_CHECKED. |
-| WARNING | **Not** used as an I13 check result in 0.1.0. Inability to confirm targets → `NOT_CHECKED` (reasons/limitations may explain why; do not extend report Schema). |
-| Semantic boundary | Heading/anchor/page/JSON node “correctness” for the claim, and whether excerpt supports the proposition, are **not** I13 auto-PASS (I14 / L4). |
-| Notes | Q2 findability depth remains open for *future* finder strength; 0.1.0 freezes Option B (empty applicable → PASS; any applicable without finder → NOT_CHECKED). Automated in Phase 3B-B4 (no finders). |
+| 范围 | 已加载 evidence 中 `locator_type` 属于 `{section, json_pointer, anchor, page_range}` 者。**`line_range` 不在范围内**（I12）。 |
+| FAIL | **0.1.0 不对目标可发现性 FAIL。** 不得重新 FAIL locator 形态（L2 Schema）、line_range 边界（I12）、路径安全（I11）或路径存在（I10）。 |
+| PASS | Evidence 集合完全加载，**且** I13 适用项数为 **零**（例如仅有 `line_range`，或空 evidence 数组）。 |
+| NOT_CHECKED | Evidence 未加载；**或**存在一个或多个 I13 适用项且 0.1.0 **无**确定性 finder；**或**适用项被 I11 不安全/未解析 / I10 缺失 / 读或解析条件门控而无法可靠检查。仅合法 locator 字段形态**不得**视为“可发现”。 |
+| 门控 | 与 I12 相同：I11 不安全/未解析 → 项 NOT_CHECKED，不读；I10 未确认文件存在 → 项 NOT_CHECKED，不读；无包外读取；无超出 I11/I10 的新路径解析策略。 |
+| 汇总 | **FAIL > NOT_CHECKED > PASS**。保留逐项明细。任何适用项仍为 NOT_CHECKED 时不得报告整体 PASS。 |
+| WARNING | 0.1.0 **不**将 WARNING 用作 I13 检查结果。无法确认目标 → `NOT_CHECKED`（可用原因/限制说明；不得扩展报告 Schema）。 |
+| 语义边界 | 标题/锚点/页/JSON 节点对主张的“正确性”，以及摘录是否支撑命题，**不是** I13 自动 PASS（I14 / L4）。 |
+| 说明 | Q2 可发现性深度仍对*未来* finder 强度开放；0.1.0 冻结 Option B（空适用 → PASS；有适用但无 finder → NOT_CHECKED）。Phase 3B-B4 已自动化（无 finders）。 |
 
-### I14 — Excerpt text match (C)
+### I14 — 摘录文本匹配（C）
 
-Historical intent (unchanged): normalize newlines; every non-empty excerpt line appears in the locator window text (stricter than smoke “first line only”); PASS if all such lines match; FAIL if any line is missing; NOT_CHECKED when there is no text window / unread binary; **does not** prove semantic adequacy (tier D / L4).
+历史意图（未变）：规范化换行；每个非空摘录行出现在 locator 窗口文本中（严于 smoke 的“仅首行”）；全部此类行匹配则 PASS；任一行缺失则 FAIL；无文本窗口 / 未读二进制时 NOT_CHECKED；**不**证明语义充分性（档 D / L4）。
 
-Frozen semantics (**L3-C / I14**). Does not invent Schema fields. Does not implement finders for non-`line_range` types. Does **not** judge whether the excerpt adequately supports a claim or knowledge status (L4). **Rules frozen; automated in Phase 3B-C1.**
+冻结语义（**L3-C / I14**）。不发明 Schema 字段。不对非 `line_range` 类型实现 finders。**不**裁决摘录是否充分支撑主张或知识状态（L4）。**规则已冻结；Phase 3B-C1 已自动化。**
 
-| Field | Content |
+| 字段 | 内容 |
 | --- | --- |
-| Scope | Loaded evidence. **Match** only for `locator_type == "line_range"` (`evidence[].locator.excerpt`). |
-| Out of scope (per-item NOT_CHECKED) | `section`, `json_pointer`, `anchor`, `page_range`: **no** finder, **no** text-window match. Each such item is recorded as NOT_CHECKED (`out_of_scope_type`) and **does** participate in rollup (so a package with only these types → overall NOT_CHECKED). Do not re-check I13 findability. |
-| Window (must match I12 line numbering) | Only after per-item I12 status is `pass`. Use the **I12 in-memory UTF-8 text snapshot** for that evidence (same bytes I12 used for line count). `lines = text.splitlines()`; `window = "\n".join(lines[start - 1:end])`. **Do not** call `read_text` again for the match window. |
-| Newline normalize (excerpt only, before split) | `\r\n` → `\n`; bare `\r` → `\n`. **No** Unicode NFC/NFD; **no** case folding; **no** fuzzy or semantic match. |
-| Empty lines | After normalize+split: a line with `line.strip() == ""` is empty and **skipped** (does not participate in match). |
-| Non-empty line match | Keep the line **un-stripped** (no extra strip, no internal whitespace collapse). Require `excerpt_line in window` (literal substring). Order / contiguity / adjacency of excerpt lines within the window is **not** required. |
-| Gates (do not build a trusted window) | Consume **per-evidence** I12 status (`pass`/`fail`/`not_checked`) and I12 text snapshots; do not re-derive bounds independently to override I12. I12 `fail` → item NOT_CHECKED (`i12_failed`). I12 `not_checked` → item NOT_CHECKED (may refine to `i11_unsafe` / `i11_unresolved`). I12 `pass` but snapshot missing → NOT_CHECKED (`snapshot_missing`); **must not** re-read the file to recover. Source-index not loaded or `source_id` not resolvable → NOT_CHECKED (`source_readable_unresolved`) — do not PASS; do not re-implement I09. Source `readable: false` → NOT_CHECKED. No out-of-package reads; no network; do not modify the package. Snapshots must not appear in the validation report or error messages. |
-| PASS | Evidence collection is fully loaded; there is no FAIL item; and **no** item remains NOT_CHECKED. Includes: (a) every `line_range` item matched (or had no non-empty excerpt lines) after I12 `pass` + readable OK; (b) loaded evidence with **zero** items (empty array). |
-| FAIL | At least one `line_range` item has a trusted window and at least one non-empty excerpt line that is **not** a literal substring of that window. |
-| NOT_CHECKED | Evidence not loaded; **or** no FAIL but at least one item was NOT_CHECKED (out-of-scope type, I12 gate, readable gate, read failure, etc.). |
-| Rollup | **FAIL > NOT_CHECKED > PASS**. Retain per-item detail. Must not report overall PASS while any item remained NOT_CHECKED. Unloaded evidence must **not** be treated as an empty-array PASS. |
-| WARNING | **Not** used as an I14 check result in 0.1.0. |
-| NEEDS_HUMAN_REVIEW | **Not** used as an I14 check result; semantic judgment stays L4. Do not add report statuses. |
-| Semantic boundary | I14 PASS means only that every non-empty excerpt line is findable as a literal substring in the `line_range` window. It does **not** mean semantic adequacy, claim support, evidence authenticity, correct `verified` status, conflict resolution, or completed human L4 review. |
-| Notes | Closes plan items L3-RQ3 (no Unicode normalize) and L3-RQ4 (empty excerpt → PASS, no WARNING). Stricter than package smoke’s “first excerpt line only”. Does not re-FAIL I10/I11/I12/I13/I16 concerns. Automated in Phase 3B-C1. |
+| 范围 | 已加载 evidence。**仅**对 `locator_type == "line_range"`（`evidence[].locator.excerpt`）做匹配。 |
+| 范围外（逐项 NOT_CHECKED） | `section`、`json_pointer`、`anchor`、`page_range`：**无** finder，**无**文本窗口匹配。每项记为 NOT_CHECKED（`out_of_scope_type`），**参与**汇总（因此仅有这些类型的包 → 整体 NOT_CHECKED）。不得重新检查 I13 可发现性。 |
+| 窗口（必须与 I12 行号一致） | 仅在该项 I12 状态为 `pass` 之后。使用该 evidence 的 **I12 内存 UTF-8 文本快照**（与 I12 计行所用字节相同）。`lines = text.splitlines()`；`window = "\n".join(lines[start - 1:end])`。**不得**为匹配窗口再次调用 `read_text`。 |
+| 换行规范化（仅摘录，在 split 前） | `\r\n` → `\n`；单独 `\r` → `\n`。**无** Unicode NFC/NFD；**无**大小写折叠；**无**模糊或语义匹配。 |
+| 空行 | normalize+split 之后：`line.strip() == ""` 的行为空，**跳过**（不参与匹配）。 |
+| 非空行匹配 | 保留行**未 strip**（无额外 strip，无内部空白折叠）。要求 `excerpt_line in window`（字面子串）。摘录行在窗口内的顺序 / 连续性 / 相邻性**不**要求。 |
+| 门控（不构建可信窗口） | 消费**逐 evidence** I12 状态（`pass`/`fail`/`not_checked`）与 I12 文本快照；不得独立重算边界以覆盖 I12。I12 `fail` → 项 NOT_CHECKED（`i12_failed`）。I12 `not_checked` → 项 NOT_CHECKED（可细化为 `i11_unsafe` / `i11_unresolved`）。I12 `pass` 但快照缺失 → NOT_CHECKED（`snapshot_missing`）；**不得**重读文件以恢复。source-index 未加载或 `source_id` 不可解析 → NOT_CHECKED（`source_readable_unresolved`）— 不得 PASS；不得重实现 I09。Source `readable: false` → NOT_CHECKED。无包外读取；无网络；不修改包。快照不得出现在校验报告或错误消息中。 |
+| PASS | Evidence 集合完全加载；无 FAIL 项；且**无**项仍为 NOT_CHECKED。包括：(a) 每个 `line_range` 项在 I12 `pass` + `readable` 正常后匹配（或无非空摘录行）；(b) 已加载 evidence 项数为 **零**（空数组）。 |
+| FAIL | 至少一个 `line_range` 项有可信窗口，且至少一个非空摘录行**不是**该窗口的字面子串。 |
+| NOT_CHECKED | Evidence 未加载；**或**无 FAIL 但至少一项为 NOT_CHECKED（范围外类型、I12 门控、readable 门控、读失败等）。 |
+| 汇总 | **FAIL > NOT_CHECKED > PASS**。保留逐项明细。任何项仍为 NOT_CHECKED 时不得报告整体 PASS。未加载 evidence **不得**当作空数组 PASS。 |
+| WARNING | 0.1.0 **不**将 WARNING 用作 I14 检查结果。 |
+| NEEDS_HUMAN_REVIEW | **不**用作 I14 检查结果；语义判断留在 L4。不得新增报告状态。 |
+| 语义边界 | I14 PASS 仅表示每个非空摘录行可作为字面子串在 `line_range` 窗口中找到。它**不**表示语义充分性、主张支撑、证据真实性、正确的 `verified` 状态、冲突解决，或已完成人工 L4 审查。 |
+| 说明 | 关闭计划项 L3-RQ3（无 Unicode 规范化）与 L3-RQ4（空摘录 → PASS，无 WARNING）。严于 `package_smoke` 的“仅首行摘录”。不对 I10/I11/I12/I13/I16 问题重新 FAIL。Phase 3B-C1 已自动化。 |
 
-### I15 — verified ⇒ non-empty evidence_ids (A)
+### I15 — verified ⇒ 非空 evidence_ids（A）
 
-| Logic | Re-check after load (schema also enforces) |
-| FAIL | verified with empty/missing evidence_ids |
+| 逻辑 | 加载后再检查（schema 亦强制） |
+| FAIL | verified 但 evidence_ids 为空/缺失 |
 
-### I16 — readable:false sources (A/B)
+### I16 — readable:false 源（A/B）
 
-Frozen semantics (**Option C**). Does not judge excerpt↔window match (I14) or semantic adequacy (L4).
+冻结语义（**Option C**）。不裁决摘录↔窗口匹配（I14）或语义充分性（L4）。
 
-| Field | Content |
+| 字段 | 内容 |
 | --- | --- |
-| Object | `source-index` `readable` + evidence `locator.source_id` / `locator.excerpt` + knowledge `status` / `evidence_ids` |
-| Evidence FAIL | Evidence whose `locator.source_id` resolves to a source with `readable: false`, **and** `strip(excerpt) != ""` (non-empty after strip). Empty or whitespace-only `excerpt` does **not** FAIL under the Evidence quoting clause alone. |
-| Knowledge FAIL | Any knowledge object with `status: verified` whose `evidence_ids` includes an evidence item whose `locator.source_id` resolves to `readable: false` — **regardless** of that evidence’s excerpt emptiness. |
-| PASS | Required collections are loaded (see NOT_CHECKED), and neither Evidence FAIL nor Knowledge FAIL applies. Empty evidence / knowledge sets with no violations → PASS. |
-| NOT_CHECKED | `source-index` not loaded and/or `evidence` not loaded (cannot evaluate either branch). If those are loaded but knowledge collections needed for the verified branch are not loaded → NOT_CHECKED (must not report PASS). |
-| Notes | Unknown `locator.source_id` is I09’s concern; I16 only applies when the source_id resolves and `readable` is false. Does not invent protocol fields. Automated in Phase 3B-B2. |
+| 对象 | `source-index` `readable` + evidence `locator.source_id` / `locator.excerpt` + knowledge `status` / `evidence_ids` |
+| Evidence FAIL | Evidence 的 `locator.source_id` 解析到 `readable: false` 的源，**且** `strip(excerpt) != ""`（strip 后非空）。空或仅空白的 `excerpt` **不会**仅因 Evidence 引用条款 FAIL。 |
+| Knowledge FAIL | 任一 `status: verified` 的 knowledge 对象，其 `evidence_ids` 包含某 evidence，且该 evidence 的 `locator.source_id` 解析到 `readable: false` — **不论**该 evidence 的摘录是否为空。 |
+| PASS | 必需集合已加载（见 NOT_CHECKED），且既无 Evidence FAIL 也无 Knowledge FAIL。无违规的空 evidence / knowledge 集合 → PASS。 |
+| NOT_CHECKED | `source-index` 未加载和/或 `evidence` 未加载（无法评估任一分支）。若两者已加载但 verified 分支所需 knowledge 集合未加载 → NOT_CHECKED（不得报告 PASS）。 |
+| 说明 | 未知 `locator.source_id` 属 I09；I16 仅在 source_id 可解析且 `readable` 为 false 时适用。不发明协议字段。Phase 3B-B2 已自动化。 |
 
-### I17 — content_transformed shape
+### I17 — content_transformed 形态
 
-| Logic | Covered by Schema (`true`\|`false`\|`null`) — record PASS under S03 or NOT_CHECKED if schema not run |
-| Note | Listed for catalog completeness |
+| 逻辑 | 由 Schema 覆盖（`true`\|`false`\|`null`）— 在 S03 下记 PASS，或 schema 未跑时 NOT_CHECKED |
+| 说明 | 列入目录以求完整 |
 
-### I18 — manifest.validation honesty
+### I18 — manifest.validation 诚实性
 
-| Field | Content |
+| 字段 | 内容 |
 | --- | --- |
-| Logic | Depends on S02 PASS. If `validation.present=true`, the effective report path must exist **inside** the package (explicit `report_path` after strip, else default `validation/validation-report.json`). Reject absolute/`..`/UNC/drive/symlink escape. Explicit path missing must not be masked by a default file. |
-| PASS | `present` is not true (normal unvalidated exporter package), or `present=true` and the authoritative report path exists safely |
-| FAIL | `present=true` with missing/unsafe report path |
-| NOT_CHECKED | S02 not PASS / manifest not loaded |
-| Notes | Report messages use reason codes + package-relative paths only (no host absolute paths). Does not judge report content semantics. |
+| 逻辑 | 依赖 S02 PASS。若 `validation.present=true`，有效报告路径必须存在于包**内部**（显式 `report_path` 经 strip 后，否则默认 `validation/validation-report.json`）。拒绝绝对/`..`/UNC/盘符/符号链接逃逸。显式路径缺失不得被默认文件掩盖。 |
+| PASS | `present` 不为 true（正常未校验 exporter 包），或 `present=true` 且权威报告路径安全存在 |
+| FAIL | `present=true` 且报告路径缺失/不安全 |
+| NOT_CHECKED | S02 非 PASS / manifest 未加载 |
+| 说明 | 报告消息仅用原因码 + 包相对路径（无主机绝对路径）。不裁决报告内容语义。 |
 
-### I19 — Orphan evidence (supports empty) (A)
+### I19 — 孤儿 evidence（supports 为空）（A）
 
-| Logic | Allowed by protocol preference to link; empty supports → **WARNING** |
+| 逻辑 | 协议偏好允许链接；空 supports → **WARNING** |
 
-### I20 — Checksum (optional)
+### I20 — 校验和（可选）
 
-Frozen semantics (**L3-C / I20**, CBHF 0.1.0). Optional per-source integrity check of the **package copy**. Does not invent Schema fields. Does not prove source authenticity, chain of custody, or semantic adequacy (L4). **Rules frozen and automated** in `scripts/_integrity.py`.
+冻结语义（**L3-C / I20**，CBHF 0.1.0）。对**包内副本**的可选按源完整性检查。不发明 Schema 字段。不证明源真实性、保管链或语义充分性（L4）。规则在 `scripts/_integrity.py` **已冻结并自动化**。
 
-| Field | Content |
+| 字段 | 内容 |
 | --- | --- |
-| Scope | Loaded `source/source-index.json` entries. Object file = `sources[].package_path` resolved under the package root. |
-| Applicable vs excluded | **No applicable checksum value** when: missing `checksum` object; `checksum` is `null`; missing `value`; `value` is `null`; or `value` is `""`. Each such source entry **MUST** be marked item-level `NOT_CHECKED` and **MUST** be **excluded from package-level aggregation** (does not participate in rollup). **Do not** treat "zero applicable entries" like I12/I14 empty-applicable **PASS** — if every source lacks an applicable checksum value, package-level I20 **MUST** be overall **NOT_CHECKED**. |
-| Applicable (participate in rollup) | `value` is a non-empty string. Then require: `alg` exactly `"sha256"` (case-sensitive; no default); `of` exactly `"package_copy"` (case-sensitive; no default; missing/other → item `NOT_CHECKED`); `value` exactly 64 hexadecimal characters (A–F/a–f accepted; normalize declared value to **lowercase** before compare; malformed non-empty → item `NOT_CHECKED`, **not** FAIL). |
-| Hash input | Exact **raw bytes** of the resolved package-copy file (`package_path`). Do not re-apply text normalization, redaction, or encoding transforms at verify time. Digest = SHA-256 hex (lowercase compare). |
-| Path safety | Resolve `package_path` relative to package root. Final target must remain inside the package root. Allow a symbolic link **only** if its final resolved target is a **regular file** inside the package root. Escaping or unresolved symlinks are unsafe. **Unsafe / unresolved → item `NOT_CHECKED` and zero file-content reads.** Missing path, non-file, or read failure → item `NOT_CHECKED` (participates). Reuse the same containment classification approach as I11 path safety for relative paths; I20 does **not** expand I11's scope (I11 remains evidence `locator.path` only). |
-| PASS (item) | Applicable; path safe; file readable; `alg`/`of`/`value` shape OK; recomputed digest equals normalized declared value. |
-| FAIL (item) | Applicable; trusted hash obtained; digests **mismatch**. **CBHF v0.1.0: checksum mismatch is FAIL.** **Never** WARNING for mismatch. |
-| NOT_CHECKED (item, participates) | Applicable but cannot verify: bad/missing `alg` or `of`; malformed non-empty `value`; unsafe/unresolved path; missing/non-file; read failure; source-index not loaded (check-level). |
-| Rollup | Among **applicable** items only: **FAIL > NOT_CHECKED > PASS**. Excluded (no value) entries do not drive PASS. Zero applicable entries → overall **NOT_CHECKED**. |
-| WARNING | **Not** used as an I20 check result for mismatch in 0.1.0. |
-| Multi-source same path | Each source entry is compared independently. Caching reads/digests by path is allowed. |
-| Notes | Closes Open Question Q3 and L3-RQ6 for 0.1.0 (`of` must be exact `package_copy`). Read-only; no package writes; no network. Does not establish authenticity of upstream user files. |
+| 范围 | 已加载的 `source/source-index.json` 条目。对象文件 = 在包根下解析的 `sources[].package_path`。 |
+| 适用 vs 排除 | 在以下情况**无适用校验和值**：缺少 `checksum` 对象；`checksum` 为 `null`；缺少 `value`；`value` 为 `null`；或 `value` 为 `""`。每个此类源条目**必须**标为项级 `NOT_CHECKED`，且**必须**从包级汇总中**排除**（不参与汇总）。**不得**将“零适用条目”当作 I12/I14 空适用的 **PASS** — 若每个源都缺少适用校验和值，包级 I20 **必须**为整体 **NOT_CHECKED**。 |
+| 适用（参与汇总） | `value` 为非空字符串。然后要求：`alg` 精确为 `"sha256"`（区分大小写；无默认）；`of` 精确为 `"package_copy"`（区分大小写；无默认；缺失/其他 → 项 `NOT_CHECKED`）；`value` 精确 64 位十六进制字符（接受 A–F/a–f；比较前将声明值规范化为**小写**；畸形非空 → 项 `NOT_CHECKED`，**不是** FAIL）。 |
+| 哈希输入 | 已解析 package-copy 文件（`package_path`）的精确**原始字节**。校验时不得再施加文本规范化、脱敏或编码变换。摘要 = SHA-256 hex（小写比较）。 |
+| 路径安全 | 相对包根解析 `package_path`。最终目标必须留在包根内。仅当符号链接最终解析目标为包根内的**常规文件**时才允许。逃逸或未解析的符号链接不安全。**不安全 / 未解析 → 项 `NOT_CHECKED`，且零次文件内容读取。** 路径缺失、非文件或读失败 → 项 `NOT_CHECKED`（参与）。对相对路径复用与 I11 路径安全相同的包含分类方法；I20 **不**扩展 I11 范围（I11 仍仅针对 evidence `locator.path`）。 |
+| PASS（项） | 适用；路径安全；文件可读；`alg`/`of`/`value` 形态 OK；重算摘要等于规范化后的声明值。 |
+| FAIL（项） | 适用；已获得可信哈希；摘要**不匹配**。**CBHF v0.1.0：校验和不匹配为 FAIL。** 不匹配时**永不** WARNING。 |
+| NOT_CHECKED（项，参与） | 适用但无法校验：坏/缺失的 `alg` 或 `of`；畸形非空 `value`；不安全/未解析路径；缺失/非文件；读失败；source-index 未加载（检查级）。 |
+| 汇总 | 仅在**适用**项中：**FAIL > NOT_CHECKED > PASS**。被排除（无 value）的条目不驱动 PASS。零适用条目 → 整体 **NOT_CHECKED**。 |
+| WARNING | 0.1.0 **不**将 WARNING 用作 I20 不匹配的检查结果。 |
+| 多源同路径 | 每个源条目独立比较。允许按路径缓存读/摘要。 |
+| 说明 | 对 0.1.0 关闭开放问题 Q3 与 L3-RQ6（`of` 必须精确为 `package_copy`）。只读；无包写入；无网络。不确立上游用户文件真实性。 |
 
 ---
 
 ## L4
 
-See [semantic-review-boundary.md](semantic-review-boundary.md). L4 checks are **never** automated semantic PASS.
+见 [semantic-review-boundary.md](semantic-review-boundary.md)。L4 检查**永不**为自动化语义 PASS。
 
 ---
 
-## Open Questions (record only)
+## 开放问题（仅记录）
 
-- Q1 Extra files: warn vs fail  
-- Q2 section/page findability depth — **0.1.0 I13 Option B frozen:** no finder; applicable items → `NOT_CHECKED` (not WARNING); empty applicable → PASS. Deeper finders / FAIL-on-missing remain future Q2 work, not claimed verified.  
-- Q3 checksum mismatch severity — **CBHF v0.1.0 closed:** checksum mismatch is **FAIL** (not WARNING). See § I20.  
-- Q4/Q5 package write of report (deferred; Phase 1 session-only)  
-- handoff `priority` string vs future enum (cbhf-format #12)  
+- Q1 额外文件：警告 vs 失败
+- Q2 section/page 可发现性深度 — **0.1.0 I13 Option B 已冻结：** 无 finder；适用项 → `NOT_CHECKED`（非 WARNING）；空适用 → PASS。更深 finders / 缺失则 FAIL 仍属未来 Q2，不得声称已核验。
+- Q3 校验和不匹配严重性 — **CBHF v0.1.0 已关闭：** 校验和不匹配为 **FAIL**（非 WARNING）。见 § I20。
+- Q4/Q5 包内写入报告（延期；Phase 1 仅会话）
+- handoff `priority` 字符串 vs 未来枚举（cbhf-format #12）
