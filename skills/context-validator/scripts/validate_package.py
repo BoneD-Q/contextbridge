@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""CBHF 0.1.0 L1+L2 deterministic validation helper for context-validator.
+"""CBHF 0.1.0 deterministic validation helper for context-validator.
 
 Skills-first: this script is invoked by the Skill; it is not a product CLI.
-Phase 2 implements Package (L1) and Schema (L2) checks only.
-L3 Integrity and L4 Semantic Review are reported as NOT_CHECKED.
+Phase 3B-1: L1 Package + L2 Schema + L3-A cross-file references.
+L3-B/C and L4 remain NOT_CHECKED.
 Never writes into the package. Never fetches schemas from the network.
 """
 
@@ -24,6 +24,8 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError
 from referencing import Registry, Resource
 from referencing.jsonschema import DRAFT202012
+
+from _integrity import run_l3_batch_a
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parents[2]
@@ -115,7 +117,6 @@ SCHEMA_TARGETS: dict[str, tuple[str, str, str | None]] = {
     ),
 }
 
-L3_CHECK_IDS = [f"I{i:02d}" for i in range(1, 21)]
 L4_CHECK_IDS = [f"H{i:02d}" for i in range(1, 7)]
 
 STATUS_PASS = "PASS"
@@ -255,7 +256,17 @@ def fingerprint_package(package: Path) -> dict[str, str]:
     return digests
 
 
-def layer_status(results: list[CheckResult]) -> str:
+def layer_status(
+    results: list[CheckResult],
+    *,
+    mixed_pass_not_checked: str = STATUS_PASS,
+) -> str:
+    """Roll up a layer.
+
+    L1/L2 keep historical mixed PASS+NOT_CHECKED → PASS (default).
+    L3 must not look fully PASS while deferred I* remain NOT_CHECKED —
+    pass mixed_pass_not_checked=NOT_CHECKED for L3.
+    """
     statuses = {r.result for r in results}
     if STATUS_FAIL in statuses:
         return STATUS_FAIL
@@ -272,8 +283,7 @@ def layer_status(results: list[CheckResult]) -> str:
     if STATUS_NOT_CHECKED in statuses and STATUS_PASS not in statuses and STATUS_FAIL not in statuses and STATUS_WARNING not in statuses:
         return STATUS_NOT_CHECKED
     if STATUS_PASS in statuses and STATUS_NOT_CHECKED in statuses:
-        # Mixed: treat as WARNING-level incompleteness at layer? Prefer NOT_CHECKED only if all not checked.
-        return STATUS_WARNING if STATUS_WARNING in statuses else STATUS_PASS
+        return mixed_pass_not_checked
     return STATUS_NOT_CHECKED
 
 
@@ -365,8 +375,9 @@ def validate_package(
     parsed_objects: dict[str, Any] = {}
     parse_ok: dict[str, bool] = {}
     limitations: list[str] = [
-        "Phase 2 script implements L1 Package + L2 Schema only.",
-        "L3 Integrity and L4 Semantic Review are NOT_CHECKED (not implemented).",
+        "Phase 3B-1: L1 Package + L2 Schema + L3-A reference integrity.",
+        "L3-B/C (I10–I14, I16, I20) and L4 Semantic Review are NOT_CHECKED.",
+        "L3-A PASS is not semantic adequacy; I14 is not implemented this batch.",
         "Report is session-level; package was not modified.",
         "Schemas loaded from local spec/cbhf/v0.1.0 only (no network).",
     ]
@@ -768,7 +779,38 @@ def validate_package(
             )
         )
 
-    # --- P07 read-only (hash before vs after L1/L2 work; no writes expected) ---
+    # --- L3-A (Batch A) + deferred L3-B/C stubs ---
+    schema_results = {c.id: c.result for c in checks if c.id.startswith("S")}
+    for item in run_l3_batch_a(
+        package=package,
+        parsed_objects=parsed_objects,
+        parse_ok=parse_ok,
+        schema_results=schema_results,
+        manifest_obj=manifest_obj,
+    ):
+        checks.append(
+            CheckResult(
+                item.id,
+                item.name,
+                item.result,
+                item.message,
+                path=item.path,
+                errors=item.errors,
+            )
+        )
+
+    # --- L4 explicitly NOT_CHECKED ---
+    for hid in L4_CHECK_IDS:
+        checks.append(
+            CheckResult(
+                hid,
+                f"Semantic boundary {hid}",
+                STATUS_NOT_CHECKED,
+                "Phase 3B-1: L4 Semantic Review not implemented (never auto semantic PASS)",
+            )
+        )
+
+    # --- P07 read-only (after all layers; no writes expected) ---
     fingerprint_after = fingerprint_package(package)
     if fingerprint_before != fingerprint_after:
         checks.append(
@@ -791,26 +833,6 @@ def validate_package(
                 "Read-only commitment",
                 STATUS_PASS,
                 "package file digests unchanged after validation",
-            )
-        )
-
-    # --- L3 / L4 explicitly NOT_CHECKED ---
-    for iid in L3_CHECK_IDS:
-        checks.append(
-            CheckResult(
-                iid,
-                f"Integrity check {iid}",
-                STATUS_NOT_CHECKED,
-                "Phase 2: L3 Integrity not implemented",
-            )
-        )
-    for hid in L4_CHECK_IDS:
-        checks.append(
-            CheckResult(
-                hid,
-                f"Semantic boundary {hid}",
-                STATUS_NOT_CHECKED,
-                "Phase 2: L4 Semantic Review not implemented (never auto semantic PASS)",
             )
         )
 
@@ -848,8 +870,9 @@ def _finalize_report(
     l3 = [c for c in checks if c.id.startswith("I")]
     l4 = [c for c in checks if c.id.startswith("H")]
 
+    # Batch A implemented; deferred I* remain NOT_CHECKED → still not_fully_validated.
     final_status = package_final_status(
-        checks, l3_implemented=False, l4_reviewed=False
+        checks, l3_implemented=True, l4_reviewed=False
     )
 
     summary = {
@@ -870,11 +893,14 @@ def _finalize_report(
         "checker": {
             "name": "context-validator",
             "skill_version": "0.1.0",
-            "phase": "2",
+            "phase": "3B-1",
             "scripts_implemented": {
                 "L1_package": True,
                 "L2_schema": True,
                 "L3_integrity": False,
+                "L3_A_references": True,
+                "L3_B_locators": False,
+                "L3_C_excerpts": False,
                 "L4_semantic": False,
             },
             "wrote_to_package": False,
@@ -884,7 +910,8 @@ def _finalize_report(
         "layers": {
             "L1": layer_status(l1),
             "L2": layer_status(l2),
-            "L3": layer_status(l3),
+            # Partial L3-A must not appear as a complete layer PASS while B/C stay NOT_CHECKED.
+            "L3": layer_status(l3, mixed_pass_not_checked=STATUS_NOT_CHECKED),
             "L4": STATUS_NOT_CHECKED,
         },
         "checks": [c.to_dict() for c in checks],
@@ -904,7 +931,7 @@ def _finalize_report(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "context-validator Phase 2 helper: L1 Package + L2 Schema only. "
+            "context-validator Phase 3B-1 helper: L1 + L2 + L3-A references. "
             "Prints a session JSON report; does not modify the package."
         )
     )
