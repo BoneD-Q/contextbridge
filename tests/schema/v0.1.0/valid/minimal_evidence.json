@@ -1,0 +1,38 @@
+{
+  "evidence": [
+    {
+      "evidence_id": "ev_001",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_001",
+        "path": "source/original/design.md",
+        "locator_type": "line_range",
+        "start": 42,
+        "end": 45,
+        "excerpt": "生产环境服务默认监听 8080 端口。"
+      },
+      "supports": [
+        { "type": "fact", "id": "fact_001" }
+      ],
+      "redaction_applied": false,
+      "notes": ""
+    },
+    {
+      "evidence_id": "ev_002",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_001",
+        "path": "source/original/design.md",
+        "locator_type": "section",
+        "start": "Deployment",
+        "end": null,
+        "excerpt": "生产环境服务默认监听 8080 端口。"
+      },
+      "supports": [
+        { "type": "fact", "id": "fact_001" }
+      ],
+      "redaction_applied": false,
+      "notes": "section start/end are single heading strings or null."
+    }
+  ]
+}

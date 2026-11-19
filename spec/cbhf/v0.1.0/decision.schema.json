@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextbridge.dev/spec/cbhf/v0.1.0/decision.schema.json",
+  "title": "CBHF 0.1.0 decisions",
+  "description": "Schema for knowledge/decisions.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decisions"],
+  "properties": {
+    "decisions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Decision" }
+    }
+  },
+  "$defs": {
+    "Decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision_id", "summary", "status"],
+      "properties": {
+        "decision_id": { "type": "string" },
+        "summary": {
+          "$ref": "common.schema.json#/$defs/LocalizedString"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/KnowledgeContext"
+        },
+        "status": {
+          "$ref": "common.schema.json#/$defs/KnowledgeStatus"
+        },
+        "confirmation": {
+          "$ref": "common.schema.json#/$defs/ConfirmationOrNull"
+        },
+        "rationale": {
+          "$ref": "common.schema.json#/$defs/LocalizedString"
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "conflict_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "date": { "type": ["string", "null"] },
+        "supersedes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "notes": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/KnowledgeStatusGates"
+        }
+      ]
+    }
+  }
+}

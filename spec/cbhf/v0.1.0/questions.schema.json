@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextbridge.dev/spec/cbhf/v0.1.0/questions.schema.json",
+  "title": "CBHF 0.1.0 handoff questions",
+  "description": "Schema for handoff/questions.json. related_conflict_ids / related_unknown_ids are string id references (e.g. cfl_*, unk_*). Cross-file existence checks are Validator-stage.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["questions"],
+  "properties": {
+    "questions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/QuestionItem" }
+    }
+  },
+  "$defs": {
+    "QuestionItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["question_id", "ask"],
+      "properties": {
+        "question_id": { "type": "string" },
+        "ask": {
+          "$ref": "common.schema.json#/$defs/LocalizedString"
+        },
+        "priority": {
+          "type": "string",
+          "description": "Priority label as used in packages. No closed enum is defined in CBHF 0.1.0 docs (example uses high); do not invent an enum here."
+        },
+        "related_conflict_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "References to conflict_id values in uncertainty/conflicts.json."
+        },
+        "related_unknown_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "References to unknown_id values in uncertainty/unknowns.json."
+        },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

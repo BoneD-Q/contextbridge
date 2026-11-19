@@ -1,0 +1,15 @@
+{
+  "actions": [
+    {
+      "action_id": "act_bad",
+      "action": {
+        "text": "已完成确认。",
+        "lang": "zh"
+      },
+      "priority": "high",
+      "status": "completed",
+      "related_ids": ["q_001"],
+      "notes": "Illegal: completed is not an ActionStatus value."
+    }
+  ]
+}

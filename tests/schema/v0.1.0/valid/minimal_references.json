@@ -1,0 +1,13 @@
+{
+  "references": [
+    {
+      "reference_id": "ref_001",
+      "title": "RFC 9110",
+      "raw_citation": "RFC 9110 HTTP Semantics",
+      "url": null,
+      "mentioned_in": ["src_001"],
+      "status": "unverified",
+      "notes": "Listed in source; not fetched."
+    }
+  ]
+}

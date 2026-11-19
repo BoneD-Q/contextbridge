@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextbridge.dev/spec/cbhf/v0.1.0/recommended-actions.schema.json",
+  "title": "CBHF 0.1.0 recommended actions",
+  "description": "Schema for handoff/recommended-actions.json. ActionStatus is pending|blocked|cancelled only — never completed. Export-time suggestions remain pending. related_ids reference other package ids (e.g. q_*, unk_*, cfl_*); existence is Validator-stage.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["actions"],
+  "properties": {
+    "actions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ActionItem" }
+    }
+  },
+  "$defs": {
+    "ActionItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action_id", "action", "status"],
+      "properties": {
+        "action_id": { "type": "string" },
+        "action": {
+          "$ref": "common.schema.json#/$defs/LocalizedString"
+        },
+        "priority": {
+          "type": "string",
+          "description": "Priority label. No closed enum is defined in CBHF 0.1.0 docs (example uses high)."
+        },
+        "status": {
+          "$ref": "common.schema.json#/$defs/ActionStatus",
+          "description": "pending | blocked | cancelled. Do not mark export-time suggestions as completed; ActionStatus has no completed value."
+        },
+        "related_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Loose references to related package object ids (questions, unknowns, conflicts, etc.)."
+        },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

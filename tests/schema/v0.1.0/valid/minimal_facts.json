@@ -1,0 +1,27 @@
+{
+  "facts": [
+    {
+      "fact_id": "fact_001",
+      "statement": {
+        "text": "生产环境服务默认监听 8080 端口。",
+        "lang": "zh",
+        "i18n": {
+          "zh": "生产环境服务默认监听 8080 端口。",
+          "en": "In production, the service listens on port 8080 by default."
+        }
+      },
+      "context": {
+        "environment": "prod",
+        "version": null,
+        "time_range": null,
+        "scope": "api-gateway"
+      },
+      "status": "verified",
+      "evidence_ids": ["ev_001"],
+      "confirmation": null,
+      "conflict_ids": [],
+      "tags": ["runtime"],
+      "notes": ""
+    }
+  ]
+}

@@ -1,7 +1,21 @@
 # CBHF 0.1.0 — Folder format (working definition)
 
 **Status:** Working definition for ContextBridge first version.  
-**Canonical path (future):** `spec/cbhf/v0.1.0/` (not yet filled). Until the spec directory is published, exporters/validators/importers MUST follow this document and must not invent alternate top-level layouts or bump the protocol version.
+**Machine-readable schemas:** [`spec/cbhf/v0.1.0/`](../../../spec/cbhf/v0.1.0/) (JSON Schema Draft 2020-12).
+
+Document roles (do not fork definitions):
+
+| Document | Authority |
+| --- | --- |
+| **This file (`cbhf-format.md`)** | Human-readable field semantics, layout rules, and examples |
+| **`spec/cbhf/v0.1.0/*.schema.json`** | Machine-readable field shapes / enums / nullability for structured JSON (and JSON-equivalent manifest) |
+| [`claim-rules.md`](claim-rules.md) | Knowledge object classification + Knowledge Status judgment |
+| [`evidence-rules.md`](evidence-rules.md) | Sources, locators, evidence links, redaction practice |
+| [`../SKILL.md`](../SKILL.md) | Exporter execution workflow (must not contradict this file) |
+
+If schema and this file disagree on **field shape**, update them together; do not silently fork. Cross-file / policy checks remain Validator-stage (not fully expressible in JSON Schema). If this file is silent on **judgment policy**, claim-rules / evidence-rules win.
+
+Do not invent alternate top-level layouts or bump the protocol version.
 
 - **Scenario:** technical document handoff (`docs`)
 - **Form:** standard folder (`folder`)
@@ -61,8 +75,9 @@ All JSON files use UTF-8, 2-space indent preferred. YAML uses UTF-8.
 | User’s file on disk / chat paste source | **Read-only.** Never modified by exporter. |
 | `source/original/` | **Package copy** used for handoff and locators. May differ from the user file after redaction or host-normalized writes. |
 
-- Do not claim the package copy is byte-identical unless you know no transform occurred (`content_transformed: false`).
-- Redaction MUST be recorded in `manifest.redaction` and summarized in `manifest.limitations`.
+- Do not claim byte-identity unless `content_transformed: false` (known identical). If identity is unknown → `content_transformed: null` (never invent `false`).
+- **Redaction** (secret/PII masking) MUST be recorded in `manifest.redaction` (`applied: true` only when redaction ran) and summarized in `manifest.limitations`.
+- Other copy transforms (encoding normalization, line-ending changes, etc.) affect `content_transformed` / `transform_reason` — they do **not** by themselves set `manifest.redaction.applied`.
 - Best-effort redaction ≠ complete secret/PII discovery — never claim full coverage.
 - If a file cannot be packaged safely, omit it, stop that file’s ingest, and tell the user.
 
@@ -70,10 +85,22 @@ All JSON files use UTF-8, 2-space indent preferred. YAML uses UTF-8.
 
 Skills hosts differ in read / write / copy support.
 
-- Only files actually read may be treated as known content.
-- Only files actually copied may appear under `source/original/`.
-- Unreadable or uncopied paths → `manifest.limitations` (and Unknowns when material).
+- Only files actually **read as text/extractable content** may back knowledge or evidence excerpts.
+- Only files actually **copied** may appear under `source/original/`.
+- **Copyable but unreadable binaries** (e.g. PDF/DOCX/image the host can copy but cannot extract text from): may be packaged as opaque copies with `readable: false`; must **not** yield `verified` knowledge, invented locators, or fabricated excerpts; record `manifest.limitations`.
+- Uncopied paths → `manifest.limitations` (and Unknowns when material).
 - Do not claim processing of unread PDF, DOCX, images, or other binaries.
+
+### Package path safety
+
+All exporter writes MUST stay inside `<package-root>/`.
+
+1. Treat every package-relative path as relative to `<package-root>`; resolve and reject escape.
+2. **Forbid** path segments `..`, absolute paths, drive prefixes (`C:\...`), and UNC paths in any package-relative field (`package_path`, locator `path`, `integrity.files_touched`, etc.).
+3. Sanitize user-derived filenames when writing under `source/original/` (replace path separators with `__`; do not preserve directory escape).
+4. **Do not follow symlinks** (or equivalent host links) that resolve outside `<package-root>` when creating or overwriting package files.
+5. Never use package write APIs to modify user originals or any path outside the package root.
+6. On violation → refuse that write, record `manifest.limitations`, and continue only with safe paths.
 
 ### ID conventions (0.1.0)
 
@@ -98,7 +125,14 @@ Numbers are zero-padded to 3 digits within a package, unique per kind. Do not re
 ### Shared field types
 
 ```text
-Status = verified | user_confirmed | inferred | unverified | unknown | disputed
+# Knowledge Status — facts, claims, decisions, constraints, glossary terms only
+KnowledgeStatus = verified | user_confirmed | inferred | unverified | unknown | disputed
+
+# Reference Status — evidence/references.json only (NOT KnowledgeStatus)
+# 0.1.0 defined portable value:
+ReferenceStatus = unverified
+# Do NOT put KnowledgeStatus values (verified, user_confirmed, inferred, unknown, disputed)
+# on references. Expanding ReferenceStatus is an open question — do not invent ad-hoc values.
 
 BilingualText = {
   "zh": string,    # Chinese; may be "" if not produced
@@ -123,23 +157,52 @@ KnowledgeContext = {
 Confirmation = {
   "confirmed_by": "user",
   "source_type": "conversation" | "user_authored_source" | "other",
-  "source_ref": string | null,         # e.g. source_id, or null for live chat
+  "source_ref": string | null,
   "confirmation_text": string | null,  # exact user wording for THIS proposition
   "confirmed_at": string | null,       # ISO-8601 UTC if known
   "limitations": string | null         # set when exact quote cannot be retained
 }
 
+# source_type meanings:
+#   conversation         — user affirmed in the current agent session / chat
+#   user_authored_source — affirmation text lives in a packaged user-authored file
+#   other                — affirmation is attributed to the user but arrived via a
+#                          channel that is neither this session nor a packaged
+#                          user-authored source (e.g. user forwards their own prior
+#                          note, paste from an external ticket without packaging it).
+#                          MUST explain the channel in confirmation.limitations.
+#                          MUST NOT invent a fake source_id.
+
+# source_ref by source_type:
+#   conversation         → null, or a non-sensitive host message id if available
+#   user_authored_source → MUST be a source_id that exists in source-index.json
+#   other                → null, or a short non-src_* label of the channel;
+#                          MUST NOT be a source_id that does not exist;
+#                          prefer null + limitations over a fabricated src_* id
+
 Locator = {
   "source_id": string,
-  "path": string,                # usually source/original/...
+  "path": string,                # package-relative; usually source/original/...; no .. escape
   "locator_type": "line_range" | "section" | "json_pointer" | "anchor" | "page_range",
-  "start": string | number | null,
+  "start": string | number | null,   # type depends on locator_type (see table below)
   "end": string | number | null,
   "excerpt": string              # short quote; redacted; <= 500 chars recommended
 }
 ```
 
-**Open point:** whether `page_range` is required for PDFs. Until decided: `line_range` for text; `page_range` when pages known; else `section` + excerpt. Unreadable PDFs must not be described as verified content.
+#### Locator `start` / `end` by `locator_type`
+
+| `locator_type` | `start` | `end` |
+| --- | --- | --- |
+| `line_range` | number (1-based line) or null | number (1-based line) or null |
+| `section` | **single** heading `string` or `null` | **single** heading `string` or `null` |
+| `json_pointer` | JSON Pointer `string` or null | null (unused) or same pointer |
+| `anchor` | anchor id `string` or null | null or end anchor `string` |
+| `page_range` | number (page) or null | number (page) or null |
+
+For `section`: do **not** use arrays, comma-joined multi-heading lists, or free-form path expressions in `start`/`end`. One heading string per field. If only a start heading is known, set `end: null`.
+
+**Open point:** whether `page_range` is required for PDFs. Until decided: `line_range` for text; `page_range` when pages known; else `section` + excerpt. Unreadable / non-extractable PDFs must not back `verified` knowledge.
 
 ---
 
@@ -167,12 +230,14 @@ sources_summary:
   count: 2
   source_ids: ["src_001", "src_002"]
 integrity:
-  files_touched: []                  # optional list of relative paths written
+  # Optional inventory of package-relative paths the exporter wrote or intended to write.
+  # NOT a checksum pass, NOT validator success, NOT proof of package completeness.
+  files_touched: []
 limitations:                         # REQUIRED — honest gaps / host limits
-  - "design.pdf unread: host cannot extract text; not packaged as verified content."
+  - "design.pdf copied as opaque binary; text not extracted; readable=false."
   - "Redaction is best-effort; complete secret/PII discovery is not claimed."
 redaction:
-  applied: true                      # false if no transforms
+  applied: true                      # true ONLY if secret/PII redaction was performed
   policy: "default_secrets_and_pii"
   completeness: "best_effort"        # NEVER use a value that implies full coverage
   notes: "Masked token-like strings in src_001 copy and excerpts."
@@ -180,6 +245,17 @@ validation:
   present: false                     # exporter always leaves false / omits report
   report_path: null                  # set only by validator when validation/ exists
 ```
+
+`manifest.redaction.applied`:
+
+- `true` — exporter performed secret/PII redaction on one or more package texts/copies.
+- `false` — no redaction pass was performed.
+- Does **not** mean “any file transform occurred”. Encoding normalization or other non-redaction changes belong in `content_transformed` / `transform_reason`, not here.
+
+`integrity.files_touched`:
+
+- Optional list of package-relative paths written during export.
+- Presence of paths does **not** mean integrity verification passed, hashes matched, or Validator ran.
 
 Optional keys: `owners`, `tags`, `related_packages`, `notes`, `host_capabilities_notes`.  
 Avoid unknown top-level keys — use `notes` until the formal spec freezes them.
@@ -209,6 +285,25 @@ Avoid unknown top-level keys — use `notes` until the formal spec freezes them.
         "value": null,
         "of": "package_copy"
       }
+    },
+    {
+      "source_id": "src_002",
+      "original_name": "architecture.pdf",
+      "user_path": null,
+      "package_path": "source/original/architecture.pdf",
+      "media_type": "application/pdf",
+      "language": "und",
+      "role": "supporting",
+      "received_from": "user",
+      "content_transformed": false,
+      "transform_reason": "none",
+      "readable": false,
+      "notes": "Opaque binary copy only; text not extracted by host.",
+      "checksum": {
+        "alg": "sha256",
+        "value": null,
+        "of": "package_copy"
+      }
     }
   ]
 }
@@ -217,19 +312,46 @@ Avoid unknown top-level keys — use `notes` until the formal spec freezes them.
 | Field | Required | Meaning |
 | --- | --- | --- |
 | `source_id` | yes | Stable id |
-| `original_name` | yes | User-facing filename |
-| `user_path` | no | Path of the user file if known (not modified) |
-| `package_path` | yes | Path inside package |
+| `original_name` | yes | User-facing filename (basename preferred) |
+| `user_path` | no | Privacy-limited pointer to the user file; see below |
+| `package_path` | yes | Safe path inside package (no `..` / absolute / symlink escape) |
 | `media_type` | yes | Best-effort MIME |
 | `language` | no | `zh` / `en` / `mixed` / `und` |
 | `role` | yes | `primary` \| `supporting` \| `reference_material` |
 | `received_from` | yes | `user` \| `workspace` \| `other` |
-| `content_transformed` | yes | `true` if package copy ≠ user bytes (redaction/normalization) |
-| `transform_reason` | no | e.g. `redaction`, `encoding_normalization`, `none` |
-| `readable` | yes | Whether exporter actually read content |
+| `content_transformed` | yes | `true` \| `false` \| `null` — see below |
+| `transform_reason` | no | e.g. `redaction`, `encoding_normalization`, `none`, `unknown` |
+| `readable` | yes | `true` only if exporter extracted usable content; opaque binary copies use `false` |
 | `checksum` | no | Prefer hashing the **package copy**; set `of: package_copy` |
 
-Skipped / unreadable user files do **not** get a fake packaged entry; record them in `manifest.limitations` instead (optional future: a `skipped_sources` list — not required in 0.1.0).
+#### `content_transformed`
+
+| Value | When to use |
+| --- | --- |
+| `true` | Known: package copy bytes differ from the user file (e.g. redaction, normalization) |
+| `false` | Known: package copy is byte-identical to the user file |
+| `null` | **Unknown** whether bytes match — host cannot compare, copy path unclear, or comparison not performed. **Do not invent `false`.** |
+
+`content_transformed` is about byte identity of the package copy vs the user file. It is independent of `manifest.redaction.applied` (though redaction usually implies `true` when redaction changed the copy).
+
+#### `user_path` privacy
+
+- Optional. Prefer `null` when the path adds little value.
+- Prefer workspace-relative paths over absolute home paths.
+- Do **not** store paths that embed secrets, tokens, personal directories you can avoid, or customer-sensitive folder names when a basename (`original_name`) suffices.
+- If a path segment is sensitive, redact it or set `user_path` to `null` and note the limitation.
+- `user_path` never authorizes modifying the user file.
+
+#### Copyable but unreadable binaries
+
+Allowed in `source/original/` when the host can copy bytes but cannot extract text:
+
+- `readable: false`
+- No evidence excerpts / line locators pretending to quote inner text
+- No KnowledgeStatus `verified` derived from that file’s unread content
+- `manifest.limitations` MUST mention the opaque packaging
+
+Skipped / not-copied user files do **not** get a fake packaged entry; record them in `manifest.limitations` instead (optional future: a `skipped_sources` list — not required in 0.1.0).
 
 ---
 
@@ -262,10 +384,10 @@ Do not put disputed resolutions here. Link to unknowns/conflicts by id in prose 
 
 ## Status field (all structured knowledge)
 
-`facts`, `claims`, `decisions`, `constraints`, and `glossary` terms **all** carry `status`.  
+`facts`, `claims`, `decisions`, `constraints`, and `glossary` terms **all** carry KnowledgeStatus `status`.  
 Writing a row does **not** make it `verified`. Allowed statuses and judgment rules: [claim-rules.md](claim-rules.md).
 
-When `status` is `user_confirmed`, `confirmation` is **required**.
+When `status` is `user_confirmed`, `confirmation` is **required** (see `Confirmation` shared type above).
 
 Optional `context` (`KnowledgeContext`) SHOULD be filled when environment/version/time/scope affects meaning or conflict detection.
 
@@ -516,7 +638,18 @@ If `redaction_applied` (or package-copy redaction) damages meaning/locatability 
 }
 ```
 
-Reference `status` here means citation-check status (usually `unverified`), **not** knowledge verification by URL shape alone.
+#### ReferenceStatus (independent of KnowledgeStatus)
+
+| Value (0.1.0) | Meaning |
+| --- | --- |
+| `unverified` | Citation recorded as stated in sources; the referenced work was **not** obtained/checked inside this package. **Default and only defined portable value in 0.1.0.** |
+
+Rules:
+
+1. `references[].status` uses **ReferenceStatus**, not KnowledgeStatus.
+2. Do **not** assign `verified`, `user_confirmed`, `inferred`, `unknown`, or `disputed` to a reference — those are KnowledgeStatus values and would be ambiguous here.
+3. A real-looking URL does **not** upgrade ReferenceStatus.
+4. Even if the user later packages the cited work as a source, knowledge claims still need their own evidence; do not overload ReferenceStatus to mean knowledge `verified` (additional ReferenceStatus values are an open question — do not invent them in exporters).
 
 ---
 
@@ -695,12 +828,15 @@ If a category has no items, write the file with an empty array under its standar
 
 | # | Ambiguity | Recommendation for 0.1.0 |
 | --- | --- | --- |
-| 1 | Where is the normative schema published? | This file until mirrored into `spec/cbhf/v0.1.0/` |
+| 1 | Where is the normative schema published? | Human semantics: this file; machine shapes: `spec/cbhf/v0.1.0/*.schema.json` |
 | 2 | Bilingual storage | Single files; `i18n.zh` / `i18n.en` + narrative bilingual sections |
 | 3 | Fact vs Claim boundary | Facts = descriptive atoms; Claims = assertive/interpretive; prefer one canonical record |
 | 4 | Checksum required? | Optional; hash package copy when available |
-| 5 | PDF locators | `page_range` when known; else `section` + excerpt; unread PDF → limitation |
+| 5 | PDF locators | `page_range` when known; else `section` + excerpt; unread/opaque PDF → `readable: false` + limitation |
 | 6 | Confirmation without retained quote | Allowed with `confirmation_text: null` + `limitations` explaining why |
 | 7 | Package root naming | User-chosen directory; stable id is `package_id` |
 | 8 | `validation-report.json` schema | Deferred to Validator skill |
 | 9 | `skipped_sources` formal list | Optional future; use `limitations` for now |
+| 10 | Expand `ReferenceStatus` beyond `unverified`? | Deferred — do not invent ad-hoc values |
+| 11 | Host message-id format for `confirmation.source_ref` | Optional opaque string; privacy-safe; else `null` |
+| 12 | Closed enum for handoff `priority` (`questions` / `recommended-actions`)? | Example uses `high` only; Schema keeps `string` until enum is ratified |

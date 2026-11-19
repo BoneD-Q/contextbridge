@@ -1,0 +1,61 @@
+cbhf_version: "0.1.0"
+protocol: CBHF
+package_id: pkg_northwind_edge_gateway_proposal
+title:
+  zh: "Northwind Edge Gateway 技术方案交接包"
+  en: "Northwind Edge Gateway technical proposal handoff"
+scenario: docs
+package_form: folder
+generated_at: "2026-11-19T04:41:00Z"
+generator:
+  skill: context-exporter
+  skill_version: "0.1.0"
+locale:
+  narratives:
+    - zh
+    - en
+  primary_source_lang: en
+sources_summary:
+  count: 4
+  source_ids:
+    - src_001
+    - src_002
+    - src_003
+    - src_004
+integrity:
+  files_touched:
+    - manifest.yaml
+    - source/source-index.json
+    - source/original/architecture-overview.md
+    - source/original/ops-runbook-excerpt.md
+    - source/original/decision-record.md
+    - source/original/open-questions.md
+    - knowledge/overview.md
+    - knowledge/facts.json
+    - knowledge/claims.json
+    - knowledge/decisions.json
+    - knowledge/constraints.json
+    - knowledge/glossary.json
+    - evidence/evidence.json
+    - evidence/references.json
+    - uncertainty/unknowns.json
+    - uncertainty/conflicts.json
+    - handoff/receiver-guide.md
+    - handoff/questions.json
+    - handoff/recommended-actions.json
+limitations:
+  - "Redaction is best-effort; complete secret/PII discovery is not claimed."
+  - "Secrets masked in package copies of architecture-overview.md and ops-runbook-excerpt.md; excerpts quoting those lines use redacted forms."
+  - "No PDF/DOCX/binary sources in this input set."
+  - "Confirmation quotes for decisions come from packaged user-authored decision-record.md, not a live chat transcript."
+  - "This package has not been run through context-validator; absence of validation/ means not validated yet."
+  - "integrity.files_touched is a write inventory only and does not mean integrity verification passed."
+redaction:
+  applied: true
+  policy: default_secrets_and_pii
+  completeness: best_effort
+  notes: "Masked EDGE_BOOTSTRAP_TOKEN, DB_PASSWORD, and PAGER_WEBHOOK_URL values in package copies."
+validation:
+  present: false
+  report_path: null
+notes: "First real context-exporter run for examples/technical-proposal. Structural smoke tests are not a Validator pass."

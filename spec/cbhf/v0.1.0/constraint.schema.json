@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextbridge.dev/spec/cbhf/v0.1.0/constraint.schema.json",
+  "title": "CBHF 0.1.0 constraints",
+  "description": "Schema for knowledge/constraints.json. Distinct structure (priority field); not folded into claim.schema.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["constraints"],
+  "properties": {
+    "constraints": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Constraint" }
+    }
+  },
+  "$defs": {
+    "Constraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["constraint_id", "statement", "status"],
+      "properties": {
+        "constraint_id": { "type": "string" },
+        "statement": {
+          "$ref": "common.schema.json#/$defs/LocalizedString"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/KnowledgeContext"
+        },
+        "status": {
+          "$ref": "common.schema.json#/$defs/KnowledgeStatus"
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["must", "should", "may", "must_not", "unspecified"]
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "confirmation": {
+          "$ref": "common.schema.json#/$defs/ConfirmationOrNull"
+        },
+        "conflict_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "notes": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/KnowledgeStatusGates"
+        }
+      ]
+    }
+  }
+}

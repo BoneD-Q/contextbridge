@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextbridge.dev/spec/cbhf/v0.1.0/evidence.schema.json",
+  "title": "CBHF 0.1.0 evidence",
+  "description": "Default root validates evidence/evidence.json. ReferencesDocument under $defs validates evidence/references.json (ReferenceStatus only).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["evidence"],
+  "properties": {
+    "evidence": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/EvidenceItem" }
+    }
+  },
+  "$defs": {
+    "EvidenceItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_id", "kind", "locator", "supports"],
+      "properties": {
+        "evidence_id": { "type": "string" },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "excerpt",
+            "table_cell",
+            "figure_caption",
+            "metadata",
+            "user_message",
+            "other"
+          ]
+        },
+        "locator": {
+          "$ref": "common.schema.json#/$defs/Locator"
+        },
+        "supports": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/SupportRef" }
+        },
+        "redaction_applied": { "type": "boolean" },
+        "notes": { "type": "string" }
+      }
+    },
+    "SupportRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["fact", "claim", "decision", "constraint", "term"]
+        },
+        "id": { "type": "string" }
+      }
+    },
+    "ReferencesDocument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["references"],
+      "properties": {
+        "references": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ReferenceItem" }
+        }
+      }
+    },
+    "ReferenceItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference_id", "status"],
+      "properties": {
+        "reference_id": { "type": "string" },
+        "title": { "type": "string" },
+        "raw_citation": { "type": "string" },
+        "url": { "type": ["string", "null"] },
+        "mentioned_in": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "status": {
+          "$ref": "common.schema.json#/$defs/ReferenceStatus"
+        },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

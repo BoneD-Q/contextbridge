@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextbridge.dev/spec/cbhf/v0.1.0/conflict.schema.json",
+  "title": "CBHF 0.1.0 conflicts",
+  "description": "Schema for uncertainty/conflicts.json. Rows should only be emitted when same_subject and context_alignment are same (policy in cbhf-format / claim-rules); Schema allows the documented context_alignment enum.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["conflicts"],
+  "properties": {
+    "conflicts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ConflictItem" }
+    }
+  },
+  "$defs": {
+    "ConflictItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conflict_id",
+        "summary",
+        "same_subject",
+        "context_alignment",
+        "parties"
+      ],
+      "properties": {
+        "conflict_id": { "type": "string" },
+        "summary": {
+          "$ref": "common.schema.json#/$defs/LocalizedString"
+        },
+        "same_subject": { "type": "boolean" },
+        "context_alignment": {
+          "type": "string",
+          "enum": ["same", "different", "uncertain"]
+        },
+        "shared_context": {
+          "$ref": "common.schema.json#/$defs/KnowledgeContext"
+        },
+        "parties": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/ConflictParty" }
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "resolution": { "type": ["string", "null"] },
+        "notes": { "type": "string" }
+      }
+    },
+    "ConflictParty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id", "stance"],
+      "properties": {
+        "type": { "type": "string" },
+        "id": { "type": "string" },
+        "stance": { "type": "string" }
+      }
+    }
+  }
+}

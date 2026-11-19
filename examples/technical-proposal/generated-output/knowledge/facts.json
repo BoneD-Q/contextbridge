@@ -1,0 +1,234 @@
+{
+  "facts": [
+    {
+      "fact_id": "fact_001",
+      "statement": {
+        "text": "The control-plane API listens on path prefix /v1/admin.",
+        "lang": "en",
+        "i18n": {
+          "zh": "控制面 API 监听路径前缀 /v1/admin。",
+          "en": "The control-plane API listens on path prefix /v1/admin."
+        }
+      },
+      "context": {
+        "environment": "unspecified",
+        "version": null,
+        "time_range": null,
+        "scope": "northwind-edge-gateway"
+      },
+      "status": "verified",
+      "evidence_ids": ["ev_001"],
+      "confirmation": null,
+      "conflict_ids": [],
+      "tags": ["api"],
+      "notes": ""
+    },
+    {
+      "fact_id": "fact_002",
+      "statement": {
+        "text": "Data-plane health checks use GET /healthz and expect HTTP 200.",
+        "lang": "en",
+        "i18n": {
+          "zh": "数据面健康检查使用 GET /healthz，并期望 HTTP 200。",
+          "en": "Data-plane health checks use GET /healthz and expect HTTP 200."
+        }
+      },
+      "context": {
+        "environment": "unspecified",
+        "version": null,
+        "time_range": null,
+        "scope": "northwind-edge-gateway"
+      },
+      "status": "verified",
+      "evidence_ids": ["ev_002"],
+      "confirmation": null,
+      "conflict_ids": [],
+      "tags": ["health"],
+      "notes": ""
+    },
+    {
+      "fact_id": "fact_003",
+      "statement": {
+        "text": "Default idle timeout for upstream connections is 60 seconds.",
+        "lang": "en",
+        "i18n": {
+          "zh": "上游连接默认空闲超时为 60 秒。",
+          "en": "Default idle timeout for upstream connections is 60 seconds."
+        }
+      },
+      "context": {
+        "environment": "unspecified",
+        "version": null,
+        "time_range": null,
+        "scope": "northwind-edge-gateway"
+      },
+      "status": "verified",
+      "evidence_ids": ["ev_003"],
+      "confirmation": null,
+      "conflict_ids": [],
+      "tags": ["timeout"],
+      "notes": ""
+    },
+    {
+      "fact_id": "fact_004",
+      "statement": {
+        "text": "Supported TLS versions are TLS 1.2 and TLS 1.3 only.",
+        "lang": "en",
+        "i18n": {
+          "zh": "仅支持 TLS 1.2 与 TLS 1.3。",
+          "en": "Supported TLS versions are TLS 1.2 and TLS 1.3 only."
+        }
+      },
+      "context": {
+        "environment": "unspecified",
+        "version": null,
+        "time_range": null,
+        "scope": "northwind-edge-gateway"
+      },
+      "status": "verified",
+      "evidence_ids": ["ev_004"],
+      "confirmation": null,
+      "conflict_ids": [],
+      "tags": ["tls"],
+      "notes": ""
+    },
+    {
+      "fact_id": "fact_005",
+      "statement": {
+        "text": "Configuration object id format is cfg_<uuid>.",
+        "lang": "en",
+        "i18n": {
+          "zh": "配置对象 ID 格式为 cfg_<uuid>。",
+          "en": "Configuration object id format is cfg_<uuid>."
+        }
+      },
+      "context": {
+        "environment": "unspecified",
+        "version": null,
+        "time_range": null,
+        "scope": "northwind-edge-gateway"
+      },
+      "status": "verified",
+      "evidence_ids": ["ev_005"],
+      "confirmation": null,
+      "conflict_ids": [],
+      "tags": ["config"],
+      "notes": ""
+    },
+    {
+      "fact_id": "fact_006",
+      "statement": {
+        "text": "Staging data-plane listen port is 8000.",
+        "lang": "en",
+        "i18n": {
+          "zh": "测试环境数据面监听端口为 8000。",
+          "en": "Staging data-plane listen port is 8000."
+        }
+      },
+      "context": {
+        "environment": "staging",
+        "version": null,
+        "time_range": null,
+        "scope": "edge-data-plane"
+      },
+      "status": "verified",
+      "evidence_ids": ["ev_006"],
+      "confirmation": null,
+      "conflict_ids": [],
+      "tags": ["port"],
+      "notes": "Different environment from production ports; not a conflict with prod."
+    },
+    {
+      "fact_id": "fact_007",
+      "statement": {
+        "text": "Production data-plane listen port is 8080.",
+        "lang": "en",
+        "i18n": {
+          "zh": "生产环境数据面监听端口为 8080。",
+          "en": "Production data-plane listen port is 8080."
+        }
+      },
+      "context": {
+        "environment": "prod",
+        "version": null,
+        "time_range": null,
+        "scope": "edge-data-plane"
+      },
+      "status": "disputed",
+      "evidence_ids": ["ev_007"],
+      "confirmation": null,
+      "conflict_ids": ["cfl_001"],
+      "tags": ["port"],
+      "notes": "Conflicts with fact_008 under the same prod/data-plane context."
+    },
+    {
+      "fact_id": "fact_008",
+      "statement": {
+        "text": "Production data-plane listen port is 8000.",
+        "lang": "en",
+        "i18n": {
+          "zh": "生产环境数据面监听端口为 8000。",
+          "en": "Production data-plane listen port is 8000."
+        }
+      },
+      "context": {
+        "environment": "prod",
+        "version": null,
+        "time_range": null,
+        "scope": "edge-data-plane"
+      },
+      "status": "disputed",
+      "evidence_ids": ["ev_008"],
+      "confirmation": null,
+      "conflict_ids": ["cfl_001"],
+      "tags": ["port"],
+      "notes": "Conflicts with fact_007 under the same prod/data-plane context."
+    },
+    {
+      "fact_id": "fact_009",
+      "statement": {
+        "text": "In the embedded soak excerpt, CPU avg is 38%.",
+        "lang": "en",
+        "i18n": {
+          "zh": "内嵌浸泡测试摘录中，CPU 平均为 38%。",
+          "en": "In the embedded soak excerpt, CPU avg is 38%."
+        }
+      },
+      "context": {
+        "environment": "unspecified",
+        "version": null,
+        "time_range": null,
+        "scope": "soak-excerpt"
+      },
+      "status": "verified",
+      "evidence_ids": ["ev_009"],
+      "confirmation": null,
+      "conflict_ids": [],
+      "tags": ["metrics"],
+      "notes": "Premise for inferred bottleneck claim."
+    },
+    {
+      "fact_id": "fact_010",
+      "statement": {
+        "text": "In the embedded soak excerpt, Conn pool wait P99 is 120 ms.",
+        "lang": "en",
+        "i18n": {
+          "zh": "内嵌浸泡测试摘录中，连接池等待 P99 为 120 ms。",
+          "en": "In the embedded soak excerpt, Conn pool wait P99 is 120 ms."
+        }
+      },
+      "context": {
+        "environment": "unspecified",
+        "version": null,
+        "time_range": null,
+        "scope": "soak-excerpt"
+      },
+      "status": "verified",
+      "evidence_ids": ["ev_010"],
+      "confirmation": null,
+      "conflict_ids": [],
+      "tags": ["metrics"],
+      "notes": "Premise for inferred bottleneck claim."
+    }
+  ]
+}

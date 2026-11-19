@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextbridge.dev/spec/cbhf/v0.1.0/manifest.schema.json",
+  "title": "CBHF 0.1.0 manifest",
+  "description": "Schema for manifest.yaml (JSON-equivalent object). Does not require validation/validation-report.json. integrity.files_touched is a write inventory only — not an integrity or validator pass.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "cbhf_version",
+    "protocol",
+    "package_id",
+    "title",
+    "scenario",
+    "package_form",
+    "generated_at",
+    "generator",
+    "locale",
+    "sources_summary",
+    "limitations",
+    "redaction",
+    "validation"
+  ],
+  "properties": {
+    "cbhf_version": { "type": "string", "const": "0.1.0" },
+    "protocol": { "type": "string", "const": "CBHF" },
+    "package_id": { "type": "string" },
+    "title": {
+      "$ref": "common.schema.json#/$defs/BilingualText"
+    },
+    "scenario": { "type": "string", "const": "docs" },
+    "package_form": { "type": "string", "const": "folder" },
+    "generated_at": { "type": "string" },
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["skill", "skill_version"],
+      "properties": {
+        "skill": { "type": "string" },
+        "skill_version": { "type": "string" }
+      }
+    },
+    "locale": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["narratives", "primary_source_lang"],
+      "properties": {
+        "narratives": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "primary_source_lang": {
+          "type": "string",
+          "enum": ["zh", "en", "mixed"]
+        }
+      }
+    },
+    "sources_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "source_ids"],
+      "properties": {
+        "count": { "type": "integer", "minimum": 0 },
+        "source_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional write inventory. Presence of files_touched does NOT mean integrity verification passed, hashes matched, or Validator ran.",
+      "properties": {
+        "files_touched": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["applied"],
+      "description": "applied is true ONLY if secret/PII redaction was performed. It does not mean any non-redaction file transform occurred.",
+      "properties": {
+        "applied": { "type": "boolean" },
+        "policy": { "type": "string" },
+        "completeness": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["present", "report_path"],
+      "description": "Exporter leaves present=false and report_path=null. No validation-report.json is required by this schema.",
+      "properties": {
+        "present": { "type": "boolean" },
+        "report_path": { "type": ["string", "null"] }
+      }
+    },
+    "owners": true,
+    "tags": true,
+    "related_packages": true,
+    "notes": true,
+    "host_capabilities_notes": true
+  }
+}

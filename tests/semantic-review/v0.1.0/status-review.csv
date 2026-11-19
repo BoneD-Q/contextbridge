@@ -1,0 +1,23 @@
+object_id,type,current_status,has_evidence_ids,confirmation_present,suggested_status,result,rationale
+fact_001,fact,verified,yes,n/a,verified,PASS,Explicit source sentence + adequate excerpt.
+fact_002,fact,verified,yes,n/a,verified,PASS,Explicit source sentence + adequate excerpt.
+fact_003,fact,verified,yes,n/a,verified,PASS,Explicit source sentence + adequate excerpt.
+fact_004,fact,verified,yes,n/a,verified,PASS,Explicit source sentence + adequate excerpt.
+fact_005,fact,verified,yes,n/a,verified,PASS,Id-format claim entailed by line 17; statement is narrowed but not overstated.
+fact_006,fact,verified,yes,n/a,verified,PASS,Staging port with environment context; not mixed into prod conflict.
+fact_007,fact,disputed,yes,n/a,disputed,PASS,Prod 8080; mutually exclusive with fact_008; linked to cfl_001.
+fact_008,fact,disputed,yes,n/a,disputed,PASS,Prod 8000; mutually exclusive with fact_007; linked to cfl_001.
+fact_009,fact,verified,yes,n/a,verified,PASS,Table cell CPU avg 38%.
+fact_010,fact,verified,yes,n/a,verified,PASS,Table cell conn pool wait P99.
+claim_001,claim,inferred,yes,n/a,inferred,PASS,"Notes mark Inference; premises + source interpretation disclaimer present. Must not be verified."
+dec_001,decision,user_confirmed,yes,yes,user_confirmed,PASS,"confirmation.source_type=user_authored_source; quote matches src_003. Fixture meta says treat as confirmation — not a live session confirm (see NOT CHECKED)."
+dec_002,decision,user_confirmed,yes,yes,user_confirmed,PASS,Chinese confirmation quote matches src_003 and EXPECTED.
+dec_003,decision,verified,yes,n/a,verified,PASS,Explicit decision sentence with excerpt; no confirmation required.
+con_001,constraint,verified,yes,n/a,verified,PASS,Must-not Web UI constraint with excerpt.
+con_002,constraint,verified,yes,n/a,verified,PASS,Logging constraint with excerpt.
+con_003,constraint,verified,yes,n/a,verified,PASS,Change-ticket constraint; dual evidence from architecture + ops.
+term_001,term,verified,yes,n/a,verified,PASS,Definition excerpt present; not verified merely by listing.
+term_002,term,verified,yes,n/a,verified,PASS,Definition excerpt present.
+unk_001,unknown_row,n/a,n/a,n/a,keep,PASS,Replica count unanswered in sources; correctly in unknowns.json not invented.
+unk_002,unknown_row,n/a,n/a,n/a,keep,PASS,On-call owner unanswered.
+unk_003,unknown_row,n/a,n/a,n/a,keep,PASS,ff_http3_preview ship state unanswered.

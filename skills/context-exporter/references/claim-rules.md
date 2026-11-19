@@ -1,7 +1,11 @@
 # Claim & status rules (CBHF 0.1.0)
 
-Used by `context-exporter` when classifying knowledge items and assigning `status`.  
-Field shapes: [cbhf-format.md](cbhf-format.md). Evidence linking: [evidence-rules.md](evidence-rules.md).
+Used by `context-exporter` when classifying knowledge items and assigning **KnowledgeStatus**.
+
+- **Field shapes / shared types:** [cbhf-format.md](cbhf-format.md) (authority for schemas; do not fork field names here)
+- **Evidence / locators / redaction practice:** [evidence-rules.md](evidence-rules.md)
+
+This file does **not** redefine package layout. If a field shape here drifts from `cbhf-format.md`, fix this file.
 
 ## Object types
 
@@ -29,11 +33,13 @@ Creating a row in `facts.json`, `claims.json`, `decisions.json`, `constraints.js
 
 ---
 
-## Status values (closed set)
+## KnowledgeStatus values (closed set)
 
 `verified` | `user_confirmed` | `inferred` | `unverified` | `unknown` | `disputed`
 
 Same spelling everywhere (SKILL, format, evidence rules).
+
+**Not** the same as `references[].status` (**ReferenceStatus** in cbhf-format), action `status` (`pending` \| `blocked` \| `cancelled`), or `manifest.validation`.
 
 ### Allowed statuses by object type
 
@@ -166,7 +172,7 @@ Apply in order; stop at first full match.
 
 ## `confirmation` object (`user_confirmed` only)
 
-Required shape (see also cbhf-format `Confirmation`):
+Required shape (normative shared type: cbhf-format `Confirmation`):
 
 ```json
 {
@@ -184,19 +190,38 @@ Required shape (see also cbhf-format `Confirmation`):
 | Field | Rule |
 | --- | --- |
 | `confirmed_by` | Always `user` in 0.1.0 for this status |
-| `source_type` | `conversation` \| `user_authored_source` \| `other` |
-| `source_ref` | `source_id` when confirmation lives in a packaged user-authored file; else `null` |
+| `source_type` | `conversation` \| `user_authored_source` \| `other` (meanings below) |
+| `source_ref` | Depends on `source_type` (table below) |
 | `confirmation_text` | Exact wording for **this** proposition when retainable |
 | `confirmed_at` | ISO-8601 UTC if known; else `null` |
-| `limitations` | Required explanation when `confirmation_text` is `null` or incomplete |
+| `limitations` | Required when `confirmation_text` is `null`/incomplete, or when `source_type` is `other` |
+
+### `source_type` meanings
+
+| Value | Meaning |
+| --- | --- |
+| `conversation` | User explicitly affirmed this proposition in the **current** agent session / chat |
+| `user_authored_source` | Affirmation text lives in a **packaged** user-authored file (indexed `source_id`) |
+| `other` | Affirmation is attributed to the user but arrived via a channel that is **neither** this session **nor** a packaged user-authored source (e.g. user forwards their own prior note; paste from an external ticket **without** packaging that ticket as a source). Must explain the channel in `confirmation.limitations`. Must **not** invent a fake `source_id`. |
+
+### `source_ref` by `source_type`
+
+| `source_type` | `source_ref` rule |
+| --- | --- |
+| `conversation` | `null`, or a privacy-safe host message id if available |
+| `user_authored_source` | **MUST** be a `source_id` present in `source/source-index.json` |
+| `other` | `null`, or a short **non-`src_*`** channel label; **MUST NOT** be a `source_id` that does not exist; prefer `null` + `limitations` over fabricating `src_*` |
 
 Rules:
 
 1. Confirm the proposition you store — not a vague adjacent topic.
 2. If the user confirms only part of a compound statement, split atoms; confirm only the affirmed atom.
-3. If exact wording cannot be retained, set `confirmation_text: null` and explain in `limitations` (also mention in `manifest.limitations` when systemic).
-4. For `user_authored_source`, still prefer packaging/quoting that confirmation span as evidence (`kind: user_message` or excerpt) when possible.
-5. For non-`user_confirmed` statuses, set `"confirmation": null` (or omit only if the implementing host cannot write nulls — prefer explicit `null` for consistency).
+3. Guess / suggestion / uncertainty from the user ≠ confirmation (any `source_type`).
+4. AI inference must never receive `user_confirmed`.
+5. If exact wording cannot be retained, set `confirmation_text: null` and explain in `limitations` (also mention in `manifest.limitations` when systemic).
+6. For `user_authored_source`, still prefer packaging/quoting that confirmation span as evidence (`kind: user_message` or excerpt) when possible.
+7. For `other`, do not silently upgrade trust: keep honest `limitations`; attach evidence only if a real packaged span exists.
+8. For non-`user_confirmed` statuses, set `"confirmation": null` (prefer explicit `null`).
 
 ---
 

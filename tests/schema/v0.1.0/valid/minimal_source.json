@@ -1,0 +1,31 @@
+{
+  "sources": [
+    {
+      "source_id": "src_001",
+      "original_name": "design.md",
+      "user_path": "docs/design.md",
+      "package_path": "source/original/design.md",
+      "media_type": "text/markdown",
+      "language": "zh",
+      "role": "primary",
+      "received_from": "user",
+      "content_transformed": null,
+      "readable": true,
+      "notes": "content_transformed null because byte identity was not compared."
+    },
+    {
+      "source_id": "src_002",
+      "original_name": "architecture.pdf",
+      "user_path": null,
+      "package_path": "source/original/architecture.pdf",
+      "media_type": "application/pdf",
+      "language": "und",
+      "role": "supporting",
+      "received_from": "user",
+      "content_transformed": false,
+      "transform_reason": "none",
+      "readable": false,
+      "notes": "Opaque binary copy; not a knowledge/evidence text source."
+    }
+  ]
+}

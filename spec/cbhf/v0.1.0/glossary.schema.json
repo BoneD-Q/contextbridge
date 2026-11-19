@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextbridge.dev/spec/cbhf/v0.1.0/glossary.schema.json",
+  "title": "CBHF 0.1.0 glossary",
+  "description": "Schema for knowledge/glossary.json. Terms carry KnowledgeStatus; listing a term does not imply verified.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["terms"],
+  "properties": {
+    "terms": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Term" }
+    }
+  },
+  "$defs": {
+    "Term": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["term_id", "term", "definition", "status"],
+      "properties": {
+        "term_id": { "type": "string" },
+        "term": { "type": "string" },
+        "definition": {
+          "$ref": "common.schema.json#/$defs/LocalizedString"
+        },
+        "status": {
+          "$ref": "common.schema.json#/$defs/KnowledgeStatus"
+        },
+        "aliases": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "confirmation": {
+          "$ref": "common.schema.json#/$defs/ConfirmationOrNull"
+        },
+        "conflict_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "notes": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/KnowledgeStatusGates"
+        }
+      ]
+    }
+  }
+}

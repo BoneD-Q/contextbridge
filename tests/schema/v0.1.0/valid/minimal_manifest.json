@@ -1,0 +1,36 @@
+{
+  "cbhf_version": "0.1.0",
+  "protocol": "CBHF",
+  "package_id": "pkg_minimal_example",
+  "title": {
+    "zh": "最小示例",
+    "en": "Minimal example"
+  },
+  "scenario": "docs",
+  "package_form": "folder",
+  "generated_at": "2026-11-19T04:00:00Z",
+  "generator": {
+    "skill": "context-exporter",
+    "skill_version": "0.1.0"
+  },
+  "locale": {
+    "narratives": ["zh", "en"],
+    "primary_source_lang": "zh"
+  },
+  "sources_summary": {
+    "count": 1,
+    "source_ids": ["src_001"]
+  },
+  "limitations": [
+    "Redaction is best-effort; complete secret/PII discovery is not claimed."
+  ],
+  "redaction": {
+    "applied": false,
+    "policy": "default_secrets_and_pii",
+    "completeness": "best_effort"
+  },
+  "validation": {
+    "present": false,
+    "report_path": null
+  }
+}

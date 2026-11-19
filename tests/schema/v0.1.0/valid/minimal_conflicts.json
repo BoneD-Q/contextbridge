@@ -1,0 +1,30 @@
+{
+  "conflicts": [
+    {
+      "conflict_id": "cfl_001",
+      "summary": {
+        "text": "同一生产环境下监听端口互斥：8080 vs 8000。",
+        "lang": "zh",
+        "i18n": {
+          "zh": "同一生产环境下监听端口互斥：8080 vs 8000。",
+          "en": "Mutually exclusive production listen ports: 8080 vs 8000."
+        }
+      },
+      "same_subject": true,
+      "context_alignment": "same",
+      "shared_context": {
+        "environment": "prod",
+        "version": null,
+        "time_range": null,
+        "scope": "api-gateway"
+      },
+      "parties": [
+        { "type": "fact", "id": "fact_001", "stance": "8080" },
+        { "type": "fact", "id": "fact_002", "stance": "8000" }
+      ],
+      "evidence_ids": ["ev_001", "ev_009"],
+      "resolution": null,
+      "notes": "Do not auto-resolve."
+    }
+  ]
+}

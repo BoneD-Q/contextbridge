@@ -1,0 +1,7 @@
+cbhf_version: "0.1.0"
+protocol: CBHF
+package_id: pkg_yaml_bad_syntax
+title:
+  zh: "坏语法
+  en: "Broken YAML
+scenario: docs

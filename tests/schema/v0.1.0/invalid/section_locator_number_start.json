@@ -1,0 +1,19 @@
+{
+  "evidence": [
+    {
+      "evidence_id": "ev_bad",
+      "kind": "excerpt",
+      "locator": {
+        "source_id": "src_001",
+        "path": "source/original/design.md",
+        "locator_type": "section",
+        "start": 12,
+        "end": null,
+        "excerpt": "bad section start type"
+      },
+      "supports": [
+        { "type": "fact", "id": "fact_001" }
+      ]
+    }
+  ]
+}

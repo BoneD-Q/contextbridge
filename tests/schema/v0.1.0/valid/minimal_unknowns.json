@@ -1,0 +1,22 @@
+{
+  "unknowns": [
+    {
+      "unknown_id": "unk_001",
+      "question": {
+        "text": "生产环境的实际副本数是多少？",
+        "lang": "zh",
+        "i18n": {
+          "zh": "生产环境的实际副本数是多少？",
+          "en": "What is the actual production replica count?"
+        }
+      },
+      "why_it_matters": {
+        "text": "影响容量与故障切换描述。",
+        "lang": "zh"
+      },
+      "related_ids": ["claim_008"],
+      "suggested_owner": "user",
+      "notes": ""
+    }
+  ]
+}

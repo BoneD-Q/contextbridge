@@ -1,0 +1,41 @@
+{
+  "claims": [
+    {
+      "claim_id": "claim_001",
+      "statement": {
+        "text": "当前瓶颈在数据库连接池。",
+        "lang": "zh",
+        "i18n": {
+          "zh": "当前瓶颈在数据库连接池。",
+          "en": "The current bottleneck is the DB connection pool."
+        }
+      },
+      "status": "inferred",
+      "kind": "interpretation",
+      "evidence_ids": ["ev_001"],
+      "confirmation": null,
+      "conflict_ids": [],
+      "notes": "Inference: derived from latency table; not explicitly stated."
+    },
+    {
+      "claim_id": "claim_002",
+      "statement": {
+        "text": "生产端口为 8080。",
+        "lang": "zh"
+      },
+      "status": "user_confirmed",
+      "kind": "assertion",
+      "evidence_ids": [],
+      "confirmation": {
+        "confirmed_by": "user",
+        "source_type": "conversation",
+        "source_ref": null,
+        "confirmation_text": "对，生产就是 8080。",
+        "confirmed_at": null,
+        "limitations": null
+      },
+      "conflict_ids": [],
+      "notes": ""
+    }
+  ]
+}

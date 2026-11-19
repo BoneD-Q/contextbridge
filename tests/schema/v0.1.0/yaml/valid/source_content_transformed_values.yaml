@@ -1,0 +1,28 @@
+sources:
+  - source_id: src_001
+    original_name: a.md
+    package_path: source/original/a.md
+    media_type: text/markdown
+    role: primary
+    received_from: user
+    content_transformed: true
+    readable: true
+    notes: "known different bytes"
+  - source_id: src_002
+    original_name: b.md
+    package_path: source/original/b.md
+    media_type: text/markdown
+    role: supporting
+    received_from: user
+    content_transformed: false
+    readable: true
+    notes: "known identical bytes"
+  - source_id: src_003
+    original_name: c.md
+    package_path: source/original/c.md
+    media_type: text/markdown
+    role: supporting
+    received_from: user
+    content_transformed: null
+    readable: true
+    notes: "unknown byte identity"

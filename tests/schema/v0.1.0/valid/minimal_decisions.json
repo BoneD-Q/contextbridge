@@ -1,0 +1,29 @@
+{
+  "decisions": [
+    {
+      "decision_id": "dec_001",
+      "summary": {
+        "text": "采用文件夹交接而非单一 JSON 包。",
+        "lang": "zh",
+        "i18n": {
+          "zh": "采用文件夹交接而非单一 JSON 包。",
+          "en": "Use a folder handoff instead of a single JSON bundle."
+        }
+      },
+      "status": "user_confirmed",
+      "confirmation": {
+        "confirmed_by": "user",
+        "source_type": "conversation",
+        "source_ref": null,
+        "confirmation_text": "就按文件夹交接，不要做成单个 JSON 包。",
+        "confirmed_at": null,
+        "limitations": null
+      },
+      "evidence_ids": [],
+      "conflict_ids": [],
+      "date": null,
+      "supersedes": [],
+      "notes": ""
+    }
+  ]
+}

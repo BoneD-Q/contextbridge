@@ -1,0 +1,17 @@
+{
+  "constraints": [
+    {
+      "constraint_id": "con_001",
+      "statement": {
+        "text": "不得引入独立 Web 服务。",
+        "lang": "zh"
+      },
+      "status": "verified",
+      "priority": "must",
+      "evidence_ids": ["ev_003"],
+      "confirmation": null,
+      "conflict_ids": [],
+      "notes": ""
+    }
+  ]
+}

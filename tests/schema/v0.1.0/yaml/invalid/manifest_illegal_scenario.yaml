@@ -1,0 +1,27 @@
+cbhf_version: "0.1.0"
+protocol: CBHF
+package_id: pkg_yaml_illegal_scenario
+title:
+  zh: "非法 scenario"
+  en: "Illegal scenario"
+scenario: webapp
+package_form: folder
+generated_at: "2026-11-19T05:00:00Z"
+generator:
+  skill: context-exporter
+  skill_version: "0.1.0"
+locale:
+  narratives:
+    - zh
+    - en
+  primary_source_lang: zh
+sources_summary:
+  count: 0
+  source_ids: []
+limitations:
+  - "fixture for illegal enum"
+redaction:
+  applied: false
+validation:
+  present: false
+  report_path: null

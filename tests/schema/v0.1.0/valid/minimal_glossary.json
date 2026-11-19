@@ -1,0 +1,22 @@
+{
+  "terms": [
+    {
+      "term_id": "term_001",
+      "term": "CBHF",
+      "definition": {
+        "text": "ContextBridge Handoff Format",
+        "lang": "en",
+        "i18n": {
+          "zh": "ContextBridge 交接格式",
+          "en": "ContextBridge Handoff Format"
+        }
+      },
+      "status": "unverified",
+      "aliases": ["ContextBridge Handoff Format"],
+      "evidence_ids": [],
+      "confirmation": null,
+      "conflict_ids": [],
+      "notes": "Listed without pinning a source span in this minimal fixture."
+    }
+  ]
+}

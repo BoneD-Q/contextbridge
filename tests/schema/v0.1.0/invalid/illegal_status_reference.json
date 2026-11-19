@@ -1,0 +1,13 @@
+{
+  "references": [
+    {
+      "reference_id": "ref_bad",
+      "title": "RFC 9110",
+      "raw_citation": "RFC 9110",
+      "url": "https://example.invalid/rfc9110",
+      "mentioned_in": ["src_001"],
+      "status": "verified",
+      "notes": "Illegal: KnowledgeStatus verified is not a ReferenceStatus value in 0.1.0."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "conflicts": [
+    {
+      "conflict_id": "cfl_001",
+      "summary": {
+        "text": "Mutually exclusive production data-plane listen ports: 8080 vs 8000.",
+        "lang": "en",
+        "i18n": {
+          "zh": "同一生产环境下数据面监听端口互斥：8080 与 8000。",
+          "en": "Mutually exclusive production data-plane listen ports: 8080 vs 8000."
+        }
+      },
+      "same_subject": true,
+      "context_alignment": "same",
+      "shared_context": {
+        "environment": "prod",
+        "version": null,
+        "time_range": null,
+        "scope": "edge-data-plane"
+      },
+      "parties": [
+        { "type": "fact", "id": "fact_007", "stance": "8080" },
+        { "type": "fact", "id": "fact_008", "stance": "8000" }
+      ],
+      "evidence_ids": ["ev_007", "ev_008"],
+      "resolution": null,
+      "notes": "Staging port 8000 (fact_006) is a different environment and is not part of this conflict."
+    }
+  ]
+}

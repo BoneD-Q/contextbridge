@@ -1,0 +1,28 @@
+cbhf_version: "0.1.0"
+protocol: CBHF
+package_id: pkg_yaml_dup_a
+package_id: pkg_yaml_dup_b
+title:
+  zh: "重复键"
+  en: "Duplicate keys"
+scenario: docs
+package_form: folder
+generated_at: "2026-11-19T05:00:00Z"
+generator:
+  skill: context-exporter
+  skill_version: "0.1.0"
+locale:
+  narratives:
+    - zh
+    - en
+  primary_source_lang: zh
+sources_summary:
+  count: 0
+  source_ids: []
+limitations:
+  - "duplicate package_id keys must be rejected"
+redaction:
+  applied: false
+validation:
+  present: false
+  report_path: null

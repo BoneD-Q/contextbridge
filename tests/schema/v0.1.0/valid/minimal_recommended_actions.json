@@ -1,0 +1,19 @@
+{
+  "actions": [
+    {
+      "action_id": "act_001",
+      "action": {
+        "text": "请用户确认两处端口是否同一环境；若是，确认权威值。",
+        "lang": "zh",
+        "i18n": {
+          "zh": "请用户确认两处端口是否同一环境；若是，确认权威值。",
+          "en": "Ask the user whether both port statements share one environment; if so, confirm the authoritative value."
+        }
+      },
+      "priority": "high",
+      "status": "pending",
+      "related_ids": ["q_001", "unk_002"],
+      "notes": "Not performed by exporter."
+    }
+  ]
+}

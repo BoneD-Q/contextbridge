@@ -1,0 +1,14 @@
+{
+  "sources": [
+    {
+      "source_id": "src_001",
+      "original_name": "design.md",
+      "package_path": "source/original/design.md",
+      "media_type": "text/markdown",
+      "role": "primary",
+      "received_from": "user",
+      "content_transformed": "yes",
+      "readable": true
+    }
+  ]
+}

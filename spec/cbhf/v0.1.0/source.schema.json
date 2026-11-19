@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextbridge.dev/spec/cbhf/v0.1.0/source.schema.json",
+  "title": "CBHF 0.1.0 source-index",
+  "description": "Schema for source/source-index.json. readable=false marks opaque/unreadable package copies that must not back verified knowledge or fabricated excerpts (cross-file Validator rule).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sources"],
+  "properties": {
+    "sources": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/SourceEntry" }
+    }
+  },
+  "$defs": {
+    "SourceEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "original_name",
+        "package_path",
+        "media_type",
+        "role",
+        "received_from",
+        "content_transformed",
+        "readable"
+      ],
+      "properties": {
+        "source_id": { "type": "string" },
+        "original_name": { "type": "string" },
+        "user_path": {
+          "type": ["string", "null"],
+          "description": "Optional privacy-limited path. Prefer null when sensitive."
+        },
+        "package_path": { "type": "string" },
+        "media_type": { "type": "string" },
+        "language": {
+          "type": "string",
+          "enum": ["zh", "en", "mixed", "und"]
+        },
+        "role": {
+          "type": "string",
+          "enum": ["primary", "supporting", "reference_material"]
+        },
+        "received_from": {
+          "type": "string",
+          "enum": ["user", "workspace", "other"]
+        },
+        "content_transformed": {
+          "type": ["boolean", "null"],
+          "description": "true=known different bytes; false=known identical; null=unknown. Do not invent false."
+        },
+        "transform_reason": { "type": "string" },
+        "readable": {
+          "type": "boolean",
+          "description": "true only if usable content was extracted. Opaque binary copies use false."
+        },
+        "notes": { "type": "string" },
+        "checksum": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "alg": { "type": "string" },
+            "value": { "type": ["string", "null"] },
+            "of": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

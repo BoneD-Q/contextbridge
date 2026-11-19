@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextbridge.dev/spec/cbhf/v0.1.0/fact.schema.json",
+  "title": "CBHF 0.1.0 facts",
+  "description": "Schema for knowledge/facts.json. Distinct from claims; not a duplicate of claim.schema.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["facts"],
+  "properties": {
+    "facts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Fact" }
+    }
+  },
+  "$defs": {
+    "Fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fact_id", "statement", "status"],
+      "properties": {
+        "fact_id": { "type": "string" },
+        "statement": {
+          "$ref": "common.schema.json#/$defs/LocalizedString"
+        },
+        "context": {
+          "$ref": "common.schema.json#/$defs/KnowledgeContext"
+        },
+        "status": {
+          "$ref": "common.schema.json#/$defs/KnowledgeStatus"
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "confirmation": {
+          "$ref": "common.schema.json#/$defs/ConfirmationOrNull"
+        },
+        "conflict_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "notes": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/KnowledgeStatusGates"
+        }
+      ]
+    }
+  }
+}

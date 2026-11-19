@@ -1,0 +1,15 @@
+{
+  "facts": [
+    {
+      "fact_id": "fact_bad",
+      "statement": {
+        "text": "端口为 8080。",
+        "lang": "zh"
+      },
+      "status": "verified",
+      "evidence_ids": [],
+      "confirmation": null,
+      "notes": "Illegal: verified requires at least one evidence_id."
+    }
+  ]
+}

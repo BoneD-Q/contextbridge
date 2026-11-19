@@ -1,0 +1,19 @@
+{
+  "questions": [
+    {
+      "question_id": "q_001",
+      "ask": {
+        "text": "两处端口描述是否针对同一环境？若是，以哪份文档为准？",
+        "lang": "zh",
+        "i18n": {
+          "zh": "两处端口描述是否针对同一环境？若是，以哪份文档为准？",
+          "en": "Do the two port statements refer to the same environment? If so, which document is authoritative?"
+        }
+      },
+      "priority": "high",
+      "related_conflict_ids": [],
+      "related_unknown_ids": ["unk_002"],
+      "notes": "Context alignment uncertain — not recorded as a conflict."
+    }
+  ]
+}

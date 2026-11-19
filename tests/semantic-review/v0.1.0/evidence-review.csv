@@ -1,0 +1,23 @@
+evidence_id,source_id,locator,excerpt_summary,linked_knowledge_ids,locatable_in_source,faithful_to_source,supports_proposition,context_gap,result,notes
+ev_001,src_001,"line_range 13-13 architecture-overview.md","control-plane API /v1/admin",fact_001,yes,yes,yes,no,PASS,Direct fact statement; excerpt matches package copy.
+ev_002,src_001,"line_range 14-14 architecture-overview.md","GET /healthz HTTP 200",fact_002,yes,yes,yes,no,PASS,Direct fact statement.
+ev_003,src_001,"line_range 15-15 architecture-overview.md","idle timeout 60 seconds",fact_003,yes,yes,yes,no,PASS,Direct fact statement.
+ev_004,src_001,"line_range 16-16 architecture-overview.md","TLS 1.2 and 1.3 only",fact_004,yes,yes,yes,no,PASS,Direct fact statement.
+ev_005,src_001,"line_range 17-17 architecture-overview.md","cfg_<uuid> in control store YAML",fact_005,yes,yes,yes,minor,PASS,"Fact statement narrows to id format only; still entailed by excerpt. No contradiction."
+ev_006,src_002,"line_range 17-17 ops-runbook-excerpt.md","Staging listen port 8000",fact_006,yes,yes,yes,no,PASS,Staging context explicit in surrounding lines 15-17; fact.context.environment=staging.
+ev_007,src_002,"line_range 9-9 ops-runbook-excerpt.md","Production listen port 8080",fact_007,yes,yes,yes,no,PASS,Prod context in lines 7-9; party to cfl_001.
+ev_008,src_002,"line_range 25-25 ops-runbook-excerpt.md","Production listen port 8000",fact_008,yes,yes,yes,no,PASS,Same prod label in lines 23-25; party to cfl_001.
+ev_009,src_001,"line_range 37-37 architecture-overview.md","CPU avg 38%",fact_009;claim_001,yes,yes,yes,no,PASS,"Supports fact_009 verbatim; premise only for claim_001 (inferred)."
+ev_010,src_001,"line_range 38-38 architecture-overview.md","Conn pool wait P99 120 ms",fact_010;claim_001,yes,yes,yes,no,PASS,"Supports fact_010 verbatim; premise only for claim_001 (inferred)."
+ev_011,src_001,"line_range 29-31 architecture-overview.md","bottleneck quote + interpretation disclaimer",claim_001,yes,yes,yes,no,PASS,"Adequacy for inferred: source itself marks interpretation. Would be inadequate alone for verified."
+ev_012,src_003,"line_range 5-5 decision-record.md","Decision: API+CLI no Web UI",dec_001,yes,yes,yes,no,PASS,Supports decision summary.
+ev_013,src_003,"line_range 9-9 decision-record.md","We confirmed we will not ship standalone Web UI",dec_001,yes,yes,yes,no,PASS,Confirmation wording for no-Web-UI proposition; see status-review for fixture caveat.
+ev_014,src_003,"line_range 13-13 decision-record.md","Decision: CBHF folder package form",dec_002,yes,yes,yes,no,PASS,Supports folder-handoff decision.
+ev_015,src_003,"line_range 17-17 decision-record.md","就按文件夹交接…",dec_002,yes,yes,yes,no,PASS,Exact confirmation quote used in confirmation object.
+ev_016,src_003,"line_range 21-21 decision-record.md","TLS 1.2 and 1.3 only at edge",dec_003,yes,yes,yes,no,PASS,Direct decision statement.
+ev_017,src_001,"line_range 21-21 architecture-overview.md","Must not introduce standalone Web UI",con_001,yes,yes,yes,no,PASS,Constraint wording matches.
+ev_018,src_001,"line_range 22-22 architecture-overview.md","Must not store raw customer bodies",con_002,yes,yes,yes,no,PASS,Constraint wording matches.
+ev_019,src_001,"line_range 23-23 architecture-overview.md","Production changes require change ticket",con_003,yes,yes,yes,no,PASS,Constraint wording matches.
+ev_020,src_002,"line_range 31-33 ops-runbook-excerpt.md","Production deploys must include change_ticket",con_003,yes,yes,yes,no,PASS,Additional ops support for same constraint; non-secret example ticket not treated as secret.
+ev_021,src_001,"line_range 43-43 architecture-overview.md","PoP definition",term_001,yes,yes,yes,no,PASS,Glossary definition verbatim.
+ev_022,src_001,"line_range 44-44 architecture-overview.md","Origin pool definition",term_002,yes,yes,yes,no,PASS,Glossary definition verbatim.

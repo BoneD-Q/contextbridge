@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextbridge.dev/spec/cbhf/v0.1.0/common.schema.json",
+  "title": "CBHF 0.1.0 shared types",
+  "description": "Shared definitions for ContextBridge Handoff Format 0.1.0. Field authority: skills/context-exporter/references/cbhf-format.md",
+  "$defs": {
+    "KnowledgeStatus": {
+      "type": "string",
+      "enum": [
+        "verified",
+        "user_confirmed",
+        "inferred",
+        "unverified",
+        "unknown",
+        "disputed"
+      ],
+      "description": "Epistemic status for facts, claims, decisions, constraints, and glossary terms only."
+    },
+    "ReferenceStatus": {
+      "type": "string",
+      "enum": ["unverified"],
+      "description": "Citation status for evidence/references.json only. Not KnowledgeStatus. 0.1.0 portable value is unverified only."
+    },
+    "ActionStatus": {
+      "type": "string",
+      "enum": ["pending", "blocked", "cancelled"],
+      "description": "Status for handoff/recommended-actions.json items. Not KnowledgeStatus."
+    },
+    "BilingualText": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["zh", "en"],
+      "properties": {
+        "zh": { "type": "string" },
+        "en": { "type": "string" }
+      }
+    },
+    "LocalizedString": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "lang"],
+      "properties": {
+        "text": { "type": "string" },
+        "lang": {
+          "type": "string",
+          "enum": ["zh", "en", "mixed", "und"]
+        },
+        "i18n": { "$ref": "#/$defs/BilingualText" }
+      }
+    },
+    "KnowledgeContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "environment": {
+          "type": ["string", "null"],
+          "enum": [
+            "prod",
+            "staging",
+            "test",
+            "dev",
+            "local",
+            "unspecified",
+            null
+          ]
+        },
+        "version": { "type": ["string", "null"] },
+        "time_range": { "type": ["string", "null"] },
+        "scope": { "type": ["string", "null"] }
+      }
+    },
+    "Confirmation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "confirmed_by",
+        "source_type",
+        "source_ref",
+        "confirmation_text",
+        "confirmed_at",
+        "limitations"
+      ],
+      "properties": {
+        "confirmed_by": { "type": "string", "const": "user" },
+        "source_type": {
+          "type": "string",
+          "enum": ["conversation", "user_authored_source", "other"]
+        },
+        "source_ref": { "type": ["string", "null"] },
+        "confirmation_text": { "type": ["string", "null"] },
+        "confirmed_at": { "type": ["string", "null"] },
+        "limitations": { "type": ["string", "null"] }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "source_type": { "const": "other" } },
+            "required": ["source_type"]
+          },
+          "then": {
+            "properties": {
+              "limitations": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "confirmation_text": { "type": "null" } },
+            "required": ["confirmation_text"]
+          },
+          "then": {
+            "properties": {
+              "limitations": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "ConfirmationOrNull": {
+      "oneOf": [
+        { "$ref": "#/$defs/Confirmation" },
+        { "type": "null" }
+      ]
+    },
+    "Locator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "path",
+        "locator_type",
+        "start",
+        "end",
+        "excerpt"
+      ],
+      "properties": {
+        "source_id": { "type": "string" },
+        "path": { "type": "string" },
+        "locator_type": {
+          "type": "string",
+          "enum": [
+            "line_range",
+            "section",
+            "json_pointer",
+            "anchor",
+            "page_range"
+          ]
+        },
+        "start": {
+          "type": ["string", "number", "null"]
+        },
+        "end": {
+          "type": ["string", "number", "null"]
+        },
+        "excerpt": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "locator_type": { "const": "section" } },
+            "required": ["locator_type"]
+          },
+          "then": {
+            "properties": {
+              "start": { "type": ["string", "null"] },
+              "end": { "type": ["string", "null"] }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "locator_type": { "const": "line_range" } },
+            "required": ["locator_type"]
+          },
+          "then": {
+            "properties": {
+              "start": { "type": ["number", "null"] },
+              "end": { "type": ["number", "null"] }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "locator_type": { "const": "page_range" } },
+            "required": ["locator_type"]
+          },
+          "then": {
+            "properties": {
+              "start": { "type": ["number", "null"] },
+              "end": { "type": ["number", "null"] }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "locator_type": { "const": "json_pointer" } },
+            "required": ["locator_type"]
+          },
+          "then": {
+            "properties": {
+              "start": { "type": ["string", "null"] },
+              "end": { "type": ["string", "null"] }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "locator_type": { "const": "anchor" } },
+            "required": ["locator_type"]
+          },
+          "then": {
+            "properties": {
+              "start": { "type": ["string", "null"] },
+              "end": { "type": ["string", "null"] }
+            }
+          }
+        }
+      ]
+    },
+    "KnowledgeStatusGates": {
+      "description": "Conditional requirements shared by knowledge objects with status + confirmation + evidence_ids.",
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "const": "user_confirmed" } },
+            "required": ["status"]
+          },
+          "then": {
+            "required": ["confirmation"],
+            "properties": {
+              "confirmation": { "$ref": "#/$defs/Confirmation" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "status": { "const": "verified" } },
+            "required": ["status"]
+          },
+          "then": {
+            "required": ["evidence_ids"],
+            "properties": {
+              "evidence_ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string" }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
