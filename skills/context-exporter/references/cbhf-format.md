@@ -51,11 +51,11 @@
     └── recommended-actions.json
 ```
 
-### Validator 可选树
+### Validator 预留路径（0.1.0：**未启用**包内写入）
 
 ```
 <package-root>/
-└── validation/                   # 可选 — 由 context-validator 在真实运行后创建
+└── validation/                   # 路径预留 — CBHF 0.1.0 不写入
     └── validation-report.json
 ```
 
@@ -63,8 +63,9 @@
 
 - `context-exporter` **必须**写入 Exporter 必需树。
 - `context-exporter` **不得**创建 `validation/` 或捏造 `validation-report.json`。
-- 缺少 `validation/` 表示“尚未校验”，而非“校验已通过”。
-- `validation-report.json` 的形态由 Validator skill 拥有（延后）。Exporter 仅承认该路径预留。
+- **CBHF 0.1.0：** `context-validator` 仅产出**会话级**报告（stdout / 聊天）；**不**写入 `validation/`，**不**翻转 `manifest.validation.present`。包内路径为协议预留，写入能力未启用。
+- 缺少 `validation/` 表示“尚未写入包内报告 / 通常尚未校验”，而非“校验已通过”。正式校验结果以 Validator **会话报告**为准。
+- `validation-report.json` 的形态由 Validator skill 拥有（延后冻结）。Exporter 仅承认该路径预留。
 
 所有 JSON 文件使用 UTF-8，建议 2 空格缩进。YAML 使用 UTF-8。
 
@@ -241,8 +242,8 @@ redaction:
   completeness: "best_effort"        # 切勿使用暗示全覆盖的值
   notes: "已在 src_001 副本与摘录中掩码类令牌字符串。"
 validation:
-  present: false                     # exporter 始终为 false / 省略 report
-  report_path: null                  # 仅在 validation/ 存在时由 validator 设置
+  present: false                     # 0.1.0 exporter 始终为 false（包内报告未启用）
+  report_path: null                  # 预留；0.1.0 Validator 不设置
 ```
 
 `manifest.redaction.applied`：
@@ -749,7 +750,7 @@ Markdown，双语章节必需：
 3. 用户原件未动；`source/original/` 是包内副本
 4. 如何使用 unknowns/conflicts（以及环境不匹配 ≠ 冲突）
 5. Limitations / 尽力脱敏注意事项
-6. 缺少 `validation/` 表示尚未校验
+6. 缺少 `validation/` 表示尚未写入包内报告（0.1.0 常态）；正式校验看会话报告，≠ 已通过
 
 用 `## English` 与 `## 中文` 分节。
 
@@ -813,15 +814,15 @@ Markdown，双语章节必需：
 ## `validation/validation-report.json`
 
 - 为 `context-validator` **预留**的可选路径。
-- 不是 Exporter 输出。
-- Schema 延至 Validator 工作开始。
+- **不是** Exporter 输出；**CBHF 0.1.0 亦不由 Validator 写入**（仅会话报告；包内写入未启用）。
+- Schema 延后冻结；不得伪造通过/失败内容。
 - Exporter 必须设置 `manifest.validation.present: false`（或在 limitations 中等价诚实），且不得声称完整校验通过。
 
 ---
 
 ## 空集合
 
-若某类别无条目，在标准键下写空数组，例如 `{ "conflicts": [] }`。不得省略 Exporter 必需文件。未校验时完全省略 `validation/`。
+若某类别无条目，在标准键下写空数组，例如 `{ "conflicts": [] }`。不得省略 Exporter 必需文件。0.1.0 下应完全省略 `validation/`（路径预留未启用）。
 
 ## 开放问题（不得分叉布局）
 
@@ -834,7 +835,7 @@ Markdown，双语章节必需：
 | 5 | PDF 定位器 | 已知时用 `page_range`；否则 `section` + excerpt；未读/不透明 PDF → `readable: false` + limitation |
 | 6 | 无保留原文的确认 | 允许 `confirmation_text: null` + 说明原因的 `limitations` |
 | 7 | 包根命名 | 用户自选目录；稳定 id 为 `package_id` |
-| 8 | `validation-report.json` schema | 延至 Validator skill |
+| 8 | `validation-report.json` schema / 包内写入 | 0.1.0：**仅会话报告**；包内 `validation/` 预留未启用；schema 延后 |
 | 9 | `skipped_sources` 正式列表 | 可选未来；当前用 `limitations` |
 | 10 | 将 `ReferenceStatus` 扩展到 `unverified` 之外？ | 延后——不得发明临时值 |
 | 11 | `confirmation.source_ref` 的宿主 message-id 格式 | 可选不透明字符串；隐私安全；否则 `null` |

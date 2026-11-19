@@ -208,7 +208,7 @@ metadata:
 
 允许空数组；不得省略必需文件。
 
-### Validator 可选（导出时不要创建）
+### Validator 预留（导出时不要创建；0.1.0 未启用包内写入）
 
 ```
 <package-root>/
@@ -216,7 +216,7 @@ metadata:
     validation-report.json
 ```
 
-仅由 `context-validator` 在真实运行后产出。Exporter 不得伪造通过/失败结果。
+路径为协议预留。**CBHF 0.1.0：** Validator 只发**会话报告**，不写该目录；Exporter 也不得创建或伪造通过/失败结果。缺少 `validation/` ≠ 已通过校验。
 
 ## 可选结构冒烟检查（非 Validator）
 

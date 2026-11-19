@@ -108,7 +108,7 @@
 | --- | --- |
 | 对象 | 顶层与显著额外项 |
 | 输入 | 树枚举 |
-| 逻辑 | 未知顶层 → **WARNING**（白名单未冻结 — 开放问题 Q1）。仅当存在先前/显式 Validator 写入时才允许 `validation/` |
+| 逻辑 | 未知顶层 → **WARNING**（白名单未冻结 — 开放问题 Q1）。**CBHF 0.1.0：** `validation/` 为预留路径且**写入未启用**；期望树不含该目录。若出现 `validation/` → 视为意外额外项 → **WARNING**（不得当作正式包内校验已启用） |
 | PASS | 无意外顶层 |
 | WARNING | 存在意外额外项 |
 | FAIL | （保留；0.1.0 默认不用） |
@@ -121,7 +121,7 @@
 | --- | --- |
 | 对象 | Validator 运行时行为 |
 | 输入 | 进程意图 |
-| 逻辑 | 不得修改 knowledge/evidence/source 副本。Phase 1：默认不写包内报告 |
+| 逻辑 | 不得修改 knowledge/evidence/source 副本。**CBHF 0.1.0：** 不写包内报告（`validation/` 预留未启用） |
 | PASS | 无包变更 |
 | FAIL | 校验期间包内知识被变更 |
 | NOT_CHECKED | 无法核验文件系统 mtimes/hashes |
@@ -331,10 +331,10 @@ Schema 位于 `spec/cbhf/v0.1.0/`（Draft 2020-12）。
 | 字段 | 内容 |
 | --- | --- |
 | 逻辑 | 依赖 S02 PASS。若 `validation.present=true`，有效报告路径必须存在于包**内部**（显式 `report_path` 经 strip 后，否则默认 `validation/validation-report.json`）。拒绝绝对/`..`/UNC/盘符/符号链接逃逸。显式路径缺失不得被默认文件掩盖。 |
-| PASS | `present` 不为 true（正常未校验 exporter 包），或 `present=true` 且权威报告路径安全存在 |
+| PASS | `present` 不为 true（**0.1.0 常态**：Exporter `present: false`，包内报告未启用），或 `present=true` 且权威报告路径安全存在 |
 | FAIL | `present=true` 且报告路径缺失/不安全 |
 | NOT_CHECKED | S02 非 PASS / manifest 未加载 |
-| 说明 | 报告消息仅用原因码 + 包相对路径（无主机绝对路径）。不裁决报告内容语义。 |
+| 说明 | 0.1.0 Validator **不**设置 `present=true`。本检查防手搓/陈旧包撒谎。报告消息仅用原因码 + 包相对路径（无主机绝对路径）。不裁决报告内容语义。 |
 
 ### I19 — 孤儿 evidence（supports 为空）（A）
 
@@ -372,5 +372,5 @@ Schema 位于 `spec/cbhf/v0.1.0/`（Draft 2020-12）。
 - Q1 额外文件：警告 vs 失败
 - Q2 section/page 可发现性深度 — **0.1.0 I13 Option B 已冻结：** 无 finder；适用项 → `NOT_CHECKED`（非 WARNING）；空适用 → PASS。更深 finders / 缺失则 FAIL 仍属未来 Q2，不得声称已核验。
 - Q3 校验和不匹配严重性 — **CBHF v0.1.0 已关闭：** 校验和不匹配为 **FAIL**（非 WARNING）。见 § I20。
-- Q4/Q5 包内写入报告（延期；Phase 1 仅会话）
+- Q4/Q5 包内写入报告 — **CBHF 0.1.0 已冻结为：仅会话报告**；`validation/` 路径预留、写入未启用；不翻转 `manifest.validation`
 - handoff `priority` 字符串 vs 未来枚举（cbhf-format #12）

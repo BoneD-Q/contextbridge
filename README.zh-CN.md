@@ -25,7 +25,7 @@ ContextBridge 是开源 **Agent Skills** 项目——不是 SaaS、不是 Web �
 3. **认识论诚实** — 保留 KnowledgeStatus（`verified` / `user_confirmed` / `inferred` / `unverified` / `unknown` / `disputed`）；Importer 不得升级状态。
 4. **结构 ≠ 语义** — L1–L3 自动检查 ≠ L4 人工语义审核。
 5. **缺口保持缺口** — Unknown 不联网补齐；Conflict 不自动选边。
-6. **缺少校验 ≠ 已通过** — 没有 Validator 报告（或没有 `validation/`）表示「尚未校验」。
+6. **缺少校验 ≠ 已通过** — 没有 Validator **会话**报告（且 0.1.0 不写包内 `validation/`）表示「尚未校验」。
 
 ## 三个 Skill
 
@@ -68,13 +68,13 @@ Exporter 必写树：
     └── recommended-actions.json
 ```
 
-可选（Validator 预留；Exporter 不得伪造）：
+预留路径（CBHF 0.1.0：**仅会话报告**；包内写入**未启用** — Exporter 与 Validator 均不创建）：
 
 ```text
 <package-root>/validation/validation-report.json
 ```
 
-缺少 `validation/` 表示 **尚未校验**，不是「已通过」。
+缺少 `validation/` 在 0.1.0 是常态，表示 **无包内报告**（通常尚未校验），不是「已通过」。权威结果以 Validator **会话** JSON 为准。
 
 ## 快速开始
 

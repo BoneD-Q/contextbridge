@@ -54,7 +54,7 @@ The sample already includes `generated-output/`. To practice export on your own 
 1. Ask the Agent to follow [`skills/context-exporter/SKILL.md`](../skills/context-exporter/SKILL.md).
 2. Provide readable source paths and an **empty** output directory for a new package root.
 3. Confirm the Exporter-required tree appears (see README package layout).
-4. Exporter must **not** create a fake `validation/` folder.
+4. Exporter must **not** create a fake `validation/` folder (CBHF 0.1.0: session reports only; in-package `validation/` write is reserved and not enabled).
 
 ## 2) Validator
 
@@ -74,17 +74,17 @@ python skills/context-validator/scripts/validate_package.py examples/technical-p
 
 Behavior (from the script):
 
-- Prints a **session JSON** report to stdout.
-- Does **not** write into the package.
-- Exit code `1` only if `final_status` is `invalid`; otherwise `0` (including warnings / not fully validated / semantically unreviewed).
+- Prints a **session JSON** report to stdout (CBHF 0.1.0 authority).
+- Does **not** write into the package — `validation/` is reserved but **write not enabled**.
+- Exit code `1` only if `final_status` is `invalid`; otherwise `0` (including warnings / `not_fully_validated` / `semantically_unreviewed`).
 
-Save stdout if you will feed it to Importer (for example redirect to a file outside the package).
+Save stdout if you will feed it to Importer (for example redirect to a file **outside** the package — do not invent `validation/` inside the package).
 
 Interpret layers honestly:
 
 - L1–L3 `PASS` ≠ semantic adequacy.
 - L4 / `H01`–`H06` remaining `NOT_CHECKED` is expected when L4 was not performed.
-- No report ⇒ not validated yet.
+- No **session** report ⇒ not validated yet (missing packaged `validation/` is expected in 0.1.0).
 
 ## 3) Importer
 

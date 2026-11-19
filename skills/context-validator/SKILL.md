@@ -40,7 +40,7 @@ metadata:
 2. **不得伪造结果。** 不得捏造 PASS/FAIL。若某项检查未执行，标记为 `NOT_CHECKED`。
 3. **不得语义自动 PASS。** L4 项仅可为 `NEEDS_HUMAN_REVIEW` 或 `NOT_CHECKED`——永不为“语义 PASS”。
 4. **不得发明协议。** 不得新增 CBHF 字段或抬升版本。
-5. **默认：仅会话报告。** 不得写入 `validation/validation-report.json`，不得翻转 `manifest.validation`（Phase 2 脚本永不写包）。
+5. **0.1.0：仅会话报告。** 向 stdout / 会话呈现结果。**不得**写入 `validation/validation-report.json`，**不得**翻转 `manifest.validation`。包内 `validation/` 为协议预留路径，**本版本写入未启用**（脚本永不写包）。
 6. **Smoke ≠ Validator。** `package_smoke_test.py` 仍是开发者烟雾测试；不得把 smoke 输出呈现为正式 Validator 通过。
 7. **隐私。** 报告中优先使用包基名 / 相对标签；避免倾倒 home/user 绝对路径。
 
@@ -68,7 +68,7 @@ metadata:
 | --- | --- | --- |
 | 包根目录 | 是 | 应包含 `manifest.yaml` 的目录（CBHF 文件夹形态） |
 | 协议期望 | 默认 0.1.0 | 读取 `manifest.cbhf_version` / `protocol` |
-| 是否写入包内报告？ | 否 | 默认 **否**（脚本不能写入） |
+| 是否写入包内报告？ | 否 | **否** — 0.1.0 未启用；仅会话 JSON |
 
 若路径不可读，停止并报告。不得伪造包。
 
@@ -102,9 +102,9 @@ python skills/context-validator/scripts/validate_package.py <package-root>
 脚本向 stdout 打印**会话 JSON 报告**，并且：
 
 - 不修改包
-- 不创建 `validation/`
+- **不**创建 / 写入 `validation/`（0.1.0 预留未启用）
 - 不跟随逃逸符号链接进入包树外
-- 将未实现检查（L4）标为 `NOT_CHECKED`；零适用校验和的 I20 也报告 `NOT_CHECKED`
+- 将未实现检查（L4）标为 `NOT_CHECKED`；零适用校验和的 I20 也报告 `NOT_CHECKED`（包级常为 `not_fully_validated`）
 
 用 [report-format.md](references/report-format.md) 解释 JSON。
 
@@ -154,17 +154,23 @@ Phase 2 脚本将 H01–H06 留为 `NOT_CHECKED`。
 
 ## 结果处理
 
-| 情形 | 包级状态（见 report-format） |
+包级 `final_status` 由 `package_final_status` 汇总（权威说明：[report-format.md](references/report-format.md)）：
+
+| 情形 | 包级状态 |
 | --- | --- |
-| 任一 L1/L2 `FAIL` | `invalid` — 列出失败与位置 |
-| L1/L2 完成且仅有 `WARNING`，但 L3 未跑 | 优先 `not_fully_validated`（Phase 2 诚实） |
-| 重要 L1/L2 检查为 `NOT_CHECKED` | `not_fully_validated` |
-| L1/L2 正常，L3/L4 未完成 | `not_fully_validated` / `semantically_unreviewed`（视情况）— **永不**语义 PASS |
-| 用户要求写入包 | Phase 2 拒绝将正式报告写入包 |
+| 任一 L1/L2/L3（`P*`/`S*`/`I*`）`FAIL` | `invalid` |
+| 任一 `I*` 为 `NOT_CHECKED`（含 I20 零适用），或重要 `P*`/`S*` 未查 | `not_fully_validated` |
+| 无上述 FAIL/未查，但有 `P*`/`S*`/`I*` `WARNING` | `structurally_valid_with_warnings` |
+| 无 FAIL/未查/WARNING，且 L4 未人工审查（Phase 3B-C2 常态） | `semantically_unreviewed` |
+| 无 FAIL/未查/WARNING，且 L4 已人工审查 | `structurally_valid`（自动化辅助**达不到**；L4 永不自动 PASS） |
+| 用户要求写入 `validation/` | **拒绝** — 0.1.0 包内报告未启用 |
+
+**永不**出现包级“语义 PASS”。
 
 ## 本 Skill 版本范围外
 
 - L4 自动语义裁决
+- 写入包内 `validation/` 或翻转 `manifest.validation`（路径预留未启用）
 - CLI / Web / DB / MCP 产品
 - 更改 CBHF Schema 或 Exporter 规则
 - 编辑 `EXPECTED.md`、`generated-output`、输入，或既有语义审查结论

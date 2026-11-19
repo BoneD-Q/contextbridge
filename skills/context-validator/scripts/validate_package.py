@@ -2,9 +2,11 @@
 """CBHF 0.1.0 deterministic validation helper for context-validator.
 
 Skills-first: this script is invoked by the Skill; it is not a product CLI.
-Phase 3B: L1 + L2 + L3-A + L3-B1–B4 + L3-C1 (I14) + L3-C2 (I20 checksum).
+Phase 3B-C2: L1 + L2 + L3-A + L3-B1–B4 + L3-C1 (I14) + L3-C2 (I20 checksum).
 L4 remains NOT_CHECKED (never automated semantic PASS).
-Never writes into the package. Never fetches schemas from the network.
+Session report only: never writes validation/ or flips manifest.validation
+(path reserved; in-package write not enabled in 0.1.0).
+Never fetches schemas from the network.
 """
 
 from __future__ import annotations
@@ -813,7 +815,7 @@ def validate_package(
                 hid,
                 f"Semantic boundary {hid}",
                 STATUS_NOT_CHECKED,
-                "Phase 3B-1: L4 Semantic Review not implemented (never auto semantic PASS)",
+                "Phase 3B-C2: L4 Semantic Review not implemented (never auto semantic PASS)",
             )
         )
 

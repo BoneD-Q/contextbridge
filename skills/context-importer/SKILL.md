@@ -62,8 +62,8 @@ metadata:
 | --- | --- | --- |
 | 包根目录 | 是 | 含 `manifest.yaml` 的目录（CBHF 目录形态） |
 | 协议期望 | 默认 0.1.0 | 仅 **CBHF `0.1.0`** 在范围内 |
-| Validator 会话报告 | 推荐 | 来自 `context-validator` / `validate_package.py` 的 stdout JSON |
-| 包内 `validation/validation-report.json` | 可选 | 缺失表示“尚未校验”，**不是**“已通过” |
+| Validator 会话报告 | 推荐 | 来自 `context-validator` / `validate_package.py` 的 stdout JSON（**0.1.0 权威来源**） |
+| 包内 `validation/validation-report.json` | 通常不存在 | 路径预留；**0.1.0 写入未启用**。若偶发存在可作信息性参考，**不得**等同于现行 Validator 会话通过；缺失 ≠ 已通过 |
 | 接收方任务目标 | 推荐 | 一句话：下一任智能体必须做什么 |
 | 强制导入 | 可选 | 仅当用户明确要求；见下方门禁 |
 
@@ -76,7 +76,7 @@ metadata:
 | 情形 | Importer 行为 |
 | --- | --- |
 | 已绑定 Validator 报告，且无 L1–L3 `FAIL`，且 `final_status` ≠ `invalid` | **正常导入**（仍须如实披露 L4 / NOT_CHECKED） |
-| 无 Validator 报告且无可用包内报告 | **允许导入**，并显著披露 **`structurally_unvalidated_in_this_session`** |
+| 无已绑定 Validator **会话**报告（0.1.0 常态亦无包内报告） | **允许导入**，并显著披露 **`structurally_unvalidated_in_this_session`** |
 | `final_status == invalid` **或** 任一 L1–L3 检查为 `FAIL` | **默认：阻止完整接管** — 输出缺陷摘要 + “请先运行/修复 Validator” |
 | 用户 **明确** 强制导入失败/invalid 包 | **仅受限报告**；每一节标记 **`UNTRUSTED_STRUCTURE`**；仍不得填补 Unknown / 不得裁决冲突胜方 |
 | 检查结果为 `NOT_CHECKED` | **不得**描述为 `PASS` 或成功 |
@@ -104,8 +104,8 @@ metadata:
 
 ### 2. 应用校验门禁
 
-- 若用户提供了 Validator JSON 会话报告，解析 `final_status`、`layers`、`failures`、`not_checked`。
-- 否则若存在且路径安全的 `validation/validation-report.json`，以同样方式尝试读取。
+- 若用户提供了 Validator JSON **会话**报告，解析 `final_status`、`layers`、`failures`、`not_checked`（0.1.0 优先且通常唯一来源）。
+- 否则若偶发存在且路径安全的 `validation/validation-report.json`，可尝试读取并披露其非会话权威性（路径预留、写入未启用）。
 - 否则标记 `structurally_unvalidated_in_this_session`。
 - 执行门禁表。默认阻止时，**不得**产出看起来可直接用于施工的完整理解报告。
 
@@ -190,7 +190,7 @@ Skill + references 合起来必须支持：
 - 云知识库 / ZIP / 双向同步
 - 自动用网络补全 Unknown
 - 更改 CBHF schemas、Exporter 或 Validator
-- 将正式报告写入 `validation/`
+- 将正式报告写入 `validation/`（0.1.0 该路径预留未启用；Importer 亦不得创建）
 
 ## 相关参考（外部权威 — 不得分叉）
 

@@ -36,7 +36,7 @@
 - `cbhf_version`、`protocol`、`scenario`、`package_form`
 - `generated_at`、若有则含生成器 skill/version
 - 校验门禁结果：normal / unvalidated / blocked / restricted
-- 可用时的已绑定 Validator 摘要：`final_status`、分层汇总、FAIL ids
+- 可用时的已绑定 Validator **会话**摘要：`final_status`、分层汇总、FAIL ids（0.1.0 不以包内 `validation/` 为权威）
 - 标志：按适用情况写入 `structurally_unvalidated_in_this_session`、`validation_report_unbound`、
   `UNTRUSTED_STRUCTURE`
 

@@ -29,7 +29,7 @@ User originals under `examples/technical-proposal/input/` were not modified. Loc
 
 - Redaction found every secret (best-effort only)
 - Production port is settled
-- `validation/` missing means validation passed — it means not validated yet
+- `validation/` missing means validation passed — in 0.1.0 that path is unused (session reports only); absence means not validated yet
 - `integrity.files_touched` (if present) means integrity verification passed
 
 ### Suggested next steps
@@ -65,7 +65,7 @@ See `handoff/questions.json` and `handoff/recommended-actions.json` (`status: pe
 
 - 脱敏已穷尽全部秘密
 - 生产端口已确定
-- 缺少 `validation/` 等于已通过校验
+- 缺少 `validation/`（0.1.0 不写包内报告，仅会话校验）等于已通过校验
 - `files_touched` 等于完整性校验通过
 
 ### 建议下一步

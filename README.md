@@ -25,7 +25,7 @@ Plain Markdown dumps and chat summaries usually collapse these distinctions.
 3. **Honest epistemology** — KnowledgeStatus values (`verified`, `user_confirmed`, `inferred`, `unverified`, `unknown`, `disputed`) are preserved; Importer must not upgrade them.
 4. **Structure ≠ semantics** — automated L1–L3 checks are not L4 human semantic review.
 5. **Gaps stay gaps** — Unknowns are not web-filled; Conflicts are not auto-adjudicated.
-6. **Missing validation ≠ passed** — absence of a Validator report (or of `validation/`) means “not validated yet”.
+6. **Missing validation ≠ passed** — no Validator **session** report (and no packaged `validation/`, which 0.1.0 does not write) means “not validated yet”.
 
 ## Three Skills
 
@@ -68,13 +68,13 @@ Exporter-required tree:
     └── recommended-actions.json
 ```
 
-Optional (Validator reservation; Exporter must not invent it):
+Reserved path (CBHF 0.1.0: **session reports only**; in-package write **not enabled** — neither Exporter nor Validator creates it):
 
 ```text
 <package-root>/validation/validation-report.json
 ```
 
-Absence of `validation/` means **not validated yet**, not “validation passed”.
+Absence of `validation/` is normal in 0.1.0 and means **no packaged report** (usually not validated yet), not “validation passed”. Use the Validator **session** JSON as the authority.
 
 ## Quick start
 

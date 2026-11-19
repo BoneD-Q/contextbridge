@@ -38,14 +38,14 @@ Importer 输入是作为 CBHF 目录包根的 **目录**：
     └── recommended-actions.json
 ```
 
-可选（Validator 保留区；Exporter 不得发明）：
+预留（Exporter / 0.1.0 Validator **均不得写入**）：
 
 ```
 <package-root>/validation/validation-report.json
 ```
 
-缺少 `validation/` 表示 **尚未校验**，不是“校验已通过”
-（`cbhf-format.md`）。
+**CBHF 0.1.0：** 校验结果仅以 Validator **会话报告**为准；包内 `validation/` 路径预留、写入未启用。
+缺少该目录是常态，表示 **尚未写入包内报告**，不是“校验已通过”（`cbhf-format.md`）。
 
 ---
 
@@ -74,10 +74,13 @@ Importer **不是** Validator。有报告时 **消费** 报告。
 
 1. 用户提供的 **会话** JSON，来自 `context-validator` /
    `python skills/context-validator/scripts/validate_package.py <package-root>`
-2. 否则，若存在且路径安全：`validation/validation-report.json`
+   （**0.1.0 权威且通常唯一来源**）
+2. 否则，若偶发存在且路径安全：`validation/validation-report.json`
+   （预留路径；写入未启用 — 仅作信息性，须披露非会话权威）
 3. 否则：无报告 → 软门禁（§3.3）
 
 不得捏造 PASS/FAIL。不得私自跑临时检查器并称之为 Validator。
+不得写入或“补全”包内 `validation/`。
 
 ### 3.2 绑定
 
@@ -94,7 +97,7 @@ Importer **不是** Validator。有报告时 **消费** 报告。
 | 条件 | 行为 |
 | --- | --- |
 | 已绑定报告；`final_status` ≠ `invalid`；无 id 匹配 L1–L3（`P*`、`S*`、`I*`）的检查 `result=FAIL` | **正常导入** |
-| 无可用已绑定报告 | **允许** + 强制横幅 **`structurally_unvalidated_in_this_session`** |
+| 无可用已绑定**会话**报告（包内报告 0.1.0 通常亦不存在） | **允许** + 强制横幅 **`structurally_unvalidated_in_this_session`** |
 | 已绑定报告 `final_status=invalid` **或** 任一 L1–L3 `FAIL` | **默认阻止** 完整接管 |
 | 用户在阻止条件后明确强制导入 | **仅受限导入** |
 | 已绑定报告中任一 `NOT_CHECKED` | 引用为未执行 / 不完整 — **永不**当作 PASS |
@@ -123,7 +126,8 @@ Importer **不是** Validator。有报告时 **消费** 报告。
 - L1–L3 `PASS` ≠ 语义真值
 - I14 / I20 `PASS` ≠ 真实性或充分性（L4）
 - H01–H06 `NOT_CHECKED` ≠ 已完成人类语义评审
-- `manifest.validation.present: false` ≠ 已校验
+- `manifest.validation.present: false` ≠ 已校验（0.1.0 Exporter 常态）
+- 缺少包内 `validation/` ≠ 已校验（0.1.0 预留未启用）
 - `integrity.files_touched`（若存在）≠ 完整性校验通过
 
 ---
@@ -226,6 +230,6 @@ Importer 不得“幻觉”其内容。
 ## 9. 非目标
 
 - 重实现 Validator 检查目录
-- 写入 `validation/validation-report.json`
+- 写入 `validation/validation-report.json`（0.1.0 该路径预留未启用）
 - 网络抓取
 - 修改 Package 文件
