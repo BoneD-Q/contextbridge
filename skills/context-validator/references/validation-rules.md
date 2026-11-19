@@ -7,7 +7,7 @@ Authority: `docs/context-validator-design.zh-CN.md` + `spec/cbhf/v0.1.0/*.schema
 
 `PASS` | `FAIL` | `WARNING` | `NOT_CHECKED` | `NEEDS_HUMAN_REVIEW`
 
-## Capability note (Phase 2)
+## Capability note (Phase 3B-B2)
 
 All checks below are **defined**. Automation status:
 
@@ -15,7 +15,10 @@ All checks below are **defined**. Automation status:
 | --- | --- |
 | L1 (P01–P07) | Implemented in `scripts/validate_package.py` |
 | L2 (S01–S15) | Implemented in `scripts/validate_package.py` |
-| L3 (I01–I20) | **Not** implemented — report `NOT_CHECKED` |
+| L3-A (I01–I09, I15, I17–I19) | Implemented in `scripts/_integrity.py` |
+| L3-B1 (I11, I10) | Implemented in `scripts/_integrity.py` |
+| L3-B2 (I16) | Implemented in `scripts/_integrity.py` (Option C) |
+| L3-B/C remaining (I12, I13, I14, I20) | **Not** implemented — report `NOT_CHECKED` |
 | L4 (H01–H06) | **Not** automated — never semantic PASS |
 
 Anything not actually executed → `NOT_CHECKED`.  
@@ -187,10 +190,10 @@ Common fields for **S02–S14** (each is a separate check):
 | Field | Content |
 | --- | --- |
 | Object | All typed IDs (`source_id`, `fact_id`, `claim_id`, `decision_id`, `constraint_id`, `term_id`, `evidence_id`, `reference_id`, `unknown_id`, `conflict_id`, `question_id`, `action_id`, `package_id`) |
-| Logic | Unique within each kind |
-| PASS | No duplicates |
-| FAIL | Duplicate within kind |
-| NOT_CHECKED | Files not loaded |
+| Logic | Unique **within each kind** (cross-kind identical strings allowed) |
+| PASS | Every applicable id collection loaded and checked; no within-kind duplicates |
+| FAIL | Duplicate confirmed in any **loaded** kind (even if other collections are missing) |
+| NOT_CHECKED | No confirmed duplicate, but one or more applicable collections not loaded / not schema-ok |
 | Output | Duplicated ids |
 
 ### I02 — evidence.supports → knowledge exists (A)
@@ -268,8 +271,16 @@ Common fields for **S02–S14** (each is a separate check):
 
 ### I16 — readable:false sources (A/B)
 
-| Logic | Evidence quoting text from `readable:false` source → FAIL; knowledge `verified` depending on such evidence → FAIL |
-| PASS | No such dependency |
+Frozen semantics (**Option C**). Does not judge excerpt↔window match (I14) or semantic adequacy (L4).
+
+| Field | Content |
+| --- | --- |
+| Object | `source-index` `readable` + evidence `locator.source_id` / `locator.excerpt` + knowledge `status` / `evidence_ids` |
+| Evidence FAIL | Evidence whose `locator.source_id` resolves to a source with `readable: false`, **and** `strip(excerpt) != ""` (non-empty after strip). Empty or whitespace-only `excerpt` does **not** FAIL under the Evidence quoting clause alone. |
+| Knowledge FAIL | Any knowledge object with `status: verified` whose `evidence_ids` includes an evidence item whose `locator.source_id` resolves to `readable: false` — **regardless** of that evidence’s excerpt emptiness. |
+| PASS | Required collections are loaded (see NOT_CHECKED), and neither Evidence FAIL nor Knowledge FAIL applies. Empty evidence / knowledge sets with no violations → PASS. |
+| NOT_CHECKED | `source-index` not loaded and/or `evidence` not loaded (cannot evaluate either branch). If those are loaded but knowledge collections needed for the verified branch are not loaded → NOT_CHECKED (must not report PASS). |
+| Notes | Unknown `locator.source_id` is I09’s concern; I16 only applies when the source_id resolves and `readable` is false. Does not invent protocol fields. Automated in Phase 3B-B2. |
 
 ### I17 — content_transformed shape
 
@@ -278,8 +289,13 @@ Common fields for **S02–S14** (each is a separate check):
 
 ### I18 — manifest.validation honesty
 
-| Logic | If `validation.present=true` but no report file → FAIL. Fresh Exporter packages should have `present=false` |
-| WARNING | present=false and no report (normal for unvalidated) |
+| Field | Content |
+| --- | --- |
+| Logic | Depends on S02 PASS. If `validation.present=true`, the effective report path must exist **inside** the package (explicit `report_path` after strip, else default `validation/validation-report.json`). Reject absolute/`..`/UNC/drive/symlink escape. Explicit path missing must not be masked by a default file. |
+| PASS | `present` is not true (normal unvalidated exporter package), or `present=true` and the authoritative report path exists safely |
+| FAIL | `present=true` with missing/unsafe report path |
+| NOT_CHECKED | S02 not PASS / manifest not loaded |
+| Notes | Report messages use reason codes + package-relative paths only (no host absolute paths). Does not judge report content semantics. |
 
 ### I19 — Orphan evidence (supports empty) (A)
 

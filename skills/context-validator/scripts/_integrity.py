@@ -1,9 +1,10 @@
 """L3 Integrity helpers for context-validator.
 
-Phase 3B-1 implements Batch A (cross-file reference existence) only:
-I01–I09, I15, I17, I18, I19.
+L3-A: I01–I09, I15, I17, I18, I19 (cross-file references).
+L3-B Batch B1: I11 path safety + I10 locator.path exists.
+L3-B Batch B2: I16 readable:false sources (Option C).
 
-I10–I14, I16, I20 remain NOT_CHECKED until later batches.
+Still NOT_CHECKED: I12, I13, I14, I20.
 L4 is never automated here.
 """
 
@@ -36,13 +37,10 @@ L3A_IDS = {
 }
 
 L3_DEFERRED_IDS = {
-    "I10": "Phase 3B-1: L3-B path existence not implemented",
-    "I11": "Phase 3B-1: L3-B path safety not implemented",
-    "I12": "Phase 3B-1: L3-B line_range bounds not implemented",
-    "I13": "Phase 3B-1: L3-B other locator findability not implemented (Q2)",
-    "I14": "Phase 3B-1: L3-C excerpt match not implemented",
-    "I16": "Phase 3B-1: L3-B readable:false rule not implemented",
-    "I20": "Phase 3B-1: checksum verification not implemented (Q3)",
+    "I12": "Phase 3B: L3-B line_range bounds not implemented",
+    "I13": "Phase 3B: L3-B other locator findability not implemented (Q2)",
+    "I14": "Phase 3B: L3-C excerpt match not implemented",
+    "I20": "Phase 3B: checksum verification not implemented (Q3)",
 }
 
 # kind -> (relative file, array key, id field, schema check id)
@@ -167,24 +165,69 @@ def path_form_forbidden(rel: str) -> bool:
 
 
 def classify_package_rel_file(package: Path, rel: str) -> tuple[str, str]:
-    """Classify a package-relative file path.
+    """Classify a package-relative file path (I18 report_path).
 
-    Returns (code, message) where code is exists | missing | unsafe.
+    Returns (code, reason_code) where code is exists | missing | unsafe.
+    reason_code is a stable token (no host absolute paths, no raw OS exceptions).
     Does not follow escaping symlinks as a successful locate.
     """
     if path_form_forbidden(rel):
-        return "unsafe", f"forbidden report_path form: {rel!r}"
+        return "unsafe", "forbidden_path_form"
     root = package.resolve()
     candidate = package / rel
     try:
         resolved = candidate.resolve()
         resolved.relative_to(root)
-    except (ValueError, OSError) as exc:
-        return "unsafe", f"report_path escapes package root or cannot resolve: {exc}"
+    except (ValueError, OSError):
+        return "unsafe", "path_escapes_or_unresolvable"
     # Intermediate symlink escape already caught by resolve+relative_to.
     if resolved.is_file():
         return "exists", ""
-    return "missing", f"report file not found at {rel}"
+    return "missing", "report_file_missing"
+
+
+def classify_locator_path_safety(package: Path, rel: str) -> tuple[str, str]:
+    """Classify evidence locator.path safety only (I11). Does not check existence.
+
+    Returns (status, reason_code):
+      safe | unsafe | unresolved
+    Never opens file contents. Never embeds host absolute paths.
+    """
+    if not isinstance(rel, str) or path_form_forbidden(rel):
+        return "unsafe", "forbidden_path_form"
+    try:
+        root = package.resolve()
+    except OSError:
+        return "unresolved", "package_root_unresolvable"
+    candidate = package / rel
+    try:
+        resolved = candidate.resolve()
+    except OSError:
+        # Host cannot resolve (e.g. some symlink permission failures).
+        return "unresolved", "symlink_unresolvable"
+    try:
+        resolved.relative_to(root)
+    except ValueError:
+        return "unsafe", "path_escapes_or_unresolvable"
+    return "safe", ""
+
+
+def locator_path_is_file(package: Path, rel: str) -> bool:
+    """True if a previously safety-checked relative path is an existing file.
+
+    Re-validates package containment before treating as present.
+    Does not read file contents.
+    """
+    status, _reason = classify_locator_path_safety(package, rel)
+    if status != "safe":
+        return False
+    try:
+        root = package.resolve()
+        resolved = (package / rel).resolve()
+        resolved.relative_to(root)
+        return resolved.is_file()
+    except (ValueError, OSError):
+        return False
 
 
 def _knowledge_loaded(idx: PackageIndex) -> bool:
@@ -620,6 +663,248 @@ def check_i09(idx: PackageIndex) -> CheckOut:
     return CheckOut("I09", name, PASS, "all locator.source_id values resolve")
 
 
+def check_i11(
+    idx: PackageIndex,
+    package: Path,
+) -> tuple[CheckOut, dict[str, str]]:
+    """I11 Path safety for evidence[].locator.path only (not source.package_path).
+
+    Returns (CheckOut, per-evidence safety map: safe|unsafe|unresolved).
+    """
+    name = "Path safety"
+    safety: dict[str, str] = {}
+    if not _evidence_loaded(idx):
+        return (
+            CheckOut("I11", name, NOT_CHECKED, "evidence.json not loaded"),
+            safety,
+        )
+
+    unsafe_errors: list[dict[str, str]] = []
+    unresolved_errors: list[dict[str, str]] = []
+
+    for eid, ev in idx.by_kind["evidence"].items():
+        loc = ev.get("locator") if isinstance(ev.get("locator"), dict) else {}
+        raw_path = loc.get("path")
+        if not isinstance(raw_path, str):
+            safety[eid] = "unsafe"
+            unsafe_errors.append(
+                {
+                    "path": f"{REL_EVIDENCE}#{eid}/locator/path",
+                    "message": f"{eid} locator.path missing or not a string (forbidden_path_form)",
+                }
+            )
+            continue
+        status, reason = classify_locator_path_safety(package, raw_path)
+        safety[eid] = status
+        if status == "unsafe":
+            unsafe_errors.append(
+                {
+                    "path": f"{REL_EVIDENCE}#{eid}/locator/path",
+                    "message": f"{eid} locator.path unsafe ({reason})",
+                }
+            )
+        elif status == "unresolved":
+            unresolved_errors.append(
+                {
+                    "path": f"{REL_EVIDENCE}#{eid}/locator/path",
+                    "message": f"{eid} locator.path unresolved ({reason})",
+                }
+            )
+
+    if unsafe_errors:
+        return (
+            CheckOut(
+                "I11",
+                name,
+                FAIL,
+                f"{len(unsafe_errors)} unsafe locator.path value(s)",
+                errors=unsafe_errors[:50],
+            ),
+            safety,
+        )
+    if unresolved_errors:
+        return (
+            CheckOut(
+                "I11",
+                name,
+                NOT_CHECKED,
+                f"{len(unresolved_errors)} locator.path value(s) could not be resolved safely on this host",
+                errors=unresolved_errors[:20],
+            ),
+            safety,
+        )
+    return (
+        CheckOut("I11", name, PASS, "all evidence locator.path values are package-safe"),
+        safety,
+    )
+
+
+def check_i10(
+    idx: PackageIndex,
+    package: Path,
+    path_safety: dict[str, str],
+) -> CheckOut:
+    """I10 locator.path exists — only for paths that passed I11 (safe)."""
+    name = "locator.path exists"
+    if not _evidence_loaded(idx):
+        return CheckOut("I10", name, NOT_CHECKED, "evidence.json not loaded")
+
+    if not idx.by_kind["evidence"]:
+        return CheckOut("I10", name, PASS, "no evidence items (empty set)")
+
+    missing: list[dict[str, str]] = []
+    checked = 0
+    skipped_unsafe = 0
+    skipped_unresolved = 0
+
+    for eid, ev in idx.by_kind["evidence"].items():
+        status = path_safety.get(eid)
+        if status == "unsafe":
+            skipped_unsafe += 1
+            continue
+        if status == "unresolved":
+            skipped_unresolved += 1
+            continue
+        if status != "safe":
+            # I11 did not classify (should not happen if I11 ran on same index)
+            skipped_unresolved += 1
+            continue
+
+        loc = ev.get("locator") if isinstance(ev.get("locator"), dict) else {}
+        raw_path = loc.get("path")
+        if not isinstance(raw_path, str):
+            skipped_unsafe += 1
+            continue
+        checked += 1
+        if not locator_path_is_file(package, raw_path):
+            missing.append(
+                {
+                    "path": f"{REL_EVIDENCE}#{eid}/locator/path",
+                    "message": f"{eid} locator.path missing (report_file_missing)",
+                }
+            )
+
+    if missing:
+        return CheckOut(
+            "I10",
+            name,
+            FAIL,
+            f"{len(missing)} missing locator.path file(s)",
+            errors=missing[:50],
+        )
+
+    if checked == 0:
+        # All skipped due to I11 FAIL/unresolved — do not PASS existence.
+        return CheckOut(
+            "I10",
+            name,
+            NOT_CHECKED,
+            (
+                f"no safe locator.path values to check "
+                f"(unsafe={skipped_unsafe}, unresolved={skipped_unresolved})"
+            ),
+        )
+
+    return CheckOut(
+        "I10",
+        name,
+        PASS,
+        f"all {checked} safe locator.path value(s) exist as package files",
+    )
+
+
+def check_i16(idx: PackageIndex) -> CheckOut:
+    """I16 readable:false sources — frozen Option C.
+
+    Evidence: readable:false + strip(excerpt) != '' → FAIL.
+    Knowledge: verified depending on any evidence whose source is
+    readable:false → FAIL (excerpt emptiness is not an exemption).
+    Unknown source_id is I09's concern (skipped here).
+    """
+    name = "readable:false sources"
+    if not _source_loaded(idx):
+        return CheckOut("I16", name, NOT_CHECKED, "source-index not loaded")
+    if not _evidence_loaded(idx):
+        return CheckOut("I16", name, NOT_CHECKED, "evidence.json not loaded")
+
+    sources = idx.by_kind["source"]
+    evidence = idx.by_kind["evidence"]
+    knowledge_loaded = _knowledge_loaded(idx)
+
+    # evidence_id → source_id for items that resolve to readable:false
+    unreadable_ev: dict[str, str] = {}
+    evidence_errors: list[dict[str, str]] = []
+
+    for eid, ev in evidence.items():
+        loc = ev.get("locator") if isinstance(ev.get("locator"), dict) else {}
+        sid = loc.get("source_id")
+        if not isinstance(sid, str) or sid not in sources:
+            continue  # unknown / malformed → I09
+        if sources[sid].get("readable") is not False:
+            continue
+        unreadable_ev[eid] = sid
+        excerpt = loc.get("excerpt")
+        if isinstance(excerpt, str) and excerpt.strip() != "":
+            evidence_errors.append(
+                {
+                    "path": f"{REL_EVIDENCE}#{eid}/locator/excerpt",
+                    "message": (
+                        f"{eid} quotes text from readable:false source {sid} "
+                        f"(readable_false_excerpt)"
+                    ),
+                }
+            )
+
+    knowledge_errors: list[dict[str, str]] = []
+    if knowledge_loaded:
+        for kind in KNOWLEDGE_KINDS:
+            for kid, obj in idx.by_kind[kind].items():
+                if obj.get("status") != "verified":
+                    continue
+                eids = obj.get("evidence_ids")
+                if not isinstance(eids, list):
+                    continue
+                for eid in eids:
+                    if not isinstance(eid, str) or eid not in unreadable_ev:
+                        continue
+                    sid = unreadable_ev[eid]
+                    knowledge_errors.append(
+                        {
+                            "path": f"knowledge/{kind}/{kid}/evidence_ids",
+                            "message": (
+                                f"{kid} verified depends on evidence {eid} from "
+                                f"readable:false source {sid} (readable_false_verified)"
+                            ),
+                        }
+                    )
+                    break  # one unreadable dependency is enough per knowledge object
+
+    combined = evidence_errors + knowledge_errors
+    if combined:
+        return CheckOut(
+            "I16",
+            name,
+            FAIL,
+            f"{len(combined)} readable:false violation(s)",
+            errors=combined[:50],
+        )
+
+    if not knowledge_loaded:
+        return CheckOut(
+            "I16",
+            name,
+            NOT_CHECKED,
+            "knowledge collections not fully loaded (cannot evaluate verified branch)",
+        )
+
+    return CheckOut(
+        "I16",
+        name,
+        PASS,
+        "no readable:false quoting or verified dependency",
+    )
+
+
 def check_i15(idx: PackageIndex) -> CheckOut:
     name = "verified ⇒ non-empty evidence_ids"
     if not _knowledge_loaded(idx):
@@ -716,29 +1001,42 @@ def check_i18(
             path=REL_MANIFEST,
         )
 
-    # present == True
+    # present == True — strip whitespace so leading/trailing spaces cannot bypass checks
     if isinstance(report_path, str) and report_path.strip():
-        code, detail = classify_package_rel_file(package, report_path)
+        rel = report_path.strip()
+        code, reason = classify_package_rel_file(package, rel)
+        # Never echo absolute/escaping path strings into the session report.
+        display_rel = "<redacted>" if code == "unsafe" else rel
         if code == "unsafe":
+            msg = f"validation.present=true but report_path unsafe ({reason})"
             return CheckOut(
                 "I18",
                 name,
                 FAIL,
-                detail,
-                path=REL_MANIFEST,
-                errors=[{"path": "manifest.yaml#validation/report_path", "message": detail}],
-            )
-        if code == "missing":
-            return CheckOut(
-                "I18",
-                name,
-                FAIL,
-                f"validation.present=true but specified report_path missing: {report_path}",
+                msg,
                 path=REL_MANIFEST,
                 errors=[
                     {
                         "path": "manifest.yaml#validation/report_path",
-                        "message": detail,
+                        "message": reason,
+                    }
+                ],
+            )
+        if code == "missing":
+            msg = (
+                f"validation.present=true but specified report_path missing "
+                f"({reason}): {display_rel}"
+            )
+            return CheckOut(
+                "I18",
+                name,
+                FAIL,
+                msg,
+                path=REL_MANIFEST,
+                errors=[
+                    {
+                        "path": "manifest.yaml#validation/report_path",
+                        "message": reason,
                     }
                 ],
             )
@@ -746,15 +1044,22 @@ def check_i18(
             "I18",
             name,
             PASS,
-            f"validation.present=true and specified report_path exists: {report_path}",
+            f"validation.present=true and specified report_path exists: {display_rel}",
             path=REL_MANIFEST,
         )
 
     # No explicit report_path → default location only
     default_rel = "validation/validation-report.json"
-    code, detail = classify_package_rel_file(package, default_rel)
+    code, reason = classify_package_rel_file(package, default_rel)
     if code == "unsafe":
-        return CheckOut("I18", name, FAIL, detail, path=REL_MANIFEST)
+        return CheckOut(
+            "I18",
+            name,
+            FAIL,
+            f"validation.present=true but default report_path unsafe ({reason})",
+            path=REL_MANIFEST,
+            errors=[{"path": default_rel, "message": reason}],
+        )
     if code == "missing":
         return CheckOut(
             "I18",
@@ -762,6 +1067,7 @@ def check_i18(
             FAIL,
             "validation.present=true but default validation/validation-report.json not found",
             path=REL_MANIFEST,
+            errors=[{"path": default_rel, "message": reason}],
         )
     return CheckOut(
         "I18",
@@ -806,8 +1112,11 @@ def run_l3_batch_a(
     schema_results: dict[str, str],
     manifest_obj: Any | None,
 ) -> list[CheckOut]:
-    """Run L3-A checks and emit NOT_CHECKED stubs for deferred I* ids."""
+    """Run L3-A + L3-B1 (I11/I10) + L3-B2 (I16); stub remaining L3-B/C as NOT_CHECKED."""
     idx = build_package_index(parsed_objects, parse_ok, schema_results, manifest_obj)
+
+    i11_result, path_safety = check_i11(idx, package)
+    i10_result = check_i10(idx, package, path_safety)
 
     results: list[CheckOut] = [
         check_i01(idx, parsed_objects, parse_ok, schema_results),
@@ -819,19 +1128,19 @@ def run_l3_batch_a(
         check_i07(idx),
         check_i08(idx),
         check_i09(idx),
+        i10_result,
+        i11_result,
         check_i15(idx),
+        check_i16(idx),
         check_i17(schema_results),
         check_i18(manifest_obj, parse_ok, package, schema_results),
         check_i19(idx),
     ]
 
     deferred_names = {
-        "I10": "locator.path exists",
-        "I11": "Path safety",
         "I12": "line_range bounds",
         "I13": "Other locator types",
         "I14": "Excerpt text match",
-        "I16": "readable:false sources",
         "I20": "Checksum (optional)",
     }
     for iid, reason in L3_DEFERRED_IDS.items():

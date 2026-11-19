@@ -119,27 +119,77 @@ def build_valid_minimal_package(dest: Path, *, empty: bool = False) -> Path:
         return dest
 
     dump_yaml(dest / "manifest.yaml", minimal_manifest())
-    # Reuse schema fixtures for content where possible
-    shutil.copy(
-        FIXTURE_SCHEMA / "valid/minimal_source.json",
+    # Integrity-consistent minimal graph (schema fixtures alone are not link-complete).
+    dump_json(
         dest / "source/source-index.json",
+        {
+            "sources": [
+                {
+                    "source_id": "src_001",
+                    "original_name": "design.md",
+                    "user_path": None,
+                    "package_path": "source/original/design.md",
+                    "media_type": "text/markdown",
+                    "language": "zh",
+                    "role": "primary",
+                    "received_from": "user",
+                    "content_transformed": None,
+                    "readable": True,
+                    "notes": "",
+                }
+            ]
+        },
     )
-    for name, rel in [
-        ("minimal_facts.json", "knowledge/facts.json"),
-        ("minimal_claims.json", "knowledge/claims.json"),
-        ("minimal_decisions.json", "knowledge/decisions.json"),
-        ("minimal_constraints.json", "knowledge/constraints.json"),
-        ("minimal_glossary.json", "knowledge/glossary.json"),
-        ("minimal_evidence.json", "evidence/evidence.json"),
-        ("minimal_references.json", "evidence/references.json"),
-        ("minimal_unknowns.json", "uncertainty/unknowns.json"),
-        ("minimal_conflicts.json", "uncertainty/conflicts.json"),
-        ("minimal_questions.json", "handoff/questions.json"),
-        ("minimal_recommended_actions.json", "handoff/recommended-actions.json"),
+    dump_json(
+        dest / "knowledge/facts.json",
+        {
+            "facts": [
+                {
+                    "fact_id": "fact_001",
+                    "statement": {"text": "生产环境服务默认监听 8080 端口。", "lang": "zh"},
+                    "status": "verified",
+                    "evidence_ids": ["ev_001"],
+                    "confirmation": None,
+                    "conflict_ids": [],
+                    "notes": "",
+                }
+            ]
+        },
+    )
+    for rel, key in [
+        ("knowledge/claims.json", "claims"),
+        ("knowledge/decisions.json", "decisions"),
+        ("knowledge/constraints.json", "constraints"),
+        ("knowledge/glossary.json", "terms"),
+        ("evidence/references.json", "references"),
+        ("uncertainty/unknowns.json", "unknowns"),
+        ("uncertainty/conflicts.json", "conflicts"),
+        ("handoff/questions.json", "questions"),
+        ("handoff/recommended-actions.json", "actions"),
     ]:
-        target = dest / rel
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(FIXTURE_SCHEMA / "valid" / name, target)
+        dump_json(dest / rel, {key: []})
+    dump_json(
+        dest / "evidence/evidence.json",
+        {
+            "evidence": [
+                {
+                    "evidence_id": "ev_001",
+                    "kind": "excerpt",
+                    "locator": {
+                        "source_id": "src_001",
+                        "path": "source/original/design.md",
+                        "locator_type": "line_range",
+                        "start": 2,
+                        "end": 2,
+                        "excerpt": "生产环境服务默认监听 8080 端口。",
+                    },
+                    "supports": [{"type": "fact", "id": "fact_001"}],
+                    "redaction_applied": False,
+                    "notes": "",
+                }
+            ]
+        },
+    )
     return dest
 
 
@@ -173,16 +223,34 @@ def test_generated_output() -> None:
         report["final_status"] == "not_fully_validated",
         report["final_status"],
     )
-    check("generated-output L3 NOT_CHECKED", report["layers"]["L3"] == "NOT_CHECKED")
+    check("generated-output L3 not FAIL", report["layers"]["L3"] != "FAIL")
     check("generated-output L4 NOT_CHECKED", report["layers"]["L4"] == "NOT_CHECKED")
     check("generated-output wrote_to_package false", report["wrote_to_package"] is False)
     rm = result_map(report)
-    for iid in [f"I{i:02d}" for i in range(1, 21)]:
-        if rm.get(iid, {}).get("result") != "NOT_CHECKED":
-            fail("generated-output L3 stubs", f"{iid}={rm.get(iid)}")
+    for iid in ["I01", "I02", "I03", "I04", "I09", "I15", "I18"]:
+        if rm.get(iid, {}).get("result") != "PASS":
+            fail("generated-output L3-A core", f"{iid}={rm.get(iid)}")
             break
     else:
-        ok("generated-output L3 stubs NOT_CHECKED")
+        ok("generated-output L3-A core PASS")
+    for iid in ["I10", "I11"]:
+        if rm.get(iid, {}).get("result") != "PASS":
+            fail("generated-output L3-B1", f"{iid}={rm.get(iid)}")
+            break
+    else:
+        ok("generated-output L3-B1 I10/I11 PASS")
+    if rm.get("I16", {}).get("result") == "PASS":
+        ok("generated-output L3-B2 I16 PASS")
+    else:
+        fail("generated-output L3-B2 I16", str(rm.get("I16")))
+    deferred = ["I12", "I13", "I14", "I20"]
+    if all(rm.get(i, {}).get("result") == "NOT_CHECKED" for i in deferred):
+        ok("generated-output L3 remaining deferred NOT_CHECKED")
+    else:
+        fail(
+            "generated-output L3 remaining deferred",
+            str({i: rm.get(i, {}).get("result") for i in deferred}),
+        )
 
 
 def test_valid_minimal_and_empty() -> None:
@@ -359,12 +427,24 @@ def test_report_structure() -> None:
         for key in required_keys:
             check(f"report has {key}", key in report)
         check(
-            "checker phase 2",
-            report["checker"]["phase"] == "2",
+            "checker phase 3B-B2",
+            report["checker"]["phase"] == "3B-B2",
         )
         check(
-            "checker L3 false",
+            "checker L3 full false",
             report["checker"]["scripts_implemented"]["L3_integrity"] is False,
+        )
+        check(
+            "checker L3-A true",
+            report["checker"]["scripts_implemented"]["L3_A_references"] is True,
+        )
+        check(
+            "checker L3-B1 true",
+            report["checker"]["scripts_implemented"]["L3_B1_path_safety_exists"] is True,
+        )
+        check(
+            "checker L3-B2 true",
+            report["checker"]["scripts_implemented"]["L3_B2_readable_false"] is True,
         )
         check(
             "checker network false",

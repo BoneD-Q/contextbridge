@@ -2,8 +2,8 @@
 """CBHF 0.1.0 deterministic validation helper for context-validator.
 
 Skills-first: this script is invoked by the Skill; it is not a product CLI.
-Phase 3B-1: L1 Package + L2 Schema + L3-A cross-file references.
-L3-B/C and L4 remain NOT_CHECKED.
+Phase 3B: L1 + L2 + L3-A + L3-B1 (I11/I10) + L3-B2 (I16 readable:false).
+Remaining L3-B/C (I12/I13/I14/I20) and L4 remain NOT_CHECKED.
 Never writes into the package. Never fetches schemas from the network.
 """
 
@@ -260,16 +260,22 @@ def layer_status(
     results: list[CheckResult],
     *,
     mixed_pass_not_checked: str = STATUS_PASS,
+    prefer_incomplete_over_warning: bool = False,
 ) -> str:
     """Roll up a layer.
 
-    L1/L2 keep historical mixed PASS+NOT_CHECKED → PASS (default).
-    L3 must not look fully PASS while deferred I* remain NOT_CHECKED —
-    pass mixed_pass_not_checked=NOT_CHECKED for L3.
+    L1/L2: WARNING outranks; mixed PASS+NOT_CHECKED → PASS (default).
+    L3: pass mixed_pass_not_checked=NOT_CHECKED and
+    prefer_incomplete_over_warning=True so deferred I* keep the layer from
+    looking finished when only an executed check warned (e.g. I19).
+    Per-check WARNING rows remain in report.warnings; final_status unchanged.
     """
     statuses = {r.result for r in results}
     if STATUS_FAIL in statuses:
         return STATUS_FAIL
+    # L3 incompleteness before WARNING — layer must not read as "done with warnings".
+    if prefer_incomplete_over_warning and STATUS_NOT_CHECKED in statuses:
+        return STATUS_NOT_CHECKED
     if STATUS_WARNING in statuses:
         return STATUS_WARNING
     if statuses and statuses <= {STATUS_PASS}:
@@ -375,9 +381,9 @@ def validate_package(
     parsed_objects: dict[str, Any] = {}
     parse_ok: dict[str, bool] = {}
     limitations: list[str] = [
-        "Phase 3B-1: L1 Package + L2 Schema + L3-A reference integrity.",
-        "L3-B/C (I10–I14, I16, I20) and L4 Semantic Review are NOT_CHECKED.",
-        "L3-A PASS is not semantic adequacy; I14 is not implemented this batch.",
+        "Phase 3B Batch B2: L1 + L2 + L3-A + I11/I10 + I16.",
+        "Still NOT_CHECKED: I12, I13, I14, I20, and L4.",
+        "L3 PASS is not semantic adequacy; I14 not implemented.",
         "Report is session-level; package was not modified.",
         "Schemas loaded from local spec/cbhf/v0.1.0 only (no network).",
     ]
@@ -893,12 +899,14 @@ def _finalize_report(
         "checker": {
             "name": "context-validator",
             "skill_version": "0.1.0",
-            "phase": "3B-1",
+            "phase": "3B-B2",
             "scripts_implemented": {
                 "L1_package": True,
                 "L2_schema": True,
                 "L3_integrity": False,
                 "L3_A_references": True,
+                "L3_B1_path_safety_exists": True,
+                "L3_B2_readable_false": True,
                 "L3_B_locators": False,
                 "L3_C_excerpts": False,
                 "L4_semantic": False,
@@ -910,8 +918,12 @@ def _finalize_report(
         "layers": {
             "L1": layer_status(l1),
             "L2": layer_status(l2),
-            # Partial L3-A must not appear as a complete layer PASS while B/C stay NOT_CHECKED.
-            "L3": layer_status(l3, mixed_pass_not_checked=STATUS_NOT_CHECKED),
+            # Partial L3-A: incompleteness outranks PASS and WARNING at layer level.
+            "L3": layer_status(
+                l3,
+                mixed_pass_not_checked=STATUS_NOT_CHECKED,
+                prefer_incomplete_over_warning=True,
+            ),
             "L4": STATUS_NOT_CHECKED,
         },
         "checks": [c.to_dict() for c in checks],
@@ -931,7 +943,7 @@ def _finalize_report(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "context-validator Phase 3B-1 helper: L1 + L2 + L3-A references. "
+            "context-validator Phase 3B-B2 helper: L1 + L2 + L3-A + I11/I10 + I16. "
             "Prints a session JSON report; does not modify the package."
         )
     )

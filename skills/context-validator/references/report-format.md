@@ -35,6 +35,16 @@ Defines how `context-validator` presents results.
 | `NOT_CHECKED` | Defined but not executed, or prerequisite missing |
 | `NEEDS_HUMAN_REVIEW` | Requires judgment; **never** auto-promote to semantic PASS |
 
+## Layer summary status (distinct from per-check and final_status)
+
+| Layer | Rollup rule |
+| --- | --- |
+| L1 / L2 | `FAIL` > `WARNING` > all-`PASS` > mixed PASS+NOT_CHECKED → **PASS** (historical) |
+| L3 | `FAIL` > any `NOT_CHECKED` → **NOT_CHECKED** (incompleteness outranks WARNING) > else `WARNING` > all-`PASS` |
+| L4 | Never semantic PASS; typically `NOT_CHECKED` / `NEEDS_HUMAN_REVIEW` |
+
+Rationale for L3: deferred checks (e.g. L3-B/C) must not let a single executed WARNING (e.g. orphan evidence) make the layer look finished. Per-check WARNING rows remain in `warnings[]`. Package `final_status` is separate and already treats important I\* `NOT_CHECKED` as `not_fully_validated`.
+
 ## Package final status (rollup; distinct from per-check)
 
 Preferred package-level labels (design doc §6.2):
@@ -61,12 +71,13 @@ Also allowed as a coarse session label: map `invalid`↔structural FAIL, keep L4
 - package_id: <id or unknown>
 - cbhf_version: <version or unresolved>
 - validated_at: <timestamp>
-- checker: context-validator Phase 2 (L1+L2 scripts; L3/L4 not automated)
+- checker: context-validator Phase 3B-1 (L1+L2+L3-A; L3-B/C and L4 not automated)
 
 ## Capability declaration
 
 - L1–L2: automated via `scripts/validate_package.py`
-- L3: rules defined; **not implemented** → NOT_CHECKED
+- L3-A: automated (I01–I09, I15, I17–I19)
+- L3-B/C: **not implemented** → per-check NOT_CHECKED; layer typically NOT_CHECKED
 - L4: boundary + human review only; **no automatic semantic PASS**
 - Package mutation: none (read-only)
 
@@ -125,11 +136,14 @@ If the user asks for JSON in-session, a non-frozen sketch may look like:
   "validated_at": "2026-11-19T00:00:00Z",
   "checker": {
     "name": "context-validator",
-    "phase": "2",
+    "phase": "3B-1",
     "scripts_implemented": {
       "L1_package": true,
       "L2_schema": true,
       "L3_integrity": false,
+      "L3_A_references": true,
+      "L3_B_locators": false,
+      "L3_C_excerpts": false,
       "L4_semantic": false
     },
     "network": false

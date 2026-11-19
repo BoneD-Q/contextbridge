@@ -18,7 +18,7 @@ metadata:
 
 Read-only validation of a **CBHF 0.1.0** folder package.
 
-This Skill is **instructions first**. Deterministic Python helpers under `scripts/` support L1/L2 only in Phase 2. They are **not** a standalone product CLI.
+This Skill is **instructions first**. Deterministic Python helpers under `scripts/` support L1/L2 and **L3-A** (cross-file references). L3-B/C and L4 are not automated yet. Helpers are **not** a standalone product CLI.
 
 Design authority: [`docs/context-validator-design.zh-CN.md`](../../docs/context-validator-design.zh-CN.md).  
 Protocol / schemas: `skills/context-exporter/references/cbhf-format.md` and `spec/cbhf/v0.1.0/*.schema.json`.
@@ -48,14 +48,17 @@ Do **not** rename or treat `tests/schema/v0.1.0/package_smoke_test.py` as this S
 6. **Smoke ≠ Validator.** `package_smoke_test.py` remains a developer smoke test; do not present smoke output as a formal Validator pass.  
 7. **Privacy.** Prefer package basename / relative labels in reports; avoid dumping home/user absolute paths.
 
-## Capability honesty (Phase 2)
+## Capability honesty (Phase 3B-B2)
 
 | Layer | Defined in references? | Automated in this Phase? |
 | --- | --- | --- |
 | L1 Package | Yes | **Yes** — `scripts/validate_package.py` (P01–P07) |
 | L2 Schema | Yes | **Yes** — same script (S01–S15), local Draft 2020-12 only |
-| L3 Integrity | Yes | **No** — every I\* → `NOT_CHECKED` |
-| L4 Semantic boundary | Yes | **Never** automated PASS — H\* → `NOT_CHECKED` this phase |
+| L3-A References | Yes | **Yes** — I01–I09, I15, I17–I19 via `_integrity.py` |
+| L3-B1 Path safety / exists | Yes | **Yes** — I11, I10 |
+| L3-B2 readable:false | Yes | **Yes** — I16 (Option C) |
+| L3-B/C remaining | Yes | **No** — I12, I13, I14, I20 → `NOT_CHECKED` |
+| L4 Semantic boundary | Yes | **Never** automated PASS — H\* → `NOT_CHECKED` |
 
 Writing a check ID in references does **not** mean it is automated unless this table says so.
 
@@ -84,7 +87,7 @@ Execute in order. Do not skip layers by inventing PASS.
 
 - Resolve package root.  
 - Open references listed above.  
-- Declare Phase 2 capability limits: L1+L2 automated; L3/L4 not implemented.
+- Declare Phase 3B-B2 limits: L1+L2+L3-A+B1+B2 (I16) automated; I12/I13/I14/I20 and L4 not implemented.
 
 ### 1. Run deterministic helper (preferred)
 
@@ -119,7 +122,11 @@ If a file failed L1 parse/existence, dependent S\* checks must be `NOT_CHECKED` 
 
 ### 4. L3 — Integrity Validation
 
-**Not implemented in Phase 2.** Report I01–I20 as `NOT_CHECKED`. Do not invent integrity PASS/FAIL.
+- **L3-A (implemented):** I01–I09, I15, I17–I19 — use script results.  
+- **L3-B1 (implemented):** I11 path safety, I10 path exists.  
+- **L3-B2 (implemented):** I16 readable:false (Option C) — use script results.  
+- **L3-B/C remaining:** I12, I13, I14, I20 → `NOT_CHECKED`.  
+Do not invent line_range / I14 excerpt-match PASS/FAIL yet. Do not treat L3 PASS as semantic adequacy.
 
 ### 5. L4 — Semantic Review Boundary
 
