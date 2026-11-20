@@ -93,23 +93,31 @@ def create_dir_link(link: Path, target: Path) -> str:
     return "symlink-abs"
 
 
-def install(roots: list[Path], *, dry_run: bool) -> int:
-    root = repo_root()
+def install(
+    discovery_roots: list[Path],
+    *,
+    dest_root: Path,
+    dry_run: bool,
+) -> int:
+    """Link canonical skills into ``dest_root / <discovery> / <name>``."""
+    canonical = repo_root()
+    dest_root = dest_root.resolve()
     errors = 0
     for name in SKILL_NAMES:
-        src = root / "skills" / name
+        src = canonical / "skills" / name
         if not (src / "SKILL.md").is_file():
             print(f"ERROR missing canonical skill: {src / 'SKILL.md'}", file=sys.stderr)
             errors += 1
             continue
-        for disc in roots:
-            link = root / disc / name
+        for disc in discovery_roots:
+            link = dest_root / disc / name
             if dry_run:
                 print(f"DRY-RUN would link {link} -> {src}")
                 continue
             try:
                 method = create_dir_link(link, src)
-                print(f"{method:10} {disc.as_posix()}/{name} -> skills/{name}")
+                rel_disc = disc.as_posix()
+                print(f"{method:10} {dest_root.as_posix()}/{rel_disc}/{name} -> {src}")
             except OSError as exc:
                 print(f"ERROR {link}: {exc}", file=sys.stderr)
                 errors += 1
@@ -131,13 +139,26 @@ def main() -> int:
         action="store_true",
         help="Only install under .agents/skills",
     )
+    parser.add_argument(
+        "--dest",
+        type=Path,
+        default=None,
+        help=(
+            "Install discovery links into another project root "
+            "(default: this ContextBridge repo). Canonical skill bodies stay here."
+        ),
+    )
     args = parser.parse_args()
-    roots = [Path(".agents") / "skills"] if args.agents_only else list(DISCOVERY_ROOTS)
-    errors = install(roots, dry_run=args.dry_run)
+    discovery = [Path(".agents") / "skills"] if args.agents_only else list(DISCOVERY_ROOTS)
+    dest = args.dest.resolve() if args.dest is not None else repo_root()
+    errors = install(discovery, dest_root=dest, dry_run=args.dry_run)
     if errors:
         print(f"Finished with {errors} error(s).", file=sys.stderr)
         return 1
-    print("Install complete. Canonical skills remain under skills/; discovery dirs are mirrors only.")
+    print(
+        "Install complete. Canonical skills remain under "
+        f"{repo_root() / 'skills'}; discovery dirs are mirrors only."
+    )
     return 0
 
 

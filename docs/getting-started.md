@@ -36,6 +36,12 @@ python scripts/install_skills.py
 # Unix:    bash scripts/install-skills.sh
 ```
 
+To use the same Skills from **another project** (without copying Skill bodies):
+
+```bash
+python scripts/install_skills.py --dest /path/to/other/project
+```
+
 This creates directory links (does **not** copy files) under:
 
 | Path | Typical hosts |
@@ -65,10 +71,22 @@ Doctor exit code `0` means canonical skills, discovery links, schemas, deps, and
 
 The sample already includes `generated-output/`. To practice export on your own docs:
 
-1. Ask the Agent to follow [`skills/context-exporter/SKILL.md`](../skills/context-exporter/SKILL.md) (or the discovered skill name `context-exporter`).
-2. Provide readable source paths and an **empty** output directory for a new package root.
-3. Confirm the Exporter-required tree appears (see README package layout).
+**Anti-stall (recommended):** Exporter defaults to a **fast path** — ≤3 source files, scaffold first, do **not** scan a whole repo. See [`skills/context-exporter/references/fast-path.md`](../skills/context-exporter/references/fast-path.md).
+
+1. Scaffold an empty CBHF tree (deterministic helper):
+
+```bash
+python skills/context-exporter/scripts/scaffold_package.py ./handoff/my-cbhf \
+  --package-id pkg_my_demo \
+  --title-zh "我的交接包" \
+  --title-en "My handoff"
+```
+
+2. Ask the Agent to follow [`skills/context-exporter/SKILL.md`](../skills/context-exporter/SKILL.md) (or `context-exporter`) in **fast** mode: name **1–3 readable docs** only and the package root above.
+3. Confirm sources land under `source/original/` and knowledge/evidence are filled (not left as scaffold stubs).
 4. Exporter must **not** create a fake `validation/` folder (CBHF 0.1.0: session reports only; in-package `validation/` write is reserved and not enabled).
+
+If the Agent only receives a repo root with no file whitelist, it should **stop and ask** for paths — that stall mode is intentional.
 
 ## 2) Validator
 

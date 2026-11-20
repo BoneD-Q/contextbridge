@@ -4,14 +4,15 @@ description: >
   将技术文档导出为保留概览、事实、主张、决策、约束、术语、证据、未知与冲突的
   CBHF 0.1.0 交接文件夹，用于 AI 到 AI 交接。在用户要求创建 ContextBridge 包、
   将文档导出为 CBHF、准备 AI 交接文件夹，或运行 context-exporter 时使用。
+  默认走快速路径（限来源、先脚手架再填充）；禁止未授权整仓扫描。
 license: Apache-2.0
 compatibility: >
   Requires local filesystem read/write for CBHF folder packages. Works with any
-  Agent Skills host that can follow SKILL.md; optional Python 3 is not required
-  for export.
+  Agent Skills host that can follow SKILL.md. Optional Python 3 enables
+  skills/context-exporter/scripts/scaffold_package.py (layout helper only).
 metadata:
   author: contextbridge
-  version: "0.1.0"
+  version: "0.1.1"
   protocol: CBHF
   protocol_version: "0.1.0"
   scenario: docs
@@ -21,16 +22,34 @@ metadata:
 # context-exporter
 
 将可读技术文档转为 **CBHF 0.1.0** 标准交接文件夹（handover folder）。
-本 Skill 仅为指令——不含 Python 应用、API、数据库或 Web 服务。
+本 Skill 以指令为主；可选 Python 脚手架只创建空包布局，不替代提取与脱敏。
 
-提取前请阅读：
+## 默认：快速路径（先读这个）
 
-1. [references/cbhf-format.md](references/cbhf-format.md) — 人工可读字段语义与布局
-2. [references/claim-rules.md](references/claim-rules.md) — 知识状态（KnowledgeStatus）与分类
-3. [references/evidence-rules.md](references/evidence-rules.md) — 来源、定位器、证据、脱敏
-4. 机器形态：`spec/cbhf/v0.1.0/*.schema.json`（Draft 2020-12）— 保持 JSON/YAML 字段形态兼容
+**在通读长 references / Schema 之前，先读并执行：**
+
+1. [references/fast-path.md](references/fast-path.md) — 反卡顿限制、脚手架、最小字段备忘
+
+**按需再打开**（字段不确定或要写 `verified` / 证据链接时）：
+
+2. [references/cbhf-format.md](references/cbhf-format.md)
+3. [references/claim-rules.md](references/claim-rules.md)
+4. [references/evidence-rules.md](references/evidence-rules.md)
+5. `spec/cbhf/v0.1.0/*.schema.json`
 
 本工作流不得与 `cbhf-format.md` 或 0.1.0 JSON Schema 在字段形态上冲突。
+
+### 反卡顿（不可跳过）
+
+- **禁止**未点名的整仓递归（含 `node_modules` / `.git` / `dist` / `__pycache__`）。
+- **默认** ≤3 个源文件；facts ≤12；其它知识类合计 ≤12。用户要「完整深度导出」才取消上限。
+- **先脚手架再填充：** 优先运行  
+  `python skills/context-exporter/scripts/scaffold_package.py <package-root> --package-id …`  
+  无 Python 则按下方「输出包」手工建树，但须在早期工具轮次内写出文件。
+- **禁止**「读完所有 references 才写第一个文件」。
+- 每完成一步向用户报一句进度。
+
+若用户只给了仓库根路径、没有文件白名单：**停止并索取 1～3 个文档路径**，不要自行扫仓。
 
 ## 何时使用
 
@@ -60,30 +79,36 @@ metadata:
 
 | 输入 | 必需 | 说明 |
 | --- | --- | --- |
-| 源文档 | 是 | agent 实际可读的路径和/或粘贴内容 |
+| 源文档 | 是 | agent 实际可读的路径和/或粘贴内容（**默认 ≤3 个文件**） |
 | 输出目录 | 是 | 创建 CBHF 文件夹的位置（例如 `./handoff/my-project-cbhf`） |
 | 包 id / 标题 | 建议 | 稳定 id 与人类可读标题 |
 | 源语言 | 建议 | 默认：从文档检测；叙述为 zh+en |
 | 用户确认 | 可选 | 仅限对**具体命题**的明确确认；经 `confirmation` 记录 |
-| 范围限制 | 可选 | 要包含或排除的文件/章节 |
+| 范围限制 | 强烈建议 | 要包含或排除的文件/章节；无白名单勿扫仓 |
+| 导出模式 | 可选 | 默认 `fast`；仅当用户明确要求时用 `full` |
 
 若必需来源不可访问，停止并报告失败路径。不得捏造内容。
 
 ## 工作流
 
-按顺序执行。不得跳过 Unknown / Conflict 两遍扫描。
+按顺序执行。不得跳过 Unknown / Conflict 两遍扫描。  
+**快速路径：** 步骤 1 用脚手架加速；步骤 4–5 遵守 [fast-path.md](references/fast-path.md) 上限。  
+**完整路径：** 取消数量上限，并在需要时打开全套 references。
 
 ### 1. 规划包根目录
 
 - 选择输出根：`<output_dir>/`（必须成为含 `manifest.yaml` 的 CBHF 包根）。
-- 按 [cbhf-format.md](references/cbhf-format.md) § 包布局创建 **Exporter 必需** 目录树。
+- **优先**运行脚手架：  
+  `python skills/context-exporter/scripts/scaffold_package.py <package-root> --package-id <id> --title-zh … --title-en …`  
+  否则按 [cbhf-format.md](references/cbhf-format.md) § 包布局（或下方「输出包」）创建 **Exporter 必需** 目录树。
 - 导出时**不要**创建 `validation/`。
 - 对后续每次写入强制包路径安全。
 - 记录 UTC 生成时间（`generated_at`）。
+- 向用户确认：已 scaffold / 已建树。
 
 ### 2. 摄入来源（用户文件只读）
 
-- 列出用户提供的每一份来源。
+- 列出用户提供的每一份来源（尊重白名单与默认 ≤3）。
 - 对每个路径：在**宿主能力**与路径安全规则内尝试复制（并在可能时读取）。
 - 复制成功：写入 `source/original/`，使用安全相对名（路径分隔符 → `__`；无 `..`）。
 - 若可复制但文本不可读（不透明 PDF/DOCX/图片等）：以二进制打包且 `readable: false`；不得捏造摘录；必须记入 limitations。
@@ -115,14 +140,14 @@ metadata:
 | 约束 / 需求 | `knowledge/constraints.json` |
 | 术语 | `knowledge/glossary.json` |
 
-遵循 [claim-rules.md](references/claim-rules.md)。优先更小的原子单元。按对象类型规则分配 `status`——**不得**因创建了一行就默认 `verified`。
+遵循 [claim-rules.md](references/claim-rules.md)（按需打开）。优先更小的原子单元。按对象类型规则分配 `status`——**不得**因创建了一行就默认 `verified`。快速路径遵守数量上限；宁可少而准，并在 `limitations` 写明「快速路径有上限」。
 
 当 `status` 为 `user_confirmed` 时，附加 `confirmation` 对象（见 cbhf-format + claim-rules），含正确的 `source_type` / `source_ref`（`other` 须有 `limitations`；不得捏造 `src_*`）。猜测 / 建议 / 不确定 ≠ 确认。
 
 ### 5. 附着证据
 
 - 为**可读**包内副本中的可引用片段创建 `evidence/evidence.json` 条目。
-- 针对实际写入的**包内副本**（脱敏后）计算定位器。不得捏造行号/页码。
+- 针对实际写入的**包内副本**（脱敏后）计算定位器。不得捏造行号/页码；**不得把 `excerpt` 锚在空行**。
 - 对 markdown/文本且行号已知时优先 `line_range`；对 `section`，`start`/`end` 各用**单个**标题字符串或 `null`。
 - `excerpt` 必须是对包内副本的忠实引用（若适用则为脱敏后）。
 - 创建 `evidence/references.json`，ReferenceStatus 仅为 `unverified`（不得复用 KnowledgeStatus）。无引用时允许空 `{ "references": [] }`。
@@ -149,28 +174,28 @@ metadata:
 
 - 协议名/版本（`CBHF` / `0.1.0`）
 - 包 id、标题、场景（`docs`）、形态（`folder`）
-- `generated_at`、生成器（`context-exporter` + skill 版本）
+- `generated_at`、生成器（`context-exporter` + skill 版本 `0.1.1`）
 - 来源摘要
 - `redaction`：仅在实际脱敏时 `applied: true`；否则 `applied: false`
 - 可选 `integrity.files_touched` 仅作写入清单（非通过证明）
 - `validation.present: false`
-- `limitations`（未读/未复制/不透明二进制、宿主限制、脱敏不完整、路径拒绝、确认原文缺口等）
+- `limitations`（未读/未复制/不透明二进制、宿主限制、脱敏不完整、路径拒绝、确认原文缺口、**快速路径上限**等）
 
 ### 9. 结束前自检
 
 - [ ] 所有 **Exporter 必需** 路径存在（见输出包）
 - [ ] 导出器未伪造 `validation/` 目录
-- [ ] 用户原件未动；包路径安全成立
+- [ ] 用户原件未动；包路径安全成立；未做未授权整仓扫描
 - [ ] `content_transformed` ∈ {true, false, null} 且诚实
 - [ ] 不透明二进制 `readable: false` 且无伪造摘录
 - [ ] 无原始密钥；`redaction.applied` 仅表示脱敏；无完整性过度声称
-- [ ] 无无充分证据链接的 KnowledgeStatus `verified`
+- [ ] 无无充分证据链接的 KnowledgeStatus `verified`；excerpt 非空行窗口
 - [ ] 每个 `user_confirmed` 对该具体命题有 `confirmation`（`other` 已说明）
 - [ ] 无将 AI 推断标为 `user_confirmed`
 - [ ] 引用仅使用 ReferenceStatus `unverified`
 - [ ] 冲突仅针对同主体 + 对齐上下文的矛盾
 - [ ] 上下文不确定的不一致 → 问题，非冲突
-- [ ] `manifest.limitations` 诚实填写
+- [ ] `manifest.limitations` 诚实填写（含快速路径时）
 - [ ] 不把 `files_touched` 当作完整性/校验成功
 
 ## 状态速查
@@ -210,7 +235,7 @@ metadata:
   handoff/recommended-actions.json
 ```
 
-允许空数组；不得省略必需文件。
+允许空数组；不得省略必需文件。脚手架脚本会创建上述空壳。
 
 ### Validator 预留（导出时不要创建；0.1.0 未启用包内写入）
 
@@ -237,10 +262,11 @@ metadata:
 1. 包路径
 2. 来源数量 / 已纳入 vs 跳过（宿主限制）
 3. 计数：facts、claims、evidence、unknowns、conflicts
-4. 状态直方图（所有带 `status` 的知识类型）
-5. 脱敏 + limitations（不得声称完整发现密钥）
-6. 是否运行了结构冒烟检查（若有）——**不要**声称完整 Validator 通过
-7. 可用时建议运行 `context-validator`
+4. 是否使用**快速路径**及上限
+5. 状态直方图（所有带 `status` 的知识类型）
+6. 脱敏 + limitations（不得声称完整发现密钥）
+7. 是否运行了结构冒烟检查（若有）——**不要**声称完整 Validator 通过
+8. 可用时建议运行 `context-validator`
 
 ## 范围外
 
@@ -248,3 +274,4 @@ metadata:
 - 从包导入 / 续作
 - LLM API、Docker、数据库、FastAPI / Web 应用 / MCP 服务器
 - 自动化解争议或从公网补全事实
+- 未授权的整仓代码索引 / 当作文档导出

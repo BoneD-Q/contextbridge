@@ -29,9 +29,11 @@ DISCOVERY_ROOTS = (
 
 REQUIRED_REFS = {
     "context-exporter": (
+        "references/fast-path.md",
         "references/cbhf-format.md",
         "references/claim-rules.md",
         "references/evidence-rules.md",
+        "scripts/scaffold_package.py",
     ),
     "context-validator": (
         "references/validation-rules.md",
