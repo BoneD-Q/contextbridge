@@ -39,6 +39,47 @@ ContextBridge 是开源 **Agent Skills** 项目——不是 SaaS、不是 Web �
 
 **CBHF**（ContextBridge Handoff Format）位于 [`spec/cbhf/`](spec/cbhf/) 与 [`skills/context-exporter/references/cbhf-format.md`](skills/context-exporter/references/cbhf-format.md)。它是**协议**，不是 Skill。
 
+## 核心架构
+
+核心：用一个 **文件夹包** 做交接载体；三个 Skill 职责硬隔离；Validator / Importer 产出留在**会话**（0.1.0 不把 `validation/` 写入包内）。
+
+```mermaid
+flowchart TB
+  DOC["源文档"]
+
+  subgraph skills ["Agent Skills"]
+    EXP["context-exporter<br/>写包"]
+    VAL["context-validator<br/>L1–L3 结构 · L4 永不自动 PASS"]
+    IMP["context-importer<br/>恢复上下文 · 不升级信任"]
+  end
+
+  subgraph carrier ["交接载体"]
+    PKG["CBHF 0.1.0 文件夹包"]
+    SCH["spec/cbhf/v0.1.0 JSON Schemas"]
+  end
+
+  subgraph session ["仅会话产出"]
+    VREP["Validator 会话 JSON"]
+    UREP["Receiver Understanding Report"]
+  end
+
+  DOC --> EXP
+  EXP -->|创建| PKG
+  SCH -.->|字段形态| VAL
+  PKG --> VAL
+  VAL -->|只读| VREP
+  PKG --> IMP
+  VREP -.->|可选导入门禁| IMP
+  IMP -->|只读| UREP
+```
+
+| 组件 | 是否写包 | 职责 |
+| --- | --- | --- |
+| `context-exporter` | 是（Exporter 必需树） | 抽取知识、证据、未知/冲突 |
+| `context-validator` | 否 | L1–L3 结构诚实性；会话报告 |
+| `context-importer` | 否 | 消费包 + 可选会话报告以接手 |
+| CBHF + schemas | 协议 | 共享字段布局；不是 Skill |
+
 ## CBHF 0.1.0 Package 结构
 
 Exporter 必写树：

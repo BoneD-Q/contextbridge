@@ -39,6 +39,47 @@ Do **not** merge these into one mega-skill. Exporter writes packages; Validator 
 
 **CBHF** (ContextBridge Handoff Format) lives under [`spec/cbhf/`](spec/cbhf/) and [`skills/context-exporter/references/cbhf-format.md`](skills/context-exporter/references/cbhf-format.md). It is a **protocol**, not a Skill.
 
+## Architecture
+
+Core idea: one **folder package** as the handoff carrier; three Skills with hard role boundaries; Validator/Importer outputs stay in the **session** (0.1.0 does not write `validation/` into the package).
+
+```mermaid
+flowchart TB
+  DOC["Source documents"]
+
+  subgraph skills ["Agent Skills"]
+    EXP["context-exporter<br/>writes package"]
+    VAL["context-validator<br/>L1–L3 structure · L4 never auto-PASS"]
+    IMP["context-importer<br/>restore · no trust upgrade"]
+  end
+
+  subgraph carrier ["Handoff carrier"]
+    PKG["CBHF 0.1.0 folder package"]
+    SCH["spec/cbhf/v0.1.0 JSON Schemas"]
+  end
+
+  subgraph session ["Session-only outputs"]
+    VREP["Validator session JSON"]
+    UREP["Receiver Understanding Report"]
+  end
+
+  DOC --> EXP
+  EXP -->|creates| PKG
+  SCH -.->|shape rules| VAL
+  PKG --> VAL
+  VAL -->|read-only| VREP
+  PKG --> IMP
+  VREP -.->|optional import gate| IMP
+  IMP -->|read-only| UREP
+```
+
+| Piece | Writes package? | Role |
+| --- | --- | --- |
+| `context-exporter` | Yes (Exporter-required tree) | Extract knowledge, evidence, unknowns/conflicts |
+| `context-validator` | No | Structural honesty L1–L3; session report |
+| `context-importer` | No | Consume package + optional session report for takeover |
+| CBHF + schemas | Protocol | Shared field layout; not a Skill |
+
 ## CBHF 0.1.0 package layout
 
 Exporter-required tree:
