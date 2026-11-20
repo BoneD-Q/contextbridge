@@ -78,9 +78,19 @@ Absence of `validation/` is normal in 0.1.0 and means **no packaged report** (us
 
 ## Quick start
 
-1. Clone this repository and open it in **Cursor** (Agent mode).
-2. Follow [docs/getting-started.md](docs/getting-started.md) to enable the three Skills and run one demo.
-3. Explore the sample package: [`examples/technical-proposal/`](examples/technical-proposal/).
+1. Clone this repository and open it in an Agent Skills host (**Cursor** is the primary verified host).
+2. Install discovery mirrors + check the environment:
+
+```bash
+python scripts/install_skills.py
+pip install -r requirements-validator.txt
+python scripts/doctor.py
+```
+
+3. Follow [docs/getting-started.md](docs/getting-started.md) for the demo. Host coverage: [docs/host-matrix.md](docs/host-matrix.md).
+4. Explore the sample package: [`examples/technical-proposal/`](examples/technical-proposal/).
+
+Path-invoke always works without install: point the agent at `skills/*/SKILL.md`.
 
 Validator helper (optional, deterministic L1–L3), from the repo root:
 
@@ -137,14 +147,14 @@ source docs  →  context-exporter  →  CBHF package
 **Out of scope / not claimed**
 
 - L4 semantic review is **never** an automated PASS.
-- No guarantee of identical behavior on every AI host; this repo is exercised primarily with **Cursor** Agent Skills workflows.
+- No guarantee of identical behavior on every AI host; see [docs/host-matrix.md](docs/host-matrix.md). Cursor is the primary **verified** host; others may work via `.agents` / `.claude` discovery after `install_skills.py`.
 - No Dashboard, database, MCP server product, ZIP sync, or cloud knowledge-base product in v0.1.0.
 - Best-effort redaction ≠ complete secret/PII discovery.
 - No invented performance, success-rate, or user-count metrics.
 
 ## Roadmap (indicative)
 
-- Keep CBHF 0.1.0 stable; document further host packaging options without claiming untested hosts.
+- Keep CBHF 0.1.0 stable; promote host-matrix rows from `unverified` → `verified` as other hosts are exercised.
 - Optional packaged validation-report shape freeze (still Validator-owned).
 - More importer/validator fixtures (e.g. `readable: false` demos) without changing frozen rules lightly.
 - Clearer contribution guide after the first public tag.

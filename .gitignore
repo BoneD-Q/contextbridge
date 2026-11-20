@@ -14,3 +14,11 @@ build/
 # Python
 __pycache__/
 *.py[cod]
+
+# Host discovery mirrors created by scripts/install_skills.py
+# (canonical skills stay under skills/; keep .agents/skills/README.md tracked)
+.agents/skills/context-exporter
+.agents/skills/context-validator
+.agents/skills/context-importer
+.claude/skills/
+.cursor/skills/

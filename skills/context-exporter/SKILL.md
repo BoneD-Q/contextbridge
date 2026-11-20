@@ -5,6 +5,10 @@ description: >
   CBHF 0.1.0 交接文件夹，用于 AI 到 AI 交接。在用户要求创建 ContextBridge 包、
   将文档导出为 CBHF、准备 AI 交接文件夹，或运行 context-exporter 时使用。
 license: Apache-2.0
+compatibility: >
+  Requires local filesystem read/write for CBHF folder packages. Works with any
+  Agent Skills host that can follow SKILL.md; optional Python 3 is not required
+  for export.
 metadata:
   author: contextbridge
   version: "0.1.0"

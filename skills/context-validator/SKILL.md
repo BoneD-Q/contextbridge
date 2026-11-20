@@ -3,6 +3,10 @@ name: context-validator
 description: >
   只读校验 CBHF 0.1.0 交接包的包结构、Schema 形态、引用完整性与语义审查提示。用于在导入或分发前检查 ContextBridge 包，或用户要求运行 context-validator。不得捏造验证通过，不得改写包内知识。
 license: Apache-2.0
+compatibility: >
+  Requires local filesystem read of CBHF packages. Optional Python 3 plus
+  requirements-validator.txt for scripts/validate_package.py (session JSON only;
+  does not write validation/).
 metadata:
   author: contextbridge
   version: "0.1.0"

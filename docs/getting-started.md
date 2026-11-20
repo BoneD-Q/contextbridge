@@ -1,20 +1,20 @@
 # Getting started (ContextBridge v0.1.0)
 
-This guide walks through one **demo** handoff using the sample technical-proposal package. It assumes you work in **Cursor** with Agent mode.
+This guide walks through one **demo** handoff using the sample technical-proposal package.
 
-For product overview see the [root README](../README.md). For document index see [README.md](README.md) in this folder.
+For product overview see the [root README](../README.md). For host discovery see [host-matrix.md](host-matrix.md). For document index see [README.md](README.md) in this folder.
 
 ## Prerequisites
 
-- This repository cloned and opened as a Cursor project.
+- This repository cloned and opened in an Agent Skills–capable host (Cursor is the primary verified host).
 - Ability to run Agent chats that can read files under `skills/` and `examples/`.
-- For the optional Validator helper: **Python 3** with dependencies used by the script (`PyYAML`, `jsonschema`, `referencing` — same environment you use to run `tests/`).
+- For the optional Validator helper: **Python 3** + [`requirements-validator.txt`](../requirements-validator.txt).
 
 You do **not** need a cloud dashboard or database.
 
-## Enable the three Skills (Cursor)
+## Enable the three Skills (out of box)
 
-This repo stores Skills at:
+Canonical Skill bodies (source of truth):
 
 ```text
 skills/context-exporter/SKILL.md
@@ -22,22 +22,36 @@ skills/context-validator/SKILL.md
 skills/context-importer/SKILL.md
 ```
 
-That layout matches the project’s Skills-first convention and Cursor **plugin** discovery of a top-level `skills/` directory when packaged as a plugin.
+### A) Always works — path-invoke
 
-For **project Agent Skills** auto-discovery, Cursor also documents:
+In Agent chat, name the skill and point at its `SKILL.md` (and linked `references/`). No install required.
 
-| Location | Scope |
+### B) Auto-discovery — install mirrors (recommended)
+
+From the **repository root**:
+
+```bash
+python scripts/install_skills.py
+# Windows: pwsh scripts/install-skills.ps1
+# Unix:    bash scripts/install-skills.sh
+```
+
+This creates directory links (does **not** copy files) under:
+
+| Path | Typical hosts |
 | --- | --- |
-| `.cursor/skills/<name>/SKILL.md` | Project |
-| `.agents/skills/<name>/SKILL.md` | Project |
+| `.agents/skills/<name>/` | Cursor, Codex, OpenCode, … |
+| `.claude/skills/<name>/` | Claude Code |
+| `.cursor/skills/<name>/` | Cursor project skills |
 
-**Practical options (pick one):**
+Then verify:
 
-1. **Path-invoke (always works in this clone):** In Agent chat, name the skill and `@`-reference its `SKILL.md` (and let the agent read linked `references/`).
-2. **Project auto-discovery:** Copy or symlink each skill folder into `.cursor/skills/` (or `.agents/skills/`) so folder names match skill `name` fields (`context-exporter`, `context-validator`, `context-importer`). Do not invent unsupported host install steps.
-3. **Plugin install:** Only when/if this repo is published as a Cursor plugin with a plugin manifest — not required for local demos.
+```bash
+pip install -r requirements-validator.txt
+python scripts/doctor.py
+```
 
-Other AI hosts are **not** claimed compatible here unless you verify them yourself.
+Doctor exit code `0` means canonical skills, discovery links, schemas, deps, and sample Validator smoke all look good. See [host-matrix.md](host-matrix.md) for what is `verified` vs `unverified` per host.
 
 ## Demo materials
 
@@ -51,7 +65,7 @@ Other AI hosts are **not** claimed compatible here unless you verify them yourse
 
 The sample already includes `generated-output/`. To practice export on your own docs:
 
-1. Ask the Agent to follow [`skills/context-exporter/SKILL.md`](../skills/context-exporter/SKILL.md).
+1. Ask the Agent to follow [`skills/context-exporter/SKILL.md`](../skills/context-exporter/SKILL.md) (or the discovered skill name `context-exporter`).
 2. Provide readable source paths and an **empty** output directory for a new package root.
 3. Confirm the Exporter-required tree appears (see README package layout).
 4. Exporter must **not** create a fake `validation/` folder (CBHF 0.1.0: session reports only; in-package `validation/` write is reserved and not enabled).
@@ -112,9 +126,11 @@ How to read the report:
 - Validator JSON shows L1–L3 results without claiming L4 PASS.
 - Importer report preserves ids such as `unk_001` and `cfl_001` without inventing answers.
 - Package files are unchanged after Validator/Importer (read-only skills/scripts).
+- `python scripts/doctor.py` exits 0 after install + pip deps.
 
 ## Next reading
 
+- Host matrix: [`host-matrix.md`](host-matrix.md)
 - Protocol (human): [`skills/context-exporter/references/cbhf-format.md`](../skills/context-exporter/references/cbhf-format.md)
 - Schemas: [`spec/cbhf/v0.1.0/`](../spec/cbhf/v0.1.0/)
 - E2E notes: [`tests/validator/e2e/README.md`](../tests/validator/e2e/README.md), [`tests/importer/e2e/README.md`](../tests/importer/e2e/README.md)

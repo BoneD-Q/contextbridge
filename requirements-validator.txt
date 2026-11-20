@@ -1,0 +1,4 @@
+# Optional deps for skills/context-validator/scripts/validate_package.py
+PyYAML>=6.0
+jsonschema>=4.18
+referencing>=0.30

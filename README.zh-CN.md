@@ -78,9 +78,19 @@ Exporter 必写树：
 
 ## 快速开始
 
-1. 克隆本仓库，用 **Cursor**（Agent 模式）打开。
-2. 按 [docs/getting-started.md](docs/getting-started.md) 启用三个 Skill 并跑通演示。
-3. 查看样例包：[`examples/technical-proposal/`](examples/technical-proposal/)。
+1. 克隆本仓库，用支持 Agent Skills 的宿主打开（**Cursor** 为主要已验证宿主）。
+2. 安装发现镜像并自检：
+
+```bash
+python scripts/install_skills.py
+pip install -r requirements-validator.txt
+python scripts/doctor.py
+```
+
+3. 按 [docs/getting-started.md](docs/getting-started.md) 跑演示。宿主覆盖见 [docs/host-matrix.md](docs/host-matrix.md)。
+4. 查看样例包：[`examples/technical-proposal/`](examples/technical-proposal/)。
+
+不安装也可路径调用：让 Agent 直接读 `skills/*/SKILL.md`。
 
 Validator 辅助脚本（可选，确定性 L1–L3），在仓库根目录执行：
 
@@ -118,7 +128,8 @@ python skills/context-validator/scripts/validate_package.py examples/technical-p
 
 | 文档 | 对象 |
 | --- | --- |
-| [docs/getting-started.md](docs/getting-started.md) | 首次跑通 |
+| [docs/getting-started.md](docs/getting-started.md) | 首次跑通 + Skill 安装 |
+| [docs/host-matrix.md](docs/host-matrix.md) | 宿主发现 / verified vs unverified |
 | [docs/README.md](docs/README.md) | 总索引（用户文档 vs 审计底稿） |
 | [cbhf-format.md](skills/context-exporter/references/cbhf-format.md) | CBHF 人读字段/布局 |
 | [spec/cbhf/v0.1.0/](spec/cbhf/v0.1.0/) | JSON Schema |
@@ -137,14 +148,14 @@ python skills/context-validator/scripts/validate_package.py examples/technical-p
 **不做 / 不声称**
 
 - L4 语义审核**永不**自动 PASS。
-- 不承诺在所有 AI 宿主上行为一致；本仓库主要以 **Cursor** Agent Skills 流程验证。
+- 不承诺在所有 AI 宿主上行为一致；见 [docs/host-matrix.md](docs/host-matrix.md)。Cursor 为主要 **verified** 宿主；其它宿主可在 `install_skills.py` 后通过 `.agents` / `.claude` 发现。
 - v0.1.0 无 Dashboard、数据库、MCP 产品、ZIP 同步或云知识库产品。
 - 脱敏 best-effort ≠ 穷尽发现全部密钥/PII。
 - 不提供虚构性能、成功率或用户数。
 
 ## 路线图（示意）
 
-- 保持 CBHF 0.1.0 稳定；补充宿主打包说明时不夸大未测宿主。
+- 保持 CBHF 0.1.0 稳定；随其它宿主实测把 host-matrix 从 `unverified` 升为 `verified`。
 - 可选的包内 validation-report 形状冻结（仍由 Validator 侧拥有）。
 - 增加更多 fixture（如 `readable: false` 演示），谨慎改冻结规则。
 - 首个公开 tag 后补充贡献指南。

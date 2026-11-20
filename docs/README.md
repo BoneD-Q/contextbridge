@@ -6,7 +6,8 @@ ContextBridge documentation falls into two buckets. Prefer **user docs** for dem
 
 | Doc | Purpose |
 | --- | --- |
-| [Getting started](getting-started.md) | First end-to-end demo in Cursor |
+| [Getting started](getting-started.md) | First end-to-end demo + skill install |
+| [Host matrix](host-matrix.md) | Discovery / verified vs unverified hosts |
 | [Root README (EN)](../README.md) / [中文](../README.zh-CN.md) | Product overview, skills, limits |
 | [CBHF format (human)](../skills/context-exporter/references/cbhf-format.md) | Package layout and field semantics |
 | [CBHF schemas](../spec/cbhf/v0.1.0/) | Machine-readable Draft 2020-12 JSON Schemas |

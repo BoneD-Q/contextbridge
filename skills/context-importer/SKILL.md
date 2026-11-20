@@ -6,6 +6,10 @@ description: >
   在继承 ContextBridge 包、继续 AI 间交接，或用户要求运行 context-importer 时使用。
   不校验包，也不修改包内容。
 license: Apache-2.0
+compatibility: >
+  Requires local filesystem read of CBHF packages. Works with any Agent Skills
+  host that can follow SKILL.md; does not write into the package. Prefers a
+  Validator session JSON when available.
 metadata:
   author: contextbridge
   version: "0.1.0"
